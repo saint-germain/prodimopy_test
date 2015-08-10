@@ -1,0 +1,20 @@
+1.0 ! version
+   flux[W/m2]     sig[W/m2]      FWHM[km/s]     sig[km/s]         flag     
+    9.49E-17       3.50E-18         0.00           0.00     ok
+    7.80E-18       7.8E-19           0              0       ul
+    9.70E-18       9.7E-19           0              0       ul
+    6.9E-18        3.2E-18           0              0       ok
+    1.69E-19       1.54E-22          0              0       ok
+    6.11E-19       1.4E-20           0              0       ok
+    9.8E-18        2.2E-18           0              0       ok
+--- line flux profiles ---
+  F     F     F     F     T     F     F    ! line profile available?
+  F     F     F     F     T     F     F    ! auto-center?
+ 0.0   0.0   0.0   0.0   0.0   0.0   0.0   ! v_valid
+nodata
+nodata
+nodata
+nodata
+LineProfile_CO_21.dat
+nodata
+nodata
