@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division 
+
 import unittest
 import prodimopy.read as pread
 from prodimopy.read import Data_ProDiMo, read_linefluxes
