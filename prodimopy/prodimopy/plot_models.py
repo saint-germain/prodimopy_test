@@ -513,5 +513,55 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)      
     
+   
+  def plot_line_profil(self,models,wl,**kwargs):
+    '''
+    Plots the line profile for the given line (id by wavelength) 
+    '''  
+    print("PLOT: plot_line_profile ...")
+    fig, ax = plt.subplots(1, 1)      
     
+    iplot = 0
+    xmin = 1.e100
+    xmax = -1.e100 
+    ymin = 1.e100
+    ymax = -1.e100 
+    for model in models:
+      line=model.getLine(wl)       
+      if line==None: continue    
+      
+      # text for the title
+      if iplot==0:
+        lintxt=line.species+"@"+"{:.2f}".format(line.wl)+" $\mathrm{\mu m}$" 
+      x = line.profile.velo           
+      y = line.profile.flux-line.fcont  # remove the continuum
+      
+      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+                      
+      iplot = iplot + 1
+      
+      if min(x) < xmin: xmin = min(x)
+      if max(x) > xmax: xmax = max(x)
+      if min(y) < ymin: ymin = min(y)
+      if max(y) > ymax: ymax = max(y)
+    
+    if iplot==0: 
+      print("WARN: No lines found: ")
+      return   
+
+    # set defaults, can be overwritten by the kwargs
+    ax.set_xlim(xmin,xmax)
+    ax.set_ylim([ymin,ymax*1.1])
+
+    ax.set_xlabel(r"$\mathrm{velocity\,[km s^{-1}}$]")    
+    ax.set_ylabel(r"$\mathrm{flux\,[Jy]}$")    
+      
+    self._dokwargs(ax, **kwargs)                
+    
+    ax.text(0.03, 0.97,lintxt, ha='left', va='top', transform=ax.transAxes)
+    
+    self._legend(ax)
+               
+    self.pdf.savefig()
+    plt.close(fig)      
     
