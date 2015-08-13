@@ -1,5 +1,6 @@
 import unittest
 import prodimopy.read as pread
+from prodimopy.read import Data_ProDiMo, read_linefluxes
 
 # class TestDataProDiMo(unittest.TestCase):
 #     def test___init__(self):
@@ -103,16 +104,34 @@ class TestReadStarSpec(unittest.TestCase):
     self.assertNotEqual(starSpec, None)
     self.assertEqual(starSpec.r, 2.0862466372196695)    
     self.assertEqual(starSpec.Inu[0], 8.2394407e-030)
+    
+class TestGetLine(unittest.TestCase):
+  def test_get_line(self):
+    # dummy Object
+    data =Data_ProDiMo("dummy")
+    lines=read_linefluxes(".")
+    data.lines=lines
+    line=data.getLine(63.0)
+    self.assertNotEqual(line, None)
+    self.assertEqual(line.species, "OI")
+    self.assertEqual(line.wl, 63.18367)
+    
+    line=data.getLine(867.0)
+    self.assertNotEqual(line, None)
+    self.assertEqual(line.species, "CO")
+    self.assertEqual(line.wl, 866.96325)          
 
 class TestReadProdimo(unittest.TestCase):
-    def test_read_prodimo(self):
-      data = pread.read_prodimo(".")
-      self.assertNotEqual(data, None)
-      self.assertNotEqual(data.lineEstimates, None)
-      self.assertNotEqual(data.dust, None)
-      self.assertNotEqual(data.sed, None)
-      self.assertNotEqual(data.starSpec, None)
-      self.assertEqual(data.x[0, data.nz - 1], 0.07)  
+  def test_read_prodimo(self):
+    data = pread.read_prodimo(".")
+    self.assertNotEqual(data, None)
+    self.assertNotEqual(data.lineEstimates, None)
+    self.assertNotEqual(data.dust, None)
+    self.assertNotEqual(data.sed, None)
+    self.assertNotEqual(data.starSpec, None)
+    self.assertEqual(data.x[0, data.nz - 1], 0.07)
+            
+      
 
 # class TestCalcColumnd(unittest.TestCase):
 #     def test_calc_columnd(self):
