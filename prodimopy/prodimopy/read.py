@@ -77,6 +77,16 @@ class Data_ProDiMo(object):
     return lines
   
   
+  def getLine(self,wl):
+    '''
+    Finds the line closest to the given wl
+    '''
+    if self.lines == None: return None
+    wls=numpy.array([line.wl for line in self.lines])    
+    idx=numpy.argmin(abs(wls[:]-wl))
+    return self.lines[idx]
+    
+  
   def getLineEstimate(self, ident, wl):
     '''
     Finds one particular line from lineEstimates array
@@ -725,10 +735,6 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   if os.path.exists(directory + "/line_flux.out"):  
     print("READ: " + directory + "/line_flux.out")
     data.lines = read_linefluxes(directory)  
-
-  if os.path.exists(directory + "/line_flux.out"):  
-    print("READ: " + directory + "/line_flux.out")
-    data.lines = read_linefluxes(directory)
 
   if os.path.exists(directory + "/SED.out"):
     print("READ: " + directory + "/SED.out")
