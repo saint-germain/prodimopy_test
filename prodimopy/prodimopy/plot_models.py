@@ -356,17 +356,13 @@ class PlotModels(object):
       if min(y) < ymin: ymin = min(y)
       if max(y) > ymax: ymax = max(y)
 
-      
-    if "ylim" in kwargs: 
-      ax.set_ylim(kwargs["ylim"])
-    else:
-      ax.set_ylim(ymin, ymax)
-              
+    ax.set_ylim(ymin, ymax)              
     ax.semilogy()
             
     ax.set_xlabel(r"r [AU]")    
     ax.set_ylabel(ylabel)    
     
+    self._dokwargs(ax, **kwargs) 
     self._legend(ax)
     
     self.pdf.savefig()
@@ -448,14 +444,14 @@ class PlotModels(object):
       
       if min(x) < xmin: xmin = min(x)
       if max(x) > xmax: xmax = max(x)
-      
-    if "ylim" in kwargs: ax.set_ylim(kwargs["ylim"])
-    
-    ax.semilogy()
+          
+    ax.set_xlim(xmin,xmax)
+    ax.semilogy()    
             
     ax.set_xlabel(r"r [AU]")    
     ax.set_ylabel(r"midplane $\epsilon(\mathrm{" + pplot.spnToLatex(species) + "})$")    
     
+    self._dokwargs(ax, **kwargs)  
     self._legend(ax)
     
     self.pdf.savefig()
@@ -497,6 +493,8 @@ class PlotModels(object):
       if max(x) > xmax: xmax = max(x)
       if y[-1] < ymin: ymin = y[-1]
       if max(y) > ymax: ymax = max(y)
+      
+    if iplot == 0: return  
       
     # set defaults, can be overwritten by the kwargs
     ax.set_xlim(xmin,xmax)
