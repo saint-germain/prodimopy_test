@@ -297,16 +297,27 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
   nxrange = list(range(pdata.nx))
   startBytes = 0  
   for i in range(nlines):
-    # has to be don in fixed format 
-    line = f.readline().decode()            
+    # has to be done in fixed format
+    # FIXME: it can be that nline is not really equal the nubmer of available line
+    # this ir probably a But in ProDiMo but maybe intended (see 
+    # OUTPUT_FLINE_ESTIMATE in ProDiMo, Therefore add a check     
+    line = f.readline()            
+    if not line: break
+    
+    line=line.decode()    
     # FIXME: has now also a version tag!! this is for the new version
     if version == 1:
       le = DataLineEstimate((line[0:9]).strip(), float(line[10:28]), int(line[29:32]), int(line[33:37]), float(line[38:49]))
     elif version == 2:
-      le = DataLineEstimate((line[0:9]).strip(), float(line[10:28]), int(line[29:34]), int(line[35:40]), float(line[41:53]))
+      try:
+        le = DataLineEstimate((line[0:9]).strip(), float(line[10:28]), int(line[29:34]), int(line[35:40]), float(line[41:53]))
+      except ValueError as err:
+        print("Conversion problems: {0}".format(err))
+        print("Line (i,text): ",i,line)
+        print("Field: ",line[0:9],line[10:28],line[29:34],line[35:40],line[41:53])
+        raise err
     else:
-      raise ValueError('Unknown version of FlineEstimates.out! version=' + str(version))
-      return     
+      raise ValueError('Unknown version of FlineEstimates.out! version=' + str(version))          
             
     le.frequency = (le.wl * u.micrometer).to(u.GHz, equivalencies=u.spectral()).value
           
