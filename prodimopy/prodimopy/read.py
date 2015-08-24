@@ -34,6 +34,8 @@ class Data_ProDiMo(object):
     self.rhod = None   
     self.nHtot = None    
     self.damean = None  # mean dust radius
+    self.chi = None
+    self.chiRT= None
     self.zetaX = None  # the X-ray ionisation rate at every point
     self.zetaCR = None
     self.zetaSTCR = None
@@ -670,6 +672,8 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.tauX10 = numpy.zeros(shape=(data.nx, data.nz))  
   data.zetaX = numpy.zeros(shape=(data.nx, data.nz))
   data.dummyH2 = numpy.zeros(shape=(data.nx, data.nz))
+  data.chi = numpy.zeros(shape=(data.nx, data.nz))
+  data.chiRT = numpy.zeros(shape=(data.nx, data.nz))
   data.zetaCR = numpy.zeros(shape=(data.nx, data.nz))
   data.zetaSTCR = numpy.zeros(shape=(data.nx, data.nz))
   data.nmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec))
@@ -711,6 +715,8 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       data.tg[ix, zidx] = float(fields[9])
       data.td[ix, zidx] = float(fields[10])
       data.rho[ix, zidx] = float(fields[12])
+      data.chi[ix, zidx] = float(fields[15])
+      data.chiRT[ix, zidx] = float(fields[iAJJ])      
       data.nHtot[ix, zidx] = float(fields[iACool])
       data.damean[ix, zidx] = float(fields[iAJJ + 3])
       data.tauX1[ix, zidx] = float(fields[iAJJ + 6])
@@ -725,7 +731,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       i = i + 1
 
   data.rhod = data.rho * data.dust2gas
-
+  
   # Read FlineEstimates.out
   if readlineEstimates == True:
     print(("READ: " + directory + "/" + filenameLineEstimates))
