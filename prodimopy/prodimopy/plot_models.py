@@ -356,6 +356,7 @@ class PlotModels(object):
       if min(y) < ymin: ymin = min(y)
       if max(y) > ymax: ymax = max(y)
 
+    ax.set_xlim(xmin,xmax)
     ax.set_ylim(ymin, ymax)              
     ax.semilogy()
             
