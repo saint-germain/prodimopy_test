@@ -105,6 +105,49 @@ class Plot(object):
     
     self.pdf.savefig()
     plt.close(fig)
+  
+  def plot_ionrates_midplane(self, model, **kwargs):
+                       
+    
+    x = np.log10(model.x[:,0])      
+
+  #  print pdata.zetaCR[ix,:]
+    y1 = model.zetaCR[:, 0]
+    y2 = model.zetaX[:, 0] / 2.0  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
+    y3 = model.zetaSTCR[:, 0]  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
+  
+    fig, ax = plt.subplots(1, 1)   
+    ax.plot(x, y1, color="red", label="$\zeta_\mathrm{CR}$")
+    ax.plot(x, y2, color="blue", label="$\zeta_\mathrm{X}$")
+    ax.plot(x, y3, color="green", label="$\zeta_\mathrm{SP}$")
+      
+    # set the limits
+      
+    if "xlim" in kwargs:     
+      ax.set_xlim(kwargs["xlim"])
+    else:
+      ax.set_xlim([x.min(),x.max()])        
+    if "ylim" in kwargs: ax.set_ylim(kwargs["ylim"])
+     
+    # print ax.get_xlim()
+    
+    ax.set_xlabel(r"r [AU]")
+    ax.set_ylabel("ionization rate per H$_2$ [s$^{-1}$]")
+    
+    # do axis style
+    if "xlog" in kwargs:
+      if kwargs["xlog"]:
+        ax.semilogx()
+    
+    ax.semilogy()     
+    
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, loc="best", fancybox=True, framealpha=0.5)    
+      
+    self.pdf.savefig()
+    plt.close(fig)  
+
+  
     
   def plot_ionrates(self, model, r, **kwargs):
               
