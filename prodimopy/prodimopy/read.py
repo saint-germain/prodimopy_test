@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import numpy 
 from astropy import units as u
+from astropy import constants as const
 import os
 
 '''
@@ -189,11 +190,12 @@ class DataLineEstimateRInfo(object):
 class DataLineEstimate(object):
   '''
   Holds the data for one line in FlineEstimates
+  wl in micrometer
   '''
   def __init__(self, ident, wl, jup, jlow, flux):
     self.ident = ident 
     self.wl = wl
-    self.frequency = None
+    self.frequency = (self.wl * u.micrometer).to(u.GHz, equivalencies=u.spectral()).value
     self.jup = jup
     self.jlow = jlow
     self.flux = flux
@@ -207,6 +209,17 @@ class DataLineEstimate(object):
           str(self.jlow) + "/" + 
           str(self.flux))
     return text 
+  
+  def flux_Jy(self):    
+    '''
+    Returns the flux value Jansky km s^-1
+    '''
+    res=self.flux*u.Watt/(u.m**2.0)
+    ckm=const.c.to('km/s')
+       
+    res=(res).to(u.Jansky,equivalencies=u.spectral_density(self.frequency*u.GHz))  
+      
+    return (res*ckm).value
 
 class DataGas(object):
   '''
