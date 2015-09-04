@@ -9,6 +9,8 @@ import astropy.units as u
 import astropy.constants as const
 import prodimopy.plot as pplot
 from math import pi
+from astropy.units import equivalencies
+from prodimopy.read import DataLineEstimate
 
 class PlotModels(object):
 
@@ -64,9 +66,8 @@ class PlotModels(object):
       
     if "ylog" in kwargs:
       if kwargs["ylog"]: ax.semilogy()
-            
-  
-  def plot_lines(self, models, lineidents, **kwargs):
+                 
+  def plot_lines(self, models, lineidents, jansky=False,**kwargs):
     '''
     plots a selection of FlineEstimates
     '''
@@ -84,7 +85,17 @@ class PlotModels(object):
       for ident in lineidents:      
         line = model.getLineEstimate(ident[0], ident[1])
         x.append(iline)
-        y.append(line.flux)
+        
+        # Convert lineflux to Jansky
+        
+        if jansky:          
+          #linetst=DataLineEstimate("HCO+", 840.38, 5, 4, 7.55e-20)
+          #print(linetst)
+          #print(self.si_to_jansky(linetst))
+          #print(self.si_to_jansky(line))
+          y.append(line.flux_Jy())        
+        else:
+          y.append(line.flux)
         
         if imodel == 0:
           # lticks.append(r"$\mathrm{"+pplot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
@@ -109,13 +120,16 @@ class PlotModels(object):
     
     if "ylim" in kwargs: 
       ax.set_ylim(kwargs["ylim"])
-    else:         
-      ax.set_ylim(1.e-24, 1.e-18)
+    #else:         
+      #ax.set_ylim(1.e-24, 1.e-18)
       
     ax.semilogy()    
     # ax.set_xlabel(r"line")
-       
-    ax.set_ylabel(r" line flux [W$\,$m$^{-2}$]")
+    
+    if jansky:   
+      ax.set_ylabel(r" line flux [Jy km$\,$s$^{-1}$]")
+    else:
+      ax.set_ylabel(r" line flux [W$\,$m$^{-2}$]")
      
     ax.set_xticklabels(lticks, rotation='45', minor=False)
     zed = [tick.label.set_fontsize(7) for tick in ax.xaxis.get_major_ticks()]
