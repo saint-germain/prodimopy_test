@@ -43,6 +43,30 @@ def _read_species(filename):
   return species
 
 
+def read_mc_final(directory,filename="Molecular_cloud.out",name=None):
+  '''
+  Reads the final Molecular Cloud abundances.
+  '''
+  if name == None:
+    dirfields = directory.split("/")
+    name = dirfields[len(dirfields) - 1]
+
+  mc=Data_mc(name) 
+  
+  f=open(directory+"/"+filename)
+  
+  species=list()
+  abun=list()
+  
+  for line in f:
+    fields=line.strip().split()
+    species.append(fields[0])
+    abun.append(float(fields[2]))
+    
+  mc.species=species
+  mc.abundances=np.array(abun)
+  
+  return mc
   
 '''
 Reads the whol output of a molecular cloud runs
