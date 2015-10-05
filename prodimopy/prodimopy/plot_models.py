@@ -18,7 +18,7 @@ class PlotModels(object):
                colors=None,
                styles=None,
                markers=None,
-               fs_legend=6,
+               fs_legend=6,  # TODO: init it with the system default legend font size
                ncol_legend=0):
 
     self.pdf = pdf    
@@ -107,8 +107,13 @@ class PlotModels(object):
 #           ax.errorbar([iline],[line.flux],yerr=[line.flux/3.0,line.flux*3.0],fmt=".",ms=0.0,color="lightgrey",linewidth=10)    
         
         iline = iline + 1  
-                                  
-      ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=5, color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name)      
+
+      mew=None
+      ms=5
+      if self.markers[imodel]=="+" or self.markers[imodel]=="x":
+        mew=2
+        ms=5      
+      ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=ms,mew=mew, color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name)      
          
       imodel = imodel + 1            
            
@@ -159,7 +164,7 @@ class PlotModels(object):
       y = model.NHver[:, 0]
       
       # print y.min() 
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot],alpha=0.7, label=model.name)
           
       iplot = iplot + 1
       
