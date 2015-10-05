@@ -2,8 +2,8 @@ from __future__ import division
 from __future__ import print_function
 
 import matplotlib.pyplot as plt
-# That crashes in the bash .. maybe because of installation
-#import prodimopy.plot as pplt 
+# That crashes in the bash on Mac OS X.. maybe because of installation
+import prodimopy.plot as pplt 
 
 
 class PlotMcModels(object):
@@ -86,9 +86,8 @@ class PlotMcModels(object):
       
      
     ax.set_xlabel(r"years")         
-    ax.set_ylabel(r" $\mathrm{\epsilon("+spname+")}$")
 
-    #ax.set_ylabel(r" $\mathrm{\epsilon("+pplt.spnToLatex(spname)+")}$")
+    ax.set_ylabel(r" $\mathrm{\epsilon("+pplt.spnToLatex(spname)+")}$")
            
     self._legend(ax)
       
