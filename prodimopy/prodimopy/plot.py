@@ -1,11 +1,12 @@
 from __future__ import division 
 from __future__ import print_function
 
+from scipy.interpolate import interp1d
+
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.interpolate.interpolate import interp1d
 
 def spnToLatex(spname):      
   name = spname        
@@ -37,7 +38,8 @@ def nhver_to_zr(ir, nhver, model, log=True):
     np.seterr(**old_settings)  # reset to default
   else:
     ipol = interp1d(model.NHver[ir, :], zrs, bounds_error=False, fill_value=0.0, kind="linear")
-    
+  
+  #return 0
   return ipol(nhver)  
 
 def plog(array):      
@@ -53,9 +55,10 @@ class Plot(object):
     self.fs_legend = fs_legend
   
   
-  def plot_cont(self, model, values, label="value", log=True, zlim=[None, None]):
+  def plot_cont(self, model, values, label="value", zlog=True, 
+                zlim=[None, None],zr=True,**kwargs):
   
-    if log is True:
+    if zlog is True:
       pvals = plog(values)
       values[np.isnan(values)] = 0.0
       
@@ -80,22 +83,47 @@ class Plot(object):
         minval = zlim[0]              
       
     x = model.x  
-    zr = model.z / model.x  
+    if zr:
+      y = model.z / model.x
+    else:
+      y = np.copy(model.z) 
+      y[:,0]=y[:,0]+0.05 
   
-    levels = MaxNLocator(nbins=50).tick_values(maxval, minval)
+    levels = MaxNLocator(nbins=100).tick_values(maxval, minval)
     ticks = MaxNLocator(nbins=6, prune="both").tick_values(minval, maxval)
   
     fig, ax = plt.subplots(1, 1)   
     cmap = plt.get_cmap('jet')        
-    CS = ax.contourf(x, zr, pvals, levels=levels, cmap=cmap)
-    ax.semilogx()
+    CS = ax.contourf(x, y, pvals, levels=levels, cmap=cmap)
+    # This is the fix for the white lines between contour levels
+    for c in CS.collections:
+      c.set_edgecolor("face")
     
+
+    if "xlim" in kwargs:
+      ax.set_xlim(kwargs["xlim"])      
+    else:    
+      ax.set_xlim([x.min(), x.max()])
+    if "ylim" in kwargs:  
+      ax.set_ylim(kwargs["ylim"])    
+    else:  
+      ax.set_ylim([y.min(), y.max()])
+
     
-    ax.set_xlim([x.min(), x.max()])
-    ax.set_ylim([zr.min(), zr.max()])
+    if not "xlog" in kwargs:
+      ax.semilogx()
+    else:
+      if kwargs["xlog"]: ax.semilogx()
+
+    if "ylog" in kwargs and kwargs["ylog"]:
+      ax.semilogy()
+    
     
     ax.set_xlabel("r [AU]")
-    ax.set_ylabel("z/r")
+    if zr:
+      ax.set_ylabel("z/r")
+    else:
+      ax.set_ylabel("z [AU]")      
     
     CB = fig.colorbar(CS, ticks=ticks)
     # CB.set_ticks(ticks)
