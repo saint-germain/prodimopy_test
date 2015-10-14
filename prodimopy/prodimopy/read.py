@@ -2,7 +2,10 @@ from __future__ import print_function
 from __future__ import division 
 from __future__ import unicode_literals
 
-import numpy 
+import numpy
+
+from scipy import integrate
+
 from astropy import units as u
 from astropy import constants as const
 import os
@@ -50,7 +53,7 @@ class Data_ProDiMo(object):
     self.dummyH2 = None
     self.spnames = None  # is a dictionary to access the indices for nmol
     self.nmol = None          
-    self.cdnmol = None  # vertical columnd densities
+    self.cdnmol = None  # vertical columnd densities    
         
     self.lineEstimates = None  # all the line estimate results
     self.lines = None  # all the lines from the line Transfer
@@ -83,6 +86,9 @@ class Data_ProDiMo(object):
   def getLine(self,wl):
     '''
     Finds the line closest to the given wl
+    TODO: considers currently only the wavelength
+          should be fine for most of the lines but including the species
+          might be required for some lines
     '''
     if self.lines == None: return None
     wls=numpy.array([line.wl for line in self.lines])    
@@ -140,7 +146,7 @@ class DataLine(object):
     Constructor
     '''
     self.wl = 0.0
-    self.frequency = 0.0
+    self.frequency = 0.0 # is also taken from the line_flux.out
     self.prodimoInf = ""
     self.species = ""
     self.ident = ""
@@ -160,6 +166,17 @@ class DataLine(object):
           str(self.flux) + "/" + 
           str(self.fcont))
     return text 
+  
+  def flux_Jy(self):    
+    '''
+    Returns the flux value Jansky km s^-1
+    '''
+    res=self.flux*u.Watt/(u.m**2.0)
+    ckm=const.c.to('km/s')
+       
+    res=(res).to(u.Jansky,equivalencies=u.spectral_density(self.frequency*u.GHz))  
+      
+    return (res*ckm).value
 
 
 class DataLineObs(DataLine):
@@ -780,7 +797,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
 def calc_columnd(data):
   '''
   Calculated the vertical column density for every species at every point 
-  in the disk (from top to bottom). Very simple and rough method
+  in the disk (from top to bottom). Very simple and rough method.
   '''    
   data.cdnmol = 0.0 * data.nmol
   for ix in range(data.nx):          
@@ -789,6 +806,12 @@ def calc_columnd(data):
       dz = dz * u.au.to(u.cm)
       nn = 0.5 * (data.nmol[ix, iz + 1, :] + data.nmol[ix, iz, :])
       data.cdnmol[ix, iz, :] = data.cdnmol[ix, iz + 1, :] + nn * dz
+      
+  # check if integration is correct 
+  # for the total hydrogen column density the error is less than 1.e-3
+  # that should be good enough for plotting
+  #nHverC=data.cdnmol[:,:,data.spnames["H"]]+data.cdnmol[:,:,data.spnames["H+"]]+data.cdnmol[:,:,data.spnames["H2"]]*2.0
+  #print(numpy.max(numpy.abs(1.0-nHverC[:,0]/data.NHver[:,0])))    
 
 ###############################################################################
 # For testing

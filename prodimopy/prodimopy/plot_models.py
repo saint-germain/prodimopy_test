@@ -67,7 +67,7 @@ class PlotModels(object):
     if "ylog" in kwargs:
       if kwargs["ylog"]: ax.semilogy()
                  
-  def plot_lines(self, models, lineidents, jansky=False,**kwargs):
+  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,**kwargs):
     '''
     plots a selection of FlineEstimates
     '''
@@ -82,10 +82,14 @@ class PlotModels(object):
       iline = 1  
       x = list()
       y = list()
-      for ident in lineidents:      
-        line = model.getLineEstimate(ident[0], ident[1])
-        x.append(iline)
-        
+      for ident in lineidents: 
+        line=None             
+        if useLineEstimate:
+          line = model.getLineEstimate(ident[0], ident[1])          
+        else:  # use the line fluxes, uses only the wavelength
+          line = model.getLine(ident[1])
+        x.append(iline)    
+                            
         # Convert lineflux to Jansky
         
         if jansky:          
@@ -99,8 +103,7 @@ class PlotModels(object):
         
         if imodel == 0:
           # lticks.append(r"$\mathrm{"+pplot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
-          lticks.append(r"$\mathrm{" + ident[0] + r"}$ " + r"{:.2f}".format(line.wl))
-   
+          lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.2f}".format(line.wl))   
    
 #         if imodel == (len(models)-1):
 #           print iline, line.flux
@@ -200,16 +203,23 @@ class PlotModels(object):
               
     iplot = 0    
     for model in models:
-      x = model.x[:, 0]
-      y = model.cdnmol[:, 0, model.spnames[species]]
-      
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
-          
-      iplot = iplot + 1
-      
-      if min(x) < xmin: xmin = min(x)
-      if max(x) > xmax: xmax = max(x)
+      if species in model.spnames:
+        x = model.x[:, 0]
+                    
+        y = model.cdnmol[:, 0, model.spnames[species]]
+        
+        
+        ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+            
+        iplot = iplot + 1
+        
+        if min(x) < xmin: xmin = min(x)
+        if max(x) > xmax: xmax = max(x)      
     
+    if iplot==0:
+      print("WARN: Species "+species+" not found in any model!")
+      plt.close(fig)
+      return
     
     ax.fill_between(x, y / 3.0, y * 3.0, color='0.8')     
   
@@ -287,9 +297,49 @@ class PlotModels(object):
   
     self.pdf.savefig()
     plt.close(fig)  
+  
+  def plot_avgabun(self,models,species,**kwargs):
+    '''
+    Plots the average abundance of the species as a function of radius
+    the avergae abundance is given by NHver(species)/total nhver
+    '''
+    print("PLOT: plot_avgabun ...")     
+          
+    fig, ax = plt.subplots(1, 1)     
+
+    iplot = 0
+    for model in models:                 
+      # get the species
+      if (species in model.spnames):   
+        y=model.cdnmol[:,0,model.spnames[species]]
+        y=y/model.NHver[:,0]   
+        x = model.x[:,0]            
+        
+        ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+    
+        iplot = iplot + 1              
+    
+    if iplot==0:
+      print("Species "+species+ " not found in any model!")
+      return 
+            
+    ax.set_xlabel(r"r [AU]")
+    ax.set_ylabel(r"average $\epsilon(\mathrm{" + pplot.spnToLatex(species) + "})$")
+    
+    # do axis style
+    ax.semilogy()     
+    
+    self._dokwargs(ax,**kwargs)    
+    self._legend(ax)
+    
+    self.pdf.savefig()
+    plt.close(fig) 
     
     
   def plot_abunvert(self, models, r, species, **kwargs):
+    '''
+    Plot vertical abundances at a certain radius.
+    '''
          
     print("PLOT: plot_abunvert ...")     
           
