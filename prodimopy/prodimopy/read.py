@@ -51,9 +51,10 @@ class Data_ProDiMo(object):
     self.AVrad = None
     self.AVver = None
     self.dummyH2 = None
-    self.spnames = None  # is a dictionary to access the indices for nmol
+    self.spnames = None  # is a dictionary to access the indices for nmol (species indices)
+    self.spmasses = None # dictornary to acess the species masses, same keys at spnames
     self.nmol = None          
-    self.cdnmol = None  # vertical columnd densities    
+    self.cdnmol = None  # vertical column number densities    
         
     self.lineEstimates = None  # all the line estimate results
     self.lines = None  # all the lines from the line Transfer
@@ -298,6 +299,35 @@ class DataStarSpec(object):
     self.lam = numpy.zeros(shape=(nlam))
     self.nu = numpy.zeros(shape=(nlam))    
     self.Inu = numpy.zeros(shape=(nlam))    
+
+def read_species(directory,pdata,filename="Species.out"):
+  '''
+  Reads the Specius.out file. Currently only the species masses are read.
+  Stores the species masses (unit g) in pdata.spmasses
+  Also adds the electron "e-"
+  
+  :param directory: the directory of the model
+  :param pdata: the ProDiMo Model data structure
+  :param filename: alternative Filename 
+  '''
+  try:
+    f = open(directory + "/" + filename, 'r')
+  except: 
+    print(("WARN: Could not open " + directory + "/" + filename + "!")) 
+    pdata.spmasses=None    
+    return None
+  
+  # skip the first line
+  f.readline()
+  
+  pdata.spmasses={} # empty dictonary
+  for line in f:
+    fields=line.strip().split()
+    spname=fields[2].strip()
+    mass=(float(fields[3].strip())*u.u).cgs.value
+    pdata.spmasses[spname]=mass  
+
+  pdata.spmasses["e-"]=const.m_e.cgs.value
 
 def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
   '''
@@ -653,7 +683,7 @@ def read_dust(directory):
 
   return dust  
 
-def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out"):
+def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", filenameLineFlux="line_flux.out",td_fileIdx=None):
   '''
   Reads the ProDiMo model.
   Reads ProDiMo.out FlineEstimates.out and dust_opac.out
@@ -662,6 +692,15 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   if name == None:
     dirfields = directory.split("/")
     name = dirfields[len(dirfields) - 1]  
+  
+  # if td_fileIdx is given alter the filenames so that the timedependent
+  # files can be read. However this would actually also workd with other kind
+  # of indices as td_fileIdx is a strong
+  if td_fileIdx != None:    
+    rpstr="_"+td_fileIdx+".out"
+    filename=filename.replace(".out",rpstr)
+    filenameLineEstimates=filenameLineEstimates.replace(".out",rpstr)
+    filenameLineFlux=filenameLineFlux.replace(".out",rpstr)  
     
   pfilename = directory + "/" + filename
   f = open(pfilename, 'r')
@@ -778,14 +817,19 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   if os.path.exists(directory + "/gas_cs.out"):
     print("READ: " + directory + "/gas_cs.out")
     data.gas = read_gas(directory)
-
-  if os.path.exists(directory + "/line_flux.out"):  
-    print("READ: " + directory + "/line_flux.out")
-    data.lines = read_linefluxes(directory)  
+  
+  if os.path.exists(directory + "/"+filenameLineFlux):
+    print("READ: " + directory + "/"+filenameLineFlux)
+    data.lines = read_linefluxes(directory,filename=filenameLineFlux)  
 
   if os.path.exists(directory + "/SED.out"):
     print("READ: " + directory + "/SED.out")
     data.sed = read_sed(directory)
+
+  if os.path.exists(directory + "/Species.out"):
+    print("READ: " + directory + "/Species.out")
+    data.sed = read_species(directory,data)    
+    
   
   # calculate the columnd densitis
   print("INFO: Calculate column densities")
@@ -796,8 +840,10 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
 
 def calc_columnd(data):
   '''
-  Calculated the vertical column density for every species at every point 
+  Calculated the vertical column number density for every species at every point 
   in the disk (from top to bottom). Very simple and rough method.
+  
+  TODO: move this to utils
   '''    
   data.cdnmol = 0.0 * data.nmol
   for ix in range(data.nx):          
