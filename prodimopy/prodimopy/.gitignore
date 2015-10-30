@@ -6,3 +6,5 @@
 /__pycache__/
 /plot_mc.pyc
 /read_mc.pyc
+/utils.pyc
+/*.pyc
