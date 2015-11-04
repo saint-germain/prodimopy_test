@@ -4,6 +4,7 @@ from __future__ import print_function
 from scipy.interpolate import interp1d
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
@@ -97,11 +98,14 @@ class Plot(object):
       
     if "title" in kwargs:
       if kwargs["title"].strip() != "":
-        ax.set_title(kwargs["title"])        
-
+        ax.set_title(kwargs["title"])
   
   def plot_cont(self, model, values, label="value", zlog=True, 
-                zlim=[None, None],zr=True,clevels=None,contour=True,plot_outfile=None,**kwargs):
+                zlim=[None, None],zr=True,clevels=None,contour=True,
+                extend="neither",**kwargs):
+    '''
+    plot routine for 2D contour plots.   
+    '''
   
     if zlog is True:
       pvals = plog(values)
@@ -139,60 +143,45 @@ class Plot(object):
   
     fig, ax = plt.subplots(1, 1)   
     cmap = plt.get_cmap('jet')        
-    CS = ax.contourf(x, y, pvals, levels=levels, cmap=cmap)
+    CS = ax.contourf(x, y, pvals, levels=levels, cmap=cmap,extend=extend)
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
       c.set_edgecolor("face")    
 
-    # FIXME: use dokwargs here
-    if "xlim" in kwargs:
-      ax.set_xlim(kwargs["xlim"])      
-    else:    
-      ax.set_xlim([x.min(), x.max()])
-    if "ylim" in kwargs:  
-      ax.set_ylim(kwargs["ylim"])    
-    else:  
-      ax.set_ylim([y.min(), y.max()])
-    
-    if not "xlog" in kwargs:
-      ax.semilogx()
-    else:
-      if kwargs["xlog"]: ax.semilogx()
-
-    if "ylog" in kwargs and kwargs["ylog"]:
-      ax.semilogy()
-    
+    ax.set_ylim([y.min(), y.max()])
+    ax.set_xlim([x.min(), x.max()])
+    ax.semilogx()        
     
     ax.set_xlabel("r [AU]")
     if zr:
       ax.set_ylabel("z/r")
     else:
       ax.set_ylabel("z [AU]")      
-    
-    if "title" in kwargs and kwargs["title"].strip() != "":      
-      ax.set_title(kwargs["title"])        
+  
+  
       #ax.text(0.27, 0.95,kwargs["title"], horizontalalignment='center',
       #   verticalalignment='center',fontsize=8,
-      #   transform=ax.transAxes)            
-   
-    CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
-    CB.ax.tick_params(labelsize=self.fs_legend) 
-    # CB.set_ticks(ticks)
-    CB.set_label(label,fontsize=self.fs_legend)  
-    
+      #   transform=ax.transAxes)
+      
+    self._dokwargs(ax,**kwargs)            
+         
     if contour:
       if clevels != None:
         if zlog: clevels=np.log10(clevels)
+        ticks=clevels
         ax.contour(CS, levels=clevels, colors='black', linestyles="solid",linewidths=1.0)
       else:
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=1.0)
     
-    if plot_outfile!= None:
-      fig.savefig(plot_outfile)
-    else:
-      self.pdf.savefig(transparent=False)
-    plt.close(fig)
-  
+    CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
+    CB.ax.tick_params(labelsize=self.fs_legend) 
+    # CB.set_ticks(ticks)
+    CB.set_label(label,fontsize=self.fs_legend)  
+
+    
+    
+    self.pdf.savefig(transparent=mpl.rcParams['savefig.transparent'])
+    plt.close(fig)  
   
   def plot_ionrates_midplane(self, model, **kwargs):                       
     
@@ -324,7 +313,33 @@ class Plot(object):
     
     self.pdf.savefig()
     plt.close(fig)
+
+  def plot_midplane(self, model, fieldname, ylabel, **kwargs):
+    '''
+    Plots a quantitiy in in the midplane as a function of radius
+    fieldname is any field in Data_ProDiMo
+    '''
+    print("PLOT: plot_midplane ...")
+    fig, ax = plt.subplots(1, 1)      
     
+    
+    x = model.x[:, 0]
+    y = getattr(model, fieldname)[:, 0]                    
+      
+    ax.plot(x, y,marker=None)
+                 
+    ax.set_xlim(np.min(x),np.max(x))
+    ax.set_ylim(np.min(y),np.max(y))                                 
+    ax.semilogy()
+            
+    ax.set_xlabel(r"r [AU]")    
+    ax.set_ylabel(ylabel)    
+    
+    self._dokwargs(ax, **kwargs) 
+    #self._legend(ax)
+    
+    self.pdf.savefig()
+    plt.close(fig)     
 
   def plot_abun_midp(self, model,species, norm=None,styles=None,colors=None, **kwargs):
     '''
