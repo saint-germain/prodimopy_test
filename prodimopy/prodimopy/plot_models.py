@@ -1,16 +1,16 @@
 from __future__ import print_function
 from __future__ import division 
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
-
 import matplotlib.ticker as plticker
+
 import numpy as np
-import astropy.units as u
-import astropy.constants as const
-import prodimopy.plot as pplot
 from math import pi
-from astropy.units import equivalencies
-from prodimopy.read import DataLineEstimate
+
+import prodimopy.plot as pplot
+
+import astropy.units as u
 
 class PlotModels(object):
 
@@ -49,7 +49,7 @@ class PlotModels(object):
     ncol = 1
     if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
       ncol = int(len(labels) / self.ncol_legend)
-    ax.legend(handles, labels, loc="best", fancybox=False, framealpha=0.75, ncol=ncol, fontsize=self.fs_legend)
+    ax.legend(handles, labels, loc="best", fancybox=False, ncol=ncol, fontsize=self.fs_legend)
 
   def _dokwargs(self,ax,**kwargs):
     '''
@@ -62,10 +62,20 @@ class PlotModels(object):
       ax.set_xlim(kwargs["xlim"])
               
     if "xlog" in kwargs:
-      if kwargs["xlog"]: ax.semilogx()
+      if kwargs["xlog"]: 
+        ax.semilogx()
+      else:
+        ax.set_xscale("linear")
       
     if "ylog" in kwargs:
-      if kwargs["ylog"]: ax.semilogy()
+      if kwargs["ylog"]: 
+        ax.semilogy()
+      else:              
+        ax.set_yscale("linear")
+      
+    if "title" in kwargs:
+      if kwargs["title"].strip() != "":
+        ax.set_title(kwargs["title"])      
                  
   def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,**kwargs):
     '''
@@ -150,7 +160,7 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)
   
-  def plot_NH(self, models, xlog=True, **kwargs):
+  def plot_NH(self, models, **kwargs):
     '''
     Plots the total vertical column density for the given species for all the models
     as a function of radius
@@ -176,18 +186,15 @@ class PlotModels(object):
        
   
     ax.set_xlim(xmin, xmax)
-    
-    if "xlim" in kwargs: ax.set_xlim(kwargs["xlim"])    
-    if "ylim" in kwargs: ax.set_ylim(kwargs["ylim"])
-    if xlog == True: ax.semilogx() 
          
     ax.semilogy()     
     ax.set_xlabel(r"r [AU]")
     ax.set_ylabel(r"N$_\mathrm{<H>}$ cm$^{-2}$")
   
+    self._dokwargs(ax,**kwargs)
     self._legend(ax)
-  
-    self.pdf.savefig()
+    
+    self.pdf.savefig(transparent=mpl.rcParams['savefig.transparent'])
     plt.close(fig)
     
   def plot_tcdspec(self, models, species, xlog=True, title=None, **kwargs):
@@ -222,26 +229,14 @@ class PlotModels(object):
       return
     
     ax.fill_between(x, y / 3.0, y * 3.0, color='0.8')     
-  
-    ax.set_xlim(xmin, xmax)
-    
-    if "xlim" in kwargs: ax.set_xlim(kwargs["xlim"])    
-    if "xmin" in kwargs: ax.set_xlim(xmin=kwargs["xmin"])
-    if "ylim" in kwargs: ax.set_ylim(kwargs["ylim"])  
-    
-    if xlog == True: ax.semilogx()
-        
+    ax.set_xlim(xmin, xmax)        
     ax.semilogy()
     
     ax.set_xlabel(r"r [AU]")
     # ax.set_ylabel(r"N$_\mathrm{"+pplot.spnToLatex(species)+"}$ cm$^{-2}$")
     ax.set_ylabel(r"N$_\mathrm{" + pplot.spnToLatex(species) + "}$ " + "[cm$^{-2}$]")
   
-    if title != None: 
-      ax.set_title(title)
-  
-    handles, labels = ax.get_legend_handles_labels()
-    
+    self._dokwargs(ax,**kwargs)          
     self._legend(ax)
   
     self.pdf.savefig()
