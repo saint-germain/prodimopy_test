@@ -72,6 +72,12 @@ class PlotModels(object):
         ax.semilogy()
       else:              
         ax.set_yscale("linear")
+        
+    if "xlabel" in kwargs:
+      ax.set_xlabel(kwargs["xlabel"])  
+
+    if "ylabel" in kwargs:
+      ax.set_ylabel(kwargs["ylabel"])
       
     if "title" in kwargs:
       if kwargs["title"].strip() != "":
@@ -197,7 +203,7 @@ class PlotModels(object):
     self.pdf.savefig(transparent=mpl.rcParams['savefig.transparent'])
     plt.close(fig)
     
-  def plot_tcdspec(self, models, species, xlog=True, title=None, **kwargs):
+  def plot_tcdspec(self, models, species, **kwargs):
     '''
     Plots the total vertical columndensity for the given species for all the models
     as a function of the radius
@@ -211,11 +217,9 @@ class PlotModels(object):
     iplot = 0    
     for model in models:
       if species in model.spnames:
-        x = model.x[:, 0]
-                    
+        x = model.x[:, 0]                    
         y = model.cdnmol[:, 0, model.spnames[species]]
-        
-        
+                
         ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
             
         iplot = iplot + 1
