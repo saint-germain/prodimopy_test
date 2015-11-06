@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 
 import numpy
 
-from scipy import integrate
-
 from astropy import units as u
 from astropy import constants as const
 import os
@@ -772,7 +770,15 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   i = 0            
   for iz in range(data.nz):
     for ix in range(data.nx): 
-      fields = lines[idata + i].split()      
+      # stupid workaround for big disks envelops wher x,y can be large than 10000 AU
+      # there is no space between the numbers for x and z so always add one if none is there
+      if lines[idata+i][20]!= " ":        
+        line=lines[idata + i][:20]+" "+lines[idata + i][20:]        
+      else:
+        line=lines[idata + i]
+            
+      fields = line.split()      
+            
       zidx = data.nz - iz - 1            
       data.x[ix, zidx] = float(fields[2])
       data.z[ix, zidx] = float(fields[3])
