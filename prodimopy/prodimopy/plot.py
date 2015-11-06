@@ -97,8 +97,18 @@ class Plot(object):
       ax.set_ylabel(kwargs["ylabel"])
       
     if "title" in kwargs:
-      if kwargs["title"].strip() != "":
-        ax.set_title(kwargs["title"])
+      if  kwargs["title"] != None and kwargs["title"].strip() != "":
+        ax.set_title(kwargs["title"].strip())
+        
+  def _closefig(self,fig):
+    '''
+    save and close the plot
+    
+    set the transparent attribut (used rcParam savefig.transparent)
+    '''    
+    self.pdf.savefig(figure=fig,transparent=mpl.rcParams['savefig.transparent'])
+    plt.close(fig)
+    
   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,contour=True,
@@ -178,10 +188,7 @@ class Plot(object):
     # CB.set_ticks(ticks)
     CB.set_label(label,fontsize=self.fs_legend)  
 
-    
-    
-    self.pdf.savefig(transparent=mpl.rcParams['savefig.transparent'])
-    plt.close(fig)  
+    self._closefig(fig)
   
   def plot_ionrates_midplane(self, model, **kwargs):                       
     
