@@ -106,7 +106,10 @@ class Plot(object):
     
     set the transparent attribut (used rcParam savefig.transparent)
     '''    
-    self.pdf.savefig(figure=fig,transparent=mpl.rcParams['savefig.transparent'])
+    
+    #trans=mpl.rcParams['savefig.transparent']
+    
+    self.pdf.savefig(figure=fig,transparent=False)
     plt.close(fig)
     
   
