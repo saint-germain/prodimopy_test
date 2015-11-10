@@ -460,6 +460,7 @@ def  read_linefluxes(directory, filename="line_flux.out"):
     line = DataLine()
     rec = records[pos]        
     line.species = (rec[10:20]).strip()
+    line.ident=line.species
     line.prodimoInf = rec[21:36].strip()
     line.wl = float(rec[43:54].strip())  # *u.um
     line.frequency = float(rec[63:76].strip())  # *u.GHz
