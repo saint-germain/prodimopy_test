@@ -60,17 +60,19 @@ class Plot(object):
     '''
     plots the legend, deals with multiple columns
     '''
-    handles, labels = ax.get_legend_handles_labels()
-    ncol = 1
-    if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
-      ncol = int(len(labels) / self.ncol_legend)
+    handles, labels = ax.get_legend_handles_labels()    
     
-    ax.legend(handles, labels, loc=loc, fancybox=False, ncol=ncol, fontsize=self.fs_legend)
-  
+    if len(labels)>0:
+      ncol = 1
+      if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
+        ncol = int(len(labels) / self.ncol_legend)
+    
+        ax.legend(handles, labels, loc=loc, fancybox=False, ncol=ncol, fontsize=self.fs_legend)  
   
   def _dokwargs(self,ax,**kwargs):
     '''
     Handles the passed kwargs elements (assumes that defaults are already set)
+    TODO: make this a general function .... 
     '''
     if "ylim" in kwargs: 
       ax.set_ylim(kwargs["ylim"])
@@ -111,6 +113,29 @@ class Plot(object):
     
     self.pdf.savefig(figure=fig,transparent=False)
     plt.close(fig)
+  
+  def plot_NH(self, model, **kwargs):
+    '''
+    Plots the total vertical hydrogen column number density 
+    as a function of radius
+    '''
+    print("PLOT: plot_NH ...")
+    fig, ax = plt.subplots(1, 1)      
+    
+    x = model.x[:, 0]
+    y = model.NHver[:, 0]    
+    ax.plot(x, y, marker=None, color="black")
+  
+    ax.set_xlim(min(x), max(x))
+         
+    ax.semilogy()  
+    ax.semilogx()   
+    ax.set_xlabel(r"r [AU]")
+    ax.set_ylabel(r"N$_\mathrm{<H>}$ cm$^{-2}$")
+  
+    self._dokwargs(ax,**kwargs)
+    self._legend(ax)
+    self._closefig(fig)
     
   
   def plot_cont(self, model, values, label="value", zlog=True, 
