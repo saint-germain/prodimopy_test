@@ -184,10 +184,10 @@ class DataLineObs(DataLine):
   '''  
   def __init__(self, flux, flux_err, fwhm, fwhm_err, flag):
     super(DataLineObs, self).__init__()
-    self.flux = flux * u.W / u.m ** 2
-    self.flux_err = flux_err * u.W / u.m ** 2
-    self.fwhm = fwhm * u.km / u.s
-    self.fwhm_err = fwhm_err * u.km / u.s
+    self.flux = flux
+    self.flux_err = flux_err
+    self.fwhm = fwhm
+    self.fwhm_err = fwhm_err
     self.flag = flag
 
 
@@ -458,12 +458,21 @@ def  read_linefluxes(directory, filename="line_flux.out"):
   for i in range(nlines):    
     # read the data for one line      
     line = DataLine()
-    rec = records[pos]        
-    line.species = (rec[10:20]).strip()
-    line.ident=line.species
-    line.prodimoInf = rec[21:36].strip()
-    line.wl = float(rec[43:54].strip())  # *u.um
-    line.frequency = float(rec[63:76].strip())  # *u.GHz
+    rec = records[pos]      
+    try:  
+      line.species = (rec[10:20]).strip()
+      line.ident=line.species
+      line.prodimoInf = rec[21:36].strip()
+      line.wl = float(rec[43:54].strip())  # *u.um
+      line.frequency = float(rec[63:76].strip())  # *u.GHz
+    except:
+      print("read_linefluxes: try new format") 
+      line.species = (rec[10:20]).strip()
+      line.ident=line.species
+      line.prodimoInf = rec[21:47].strip()
+      line.wl = float(rec[48:64].strip())  # *u.um
+      line.frequency = float(rec[74:90].strip())  # *u.GHz
+      
            
     rec = records[pos + 1]
     line.flux = float(rec.split("=")[1].strip())  # *u.Watt/u.m**2       
@@ -687,10 +696,14 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   Reads the ProDiMo model.
   Reads ProDiMo.out FlineEstimates.out and dust_opac.out
   '''
-  
+  # guess a name if not set
   if name == None:
-    dirfields = directory.split("/")
-    name = dirfields[len(dirfields) - 1]  
+    if directory==None or directory=="." or directory=="":
+      dirfields=os.getcwd().split("/")
+    else:  
+      dirfields = directory.split("/")
+    
+    name = dirfields[-1]  
   
   # if td_fileIdx is given alter the filenames so that the timedependent
   # files can be read. However this would actually also workd with other kind
