@@ -51,10 +51,11 @@ def plog(array):
   return array
 
 class Plot(object):
-  def __init__(self, pdf, fs_legend=7.5):
+  def __init__(self, pdf, fs_legend=7.5,title=None):
     self.pdf = pdf
     self.fs_legend = fs_legend
     self.ncol_legend = 5
+    self.title=title
   
   def _legend(self, ax,loc="best"):
     '''
@@ -66,8 +67,8 @@ class Plot(object):
       ncol = 1
       if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
         ncol = int(len(labels) / self.ncol_legend)
-    
-        ax.legend(handles, labels, loc=loc, fancybox=False, ncol=ncol, fontsize=self.fs_legend)  
+            
+      ax.legend(handles, labels, loc=loc, fancybox=False, ncol=ncol, fontsize=self.fs_legend)  
   
   def _dokwargs(self,ax,**kwargs):
     '''
@@ -97,6 +98,10 @@ class Plot(object):
 
     if "ylabel" in kwargs:
       ax.set_ylabel(kwargs["ylabel"])
+    
+    if self.title != None:
+      if self.title.strip() != "":
+        ax.set_title(self.title.strip())
       
     if "title" in kwargs:
       if  kwargs["title"] != None and kwargs["title"].strip() != "":
@@ -207,9 +212,9 @@ class Plot(object):
       if clevels != None:
         if zlog: clevels=np.log10(clevels)
         ticks=clevels
-        ax.contour(CS, levels=clevels, colors='black', linestyles="solid",linewidths=1.0)
+        ax.contour(CS, levels=clevels, colors='black', linestyles="solid",linewidths=0.8)
       else:
-        ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=1.0)
+        ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
     CB.ax.tick_params(labelsize=self.fs_legend) 
@@ -257,7 +262,7 @@ class Plot(object):
       
     self.pdf.savefig(transparent=False)
     plt.close(fig)  
-
+  
   
     
   def plot_ionrates(self, model, r, **kwargs):
@@ -374,8 +379,173 @@ class Plot(object):
     #self._legend(ax)
     
     self.pdf.savefig()
-    plt.close(fig)     
+    plt.close(fig)   
+    
+  def plot_abunvert(self, model, r, species, useNH=True,
+                    norm=None,styles=None,colors=None,markers=None,linewidths=None,**kwargs):
+    '''
+    Plot vertical abundances at a certain radius for the given species
+    (can be more than one)
+    '''
+         
+    print("PLOT: plot_abunvert ...")     
+          
+    rstr = r"r$\approx${:.2f} AU".format(r)   
+    
+    fig, ax = plt.subplots(1, 1)     
 
+    ix = (np.abs(model.x[:, 0] - r)).argmin()
+
+    iplot=0
+    ymin=1.e100
+    ymax=-1.0
+    
+    for spec in species:           
+      if useNH:
+        old_settings = np.seterr(divide='ignore')     
+        x = np.log10(model.NHver[ix, :])      
+        np.seterr(**old_settings)  # reset to defaul
+      else:
+        x=model.z[ix,:]/model.x[ix,0]
+      
+      if spec in model.spnames:
+        y = model.nmol[ix,:,model.spnames[spec]]/model.nHtot[ix,:]
+        if norm != None:
+          y=y/norm                    
+        
+        # FIXME: add proper treatment for styles and colors       
+        if styles==None:         
+          style="-"
+          if "#" in spec: style="--"
+        else: 
+          style=styles[iplot]
+
+        color=None          
+        if colors!=None:
+          color=colors[iplot]
+          
+        marker=None  
+        if markers!=None:
+          marker=markers[iplot]  
+            
+         
+        lines=ax.plot(x, y, marker=marker, ms=4, markeredgecolor=color, markerfacecolor=color, 
+                linestyle=style, color=color, 
+                label="$\mathrm{"+spnToLatex(spec)+"}$")
+              
+        if linewidths != None:
+          if linewidths[iplot] != None:
+            lines[-1].set_linewidth(linewidths[iplot])  
+
+
+                        
+        iplot = iplot + 1
+        if min(y) < ymin: ymin = min(y)
+        if max(y) > ymax: ymax = max(y)
+      
+   
+    if useNH:
+      ax.set_xlim([17.5, x.max()])    
+    ax.set_ylim(ymin,ymax)
+    ax.semilogy()
+                         
+#     ax2 = ax.twiny()
+#     ax2.set_xlabel("z/r")
+#     ax2.set_xlim(ax.get_xlim())
+#     #ax2.set_xticks(ax.get_xticks())    
+#     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
+    
+    if useNH:
+      ax.set_xlabel(r"$\mathsf{\log\,N_{<H>}\,[cm^{-2}]}$ @" + rstr)
+    else:
+      ax.set_xlabel(r"z/r @" + rstr)
+    ax.set_ylabel(r"$\mathsf{\epsilon(X)}$")    
+    
+    self._dokwargs(ax,**kwargs)
+    self._legend(ax)
+    self._closefig(fig)     
+  
+  def plot_abunrad(self, model, species, useNH=True,
+                    norm=None,styles=None,colors=None,markers=None,linewidths=None,**kwargs):
+    '''
+    Plot vertical radial abundance in the midplane
+    (can be more than one)
+    Same as abunvert but radially more usefull for envelopes
+    '''
+         
+    print("PLOT: plot_abunrad ...")                     
+    
+    fig, ax = plt.subplots(1, 1)     
+    
+    iplot=0
+    ymin=1.e100
+    ymax=-1.0
+    
+    for spec in species:           
+      if useNH:
+        old_settings = np.seterr(divide='ignore')     
+        x = np.log10(model.NHrad[:, 0])      
+        np.seterr(**old_settings)  # reset to defaul
+      else:
+        x=model.x[:,0]
+      
+      if spec in model.spnames:
+        y = model.nmol[:,0,model.spnames[spec]]/model.nHtot[:,0]
+        if norm != None:
+          y=y/norm                    
+        
+        # FIXME: add proper treatment for styles and colors       
+        if styles==None:         
+          style="-"
+          if "#" in spec: style="--"
+        else: 
+          style=styles[iplot]
+
+        color=None          
+        if colors!=None:
+          color=colors[iplot]
+          
+        marker=None  
+        if markers!=None:
+          marker=markers[iplot]  
+            
+         
+        lines=ax.plot(x, y, marker=marker, ms=4, markeredgecolor=color, markerfacecolor=color, 
+                linestyle=style, color=color, 
+                label="$\mathrm{"+spnToLatex(spec)+"}$")
+              
+        if linewidths != None:
+          if linewidths[iplot] != None:
+            lines[-1].set_linewidth(linewidths[iplot])  
+
+
+                        
+        iplot = iplot + 1
+        if min(y) < ymin: ymin = min(y)
+        if max(y) > ymax: ymax = max(y)
+      
+   
+    if useNH:
+      ax.set_xlim([17.5, x.max()])    
+    ax.set_ylim(ymin,ymax)
+    ax.semilogy()
+                         
+#     ax2 = ax.twiny()
+#     ax2.set_xlabel("z/r")
+#     ax2.set_xlim(ax.get_xlim())
+#     #ax2.set_xticks(ax.get_xticks())    
+#     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
+    
+    if useNH:
+      ax.set_xlabel(r"$\mathsf{\log\,N_{<H,rad>}\,[cm^{-2}]}$")
+    else:
+      ax.set_xlabel(r"r [AU]")
+    ax.set_ylabel(r"$\mathsf{\epsilon(X)}$")    
+    
+    self._dokwargs(ax,**kwargs)
+    self._legend(ax)
+    self._closefig(fig)       
+    
   def plot_abun_midp(self, model,species, norm=None,styles=None,colors=None, **kwargs):
     '''
     Plots the abundances in the midplane for the given species (can be more than one)
@@ -428,4 +598,51 @@ class Plot(object):
   
     self.pdf.savefig()
     plt.close(fig)
+    
+  def plot_taus(self,model,r,**kwargs):
+    '''
+    Plot's taus (A_V, X-rays) as a function of vertical column density
+    '''  
+    ir=(np.abs(model.x[:, 0] - r)).argmin()
+    rstr = "r={:.2f} AU".format(model.x[ir,0])     
+    
+    fig, ax = plt.subplots(1, 1)
+          
+    old_settings = np.seterr(divide='ignore')           
+          
+    x=np.log10(model.NHver[ir,:])  
+      
+    ax.plot(x, model.tauX1[ir,:], color="blue", label=r"$\mathrm{\tau_{1\;keV}}$")
+    ax.plot(x, model.tauX10[ir,:], "--",color="blue", label=r"$\mathrm{\tau_{10\;keV}}$")
+    ax.plot(x, model.AVrad[ir,:], color="red", label=r"$\mathrm{A_V,rad}}$")
+    ax.plot(x, model.AVver[ir,:], "--", color="red", label=r"$\mathrm{A_{V,ver}}$")
+                                 
+    ax.set_xlim(17.5,x.max())        
+    ax.set_ylim(1.e-2,np.max([model.AVver[ir,:].max(),2.0]))
+    
+    np.seterr(**old_settings)  # reset to default 
+      
+    ax.hlines(1.0,ax.get_xlim()[0],ax.get_xlim()[1],linestyle=":") 
+     
+    ax2 = ax.twiny()
+    ax2.set_xlabel("z/r")
+    ax2.set_xlim(ax.get_xlim())
+    #ax2.set_xticks(ax.get_xticks())    
+    ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ir, ax.get_xticks(), model)])
+    
+    ax.set_xlabel(r"$\log$ N$_\mathrm{H}$ [cm$^{-2}$]")
+    ax.set_ylabel(r"$\mathrm{A_V, \tau}$")  
+    
+    # do axis style
+    ax.semilogy()     
+    
+    self._dokwargs(ax,**kwargs)
+    
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, loc="best", fancybox=True, framealpha=0.5)
+    ax.text(0.025, 0.025, rstr,
+       verticalalignment='bottom', horizontalalignment='left',
+       transform=ax.transAxes,alpha=0.75)
+      
+    self._closefig(fig)     
 
