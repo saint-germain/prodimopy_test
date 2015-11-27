@@ -347,8 +347,6 @@ class PlotModels(object):
     fig, ax = plt.subplots(1, 1)     
 
     iplot = 0
-    xmin = 1.e100
-    xmax = 0 
     for model in models:
       # closed radial point to given radius
       ix = (np.abs(model.x[:, 0] - r)).argmin()
@@ -363,18 +361,8 @@ class PlotModels(object):
                       
       iplot = iplot + 1
       
-      if min(x) < xmin: xmin = min(x)
-      if max(x) > xmax: xmax = max(x)
-      
-    # set the limits
-      
-    if "xlim" in kwargs:     
-      ax.set_xlim(kwargs["xlim"])
-    else:
-      ax.set_xlim([17.5, x.max()])
-              
-    if "ylim" in kwargs: ax.set_ylim(kwargs["ylim"])
-     
+    
+    ax.set_xlim([17.5, x.max()])
     # print ax.get_xlim()
   
 #     ax2 = ax.twiny()
@@ -383,12 +371,13 @@ class PlotModels(object):
 #     #ax2.set_xticks(ax.get_xticks())    
 #     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
     
-    ax.set_xlabel(r"$\log$ N$_\mathrm{H}$ [cm$^{-2}$] @" + rstr)
-    ax.set_ylabel(r"$\epsilon(\mathrm{" + pplot.spnToLatex(species) + "})$")    
+    ax.set_xlabel(r"$\mathsf{\log N_{<H>} [cm^{-2}]}$ @" + rstr)
+    ax.set_ylabel(r"$\mathsf{\epsilon(" + pplot.spnToLatex(species) + "})$")    
     
     # do axis style
     ax.semilogy()     
     
+    self._dokwargs(ax,**kwargs)
     self._legend(ax)
     # ax.text(0.025, 0.025, rstr,
     #   verticalalignment='bottom', horizontalalignment='left',
