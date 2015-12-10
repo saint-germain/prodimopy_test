@@ -189,6 +189,7 @@ class DataLineObs(DataLine):
     self.fwhm = fwhm
     self.fwhm_err = fwhm_err
     self.flag = flag
+    self.profile=None
 
 
 class DataLineEstimateRInfo(object):
@@ -300,7 +301,7 @@ class DataStarSpec(object):
 
 def read_species(directory,pdata,filename="Species.out"):
   '''
-  Reads the Specius.out file. Currently only the species masses are read.
+  Reads the Species.out file. Currently only the species masses are read.
   Stores the species masses (unit g) in pdata.spmasses
   Also adds the electron "e-"
   
@@ -466,7 +467,7 @@ def  read_linefluxes(directory, filename="line_flux.out"):
       line.wl = float(rec[43:54].strip())  # *u.um
       line.frequency = float(rec[63:76].strip())  # *u.GHz
     except:
-      print("read_linefluxes: try new format") 
+      #print("read_linefluxes: try new format") 
       line.species = (rec[10:20]).strip()
       line.ident=line.species
       line.prodimoInf = rec[21:47].strip()
@@ -520,15 +521,33 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat"):
                         float(fields[3].strip()), \
                         fields[4].strip())    
     linesobs.append(lineobs)
+  
+  # the additional data
+    
+  profile = (records[2 + nlines+1].split())[0:nlines]
+  autoC = (records[2 + nlines+2].split())[0:nlines]
+  vvalid = (records[2 + nlines+3].split())[0:nlines]
+  
+  # now go through the profiles  
+  for i in range(nlines):  
+    proffilename=records[2 + nlines+3+i+1].strip()
+    if profile[i] == "T":            
+      linesobs[i].profile=read_lineObsProfile(proffilename,directory=directory)
     
   return linesobs
   
   
-def read_lineObsProfile(filename):
+def read_lineObsProfile(filename,directory="."):
   '''
   reads a line profile file which can be used for ProDiMo
   '''
-  f = open(filename, 'r')
+  
+  try:
+    f = open(directory + "/" + filename, 'r')
+  except: 
+    print(("WARN: Could not open " + directory + "/" + filename + "!"))     
+    return None
+  
   records = f.readlines()
   f.close()
   
@@ -665,13 +684,16 @@ def read_dust(directory):
   
   # apow amax etc.
   strings = f.readline().split()  
-  
-  amin = ((float(strings[6]) * u.cm).to(u.micron)).value
-  amax = ((float(strings[7]) * u.cm).to(u.micron)).value
-  apow = float(strings[8])
-  nsize = int(strings[9])
-  
-  dust = DataDust(amin, amax, apow, nsize, nlam)
+
+  if len(strings) > 0:  
+    amin = ((float(strings[6]) * u.cm).to(u.micron)).value
+    amax = ((float(strings[7]) * u.cm).to(u.micron)).value
+    apow = float(strings[8])
+    nsize = int(strings[9])
+    dust = DataDust(amin, amax, apow, nsize, nlam)
+  else:
+    dust = DataDust(-1, -1, 0.0, -1, nlam)
+
   
   f.readline()
       
@@ -680,12 +702,13 @@ def read_dust(directory):
     dust.lam[i] = float(fields[0])
     dust.kext[i] = float(fields[1])
     dust.kabs[i] = float(fields[2])
-    dust.ksca[i] = float(fields[3])    
-    dust.ksca_an[i] = float(fields[5])  # skip kprn
-    dust.kextcs[i] = float(fields[6])
-    dust.kabscs[i] = float(fields[7])
-    dust.kscacs[i] = float(fields[7])
-    dust.kscacs_an[i] = float(fields[9])
+    dust.ksca[i] = float(fields[3])      
+    if len(fields) >4:  
+      dust.ksca_an[i] = float(fields[5])  # skip kprn
+      dust.kextcs[i] = float(fields[6])
+      dust.kabscs[i] = float(fields[7])
+      dust.kscacs[i] = float(fields[7])
+      dust.kscacs_an[i] = float(fields[9])
 
   f.close()
 
@@ -848,7 +871,8 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
 
   if os.path.exists(directory + "/Species.out"):
     print("READ: " + directory + "/Species.out")
-    data.sed = read_species(directory,data)    
+    # data is filled in the routine
+    read_species(directory,data)    
     
   
   # calculate the columnd densitis
