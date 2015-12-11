@@ -40,6 +40,10 @@ class PlotModels(object):
     self.fs_legend = fs_legend
     self.ncol_legend = ncol_legend              
 
+  def _sfigs(self,wfac=2.0,hfac=1.0):
+    figsize=mpl.rcParams['figure.figsize']  
+        
+    return (figsize[0]*wfac,figsize[1]*hfac)
 
   def _legend(self, ax):
     '''
@@ -83,12 +87,19 @@ class PlotModels(object):
       if kwargs["title"].strip() != "":
         ax.set_title(kwargs["title"])      
                  
-  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,**kwargs):
+  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,lineObs=None,**kwargs):
     '''
-    plots a selection of FlineEstimates
+    Plots a selection of lines or lineEstimates
+    TODO: split lines and lineestimate plots
+    TODO: if not FlineEstimates than it would be also possible to plot all lines for which 
+          line transfer is done
     '''
     print("PLOT: plot_lines ...")
-    fig, ax = plt.subplots(1, 1)  
+    
+    if len(lineidents)>10:
+      fig, ax = plt.subplots(1, 1,figsize=self._sfigs())
+    else:
+      fig, ax = plt.subplots(1, 1)  
          
     imodel = 0          
     lticks = list()
@@ -98,7 +109,7 @@ class PlotModels(object):
       iline = 1  
       x = list()
       y = list()
-      for ident in lineidents: 
+      for ident in lineidents:         
         line=None             
         if useLineEstimate:
           line = model.getLineEstimate(ident[0], ident[1])          
@@ -128,14 +139,41 @@ class PlotModels(object):
         iline = iline + 1  
 
       mew=None
-      ms=5
+      ms=4
       if self.markers[imodel]=="+" or self.markers[imodel]=="x":
         mew=2
-        ms=5      
-      ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=ms,mew=mew, color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name)      
+        ms=5     
+
+      ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=ms,mew=mew, 
+              color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name,
+              zorder=10)      
          
       imodel = imodel + 1            
-           
+    
+    if lineObs != None:
+      nlines=len(lineObs)        
+      ylinesObs=[item.flux for item in lineObs]
+      ylinesObsErr=np.zeros(shape=(2,nlines))
+      ylinesObsErr2=np.zeros(shape=(2,nlines))    
+      ylinesObsUl=list()
+      # for the errors and errorbars
+      for i in range(nlines):
+        ylinesObsErr[:,i]=lineObs[i].flux_err              
+        ylinesObsErr2[0,i]=(lineObs[i].flux)/2.0
+        ylinesObsErr2[1,i]=lineObs[i].flux      
+        #print linesObs[i].flag
+        if lineObs[i].flag == "ul":      
+          ylinesObsUl.append(ylinesObs[i]/0.5)
+          ylinesObsErr[0,i]=ylinesObs[i]*0.4
+          ylinesObsErr[1,i]=0.0      
+          ylinesObsErr2[0,i]=lineObs[i].flux*(1.0-1.e-10)      
+        else:
+          ylinesObsUl.append(0.0)  
+    
+      # the observations
+      # takes the x frmo above
+      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr2,fmt=".",ms=0.0,color="lightgrey",linewidth=10,zorder=0)
+      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr,uplims=ylinesObsUl,fmt="o",ms=4.0,color="black",capsize=2,label="Obs.")           
    
     ax.set_xlim(0.5, iline - 0.5)
     
@@ -151,11 +189,16 @@ class PlotModels(object):
     # ax.set_xlabel(r"line")
     
     if jansky:   
-      ax.set_ylabel(r" line flux [Jy km$\,$s$^{-1}$]")
+      ax.set_ylabel(r" line flux [Jy km$\;$s$^{-1}$]")
     else:
-      ax.set_ylabel(r" line flux [W$\,$m$^{-2}$]")
+      ax.set_ylabel(r" line flux [W$\;$m$^{-2}$]")
+      
+    xgrid=np.array(x)      
+    ax.vlines(xgrid-0.5,ymin=ax.get_ylim()[0],ymax=ax.get_ylim()[1],linestyle="solid",linewidth=0.5,color="grey")  
+    ax.yaxis.grid(color="grey")  
+  
      
-    ax.set_xticklabels(lticks, rotation='45', minor=False)
+    ax.set_xticklabels(lticks, rotation='70', minor=False)
     zed = [tick.label.set_fontsize(7) for tick in ax.xaxis.get_major_ticks()]
      
     self._legend(ax)
