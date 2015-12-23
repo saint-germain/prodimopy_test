@@ -512,6 +512,9 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat"):
   f.close()
   
   linesobs = list()  
+  versionStr=records[0].split()
+  version=float(versionStr[0])
+  
   for rec in records[2:2 + nlines]:  #        
     fields = rec.split()
     
@@ -524,13 +527,19 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat"):
   
   # the additional data
     
+  # FIXME: do this proberly (the reading etc. and different versions)  
   profile = (records[2 + nlines+1].split())[0:nlines]
   autoC = (records[2 + nlines+2].split())[0:nlines]
   vvalid = (records[2 + nlines+3].split())[0:nlines]
   
+  #speres = (records[2 + nlines+4].split())[0:nlines]
+     
+  offset=5
+  if version>=2.0: offset=6
+  
   # now go through the profiles  
   for i in range(nlines):  
-    proffilename=records[2 + nlines+3+i+1].strip()
+    proffilename=records[offset+nlines+i+1].strip()
     if profile[i] == "T":            
       linesobs[i].profile=read_lineObsProfile(proffilename,directory=directory)
     
@@ -765,6 +774,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.AVver = numpy.zeros(shape=(data.nx, data.nz))  
   data.NHver = numpy.zeros(shape=(data.nx, data.nz))
   data.NHrad = numpy.zeros(shape=(data.nx, data.nz))
+  data.d2g = numpy.zeros(shape=(data.nx, data.nz))
   data.tg = numpy.zeros(shape=(data.nx, data.nz))
   data.td = numpy.zeros(shape=(data.nx, data.nz))
   data.nd = numpy.zeros(shape=(data.nx, data.nz))
@@ -831,6 +841,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       data.chiRT[ix, zidx] = float(fields[iAJJ])      
       data.nHtot[ix, zidx] = float(fields[iACool])
       data.damean[ix, zidx] = float(fields[iAJJ + 3])
+      data.d2g[ix, zidx] = float(fields[iAJJ + 4])
       data.tauX1[ix, zidx] = float(fields[iAJJ + 6])
       data.tauX5[ix, zidx] = float(fields[iAJJ + 7])
       data.tauX10[ix, zidx] = float(fields[iAJJ + 8])      
@@ -842,7 +853,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       
       i = i + 1
 
-  data.rhod = data.rho * data.dust2gas
+  data.rhod = data.rho * data.d2g
   
   # Read FlineEstimates.out
   if readlineEstimates == True:
