@@ -518,6 +518,7 @@ class PlotModels(object):
     ax.set_xlabel(r"z/r @ " + rstr)    
     ax.set_ylabel(ylabel)    
     
+    #self._dokwargs(ax,kwargs)
     self._legend(ax)
     
     self.pdf.savefig()
