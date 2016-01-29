@@ -11,6 +11,7 @@ from math import pi
 import prodimopy.plot as pplot
 
 import astropy.units as u
+from matplotlib import patches
 
 class PlotModels(object):
 
@@ -45,10 +46,13 @@ class PlotModels(object):
         
     return (figsize[0]*wfac,figsize[1]*hfac)
 
-  def _legend(self, ax):
+  def _legend(self, ax,**kwargs):
     '''
     plots the legend, deals with multiple columns
     '''
+    if "slegend" in kwargs:
+      if not kwargs["slegend"]: return 
+    
     handles, labels = ax.get_legend_handles_labels()
     ncol = 1
     if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
@@ -114,7 +118,7 @@ class PlotModels(object):
         if useLineEstimate:
           line = model.getLineEstimate(ident[0], ident[1])          
         else:  # use the line fluxes, uses only the wavelength
-          line = model.getLine(ident[1])
+          line = model.getLine(ident[1],ident=ident[0])
         x.append(iline)    
                             
         # Convert lineflux to Jansky
@@ -131,24 +135,34 @@ class PlotModels(object):
         if imodel == 0:
           # lticks.append(r"$\mathrm{"+pplot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
           lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.2f}".format(line.wl))   
-   
-#         if imodel == (len(models)-1):
-#           print iline, line.flux
-#           ax.errorbar([iline],[line.flux],yerr=[line.flux/3.0,line.flux*3.0],fmt=".",ms=0.0,color="lightgrey",linewidth=10)    
-        
+           
         iline = iline + 1  
 
       mew=None
       ms=4
-      if self.markers[imodel]=="+" or self.markers[imodel]=="x":
-        mew=2
+      if self.markers[imodel]=="+" or self.markers[imodel]=="x":        
+        mew=1.5
         ms=5     
-
+      elif self.markers[imodel]=="*" or self.markers[imodel]=="p":
+        ms=5
+              
       ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=ms,mew=mew, 
               color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name,
               zorder=10)      
          
-      imodel = imodel + 1            
+      imodel = imodel + 1  
+
+    # boxes for factor 3 and 10 relative to the last model
+    for i in range(len(x)):
+      xc=x[i]-0.3
+      yc=y[i]/3.0
+      height=y[i]*3.0 -y[i]/3.0     
+      width=0.6   
+      ax.add_patch(patches.Rectangle((xc,yc),width,height,color="0.8"))
+
+      height=y[i]*10.0 -y[i]/10.0
+      yc=y[i]/10.0        
+      ax.add_patch(patches.Rectangle((xc,yc),width,height,color="0.5",fill=False,linewidth=0.5))          
     
     if lineObs != None:
       nlines=len(lineObs)        
@@ -182,16 +196,13 @@ class PlotModels(object):
     
     if "ylim" in kwargs: 
       ax.set_ylim(kwargs["ylim"])
-    #else:         
-      #ax.set_ylim(1.e-24, 1.e-18)
       
-    ax.semilogy()    
-    # ax.set_xlabel(r"line")
+    ax.semilogy()        
     
     if jansky:   
-      ax.set_ylabel(r" line flux [Jy km$\;$s$^{-1}$]")
+      ax.set_ylabel(r" line flux [Jy km$\,$s$^{-1}$]")
     else:
-      ax.set_ylabel(r" line flux [W$\;$m$^{-2}$]")
+      ax.set_ylabel(r" line flux [W$\,$m$^{-2}$]")
       
     xgrid=np.array(x)      
     ax.vlines(xgrid-0.5,ymin=ax.get_ylim()[0],ymax=ax.get_ylim()[1],linestyle="solid",linewidth=0.5,color="grey")  
@@ -241,12 +252,12 @@ class PlotModels(object):
     ax.set_ylabel(r"N$_\mathrm{<H>}$ cm$^{-2}$")
   
     self._dokwargs(ax,**kwargs)
-    self._legend(ax)
+    self._legend(ax,**kwargs)
     
     self.pdf.savefig(transparent=mpl.rcParams['savefig.transparent'])
     plt.close(fig)
     
-  def plot_tcdspec(self, models, species, **kwargs):
+  def plot_tcdspec(self, models, species, relToH=False, **kwargs):
     '''
     Plots the total vertical columndensity for the given species for all the models
     as a function of the radius
@@ -262,8 +273,14 @@ class PlotModels(object):
       if species in model.spnames:
         x = model.x[:, 0]                    
         y = model.cdnmol[:, 0, model.spnames[species]]
+        if relToH==True:
+          y=y/model.NHver[:,0]
+        
+        linewidth=1.5
+        if self.styles[iplot]=="--": linewidth=2.5
                 
-        ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+        ax.plot(x, y, self.styles[iplot], marker=None,linewidth=linewidth, 
+                color=self.colors[iplot], label=model.name)
             
         iplot = iplot + 1
         
@@ -279,12 +296,14 @@ class PlotModels(object):
     ax.set_xlim(xmin, xmax)        
     ax.semilogy()
     
-    ax.set_xlabel(r"r [AU]")
-    # ax.set_ylabel(r"N$_\mathrm{"+pplot.spnToLatex(species)+"}$ cm$^{-2}$")
-    ax.set_ylabel(r"N$_\mathrm{" + pplot.spnToLatex(species) + "}$ " + "[cm$^{-2}$]")
+    ax.set_xlabel(r"r [AU]")    
+    if relToH==True:
+      ax.set_ylabel(r"average $\mathsf{\epsilon(" + pplot.spnToLatex(species) + ")}$ ")
+    else:
+      ax.set_ylabel(r"N$_\mathsf{" + pplot.spnToLatex(species) + "}$ " + "[cm$^{-2}$]")
   
     self._dokwargs(ax,**kwargs)          
-    self._legend(ax)
+    self._legend(ax,**kwargs)
   
     self.pdf.savefig()
     plt.close(fig)  
@@ -430,7 +449,47 @@ class PlotModels(object):
     plt.close(fig) 
   
   
-  def plot_midplane(self, models, fieldname, ylabel, **kwargs):
+  def plot_radial(self, models, fields, ylabel,**kwargs):
+    '''
+    Plots a quantitiy in radial direction. Fields must have the same number
+    of entries as models and must contain arrays with the dimension of nx   
+    '''
+    print("PLOT: radial ...")
+    fig, ax = plt.subplots(1, 1)      
+    
+    iplot = 0
+    xmin = 1.e100
+    xmax = 0
+    ymin = 1.e100
+    ymax = -1.e00 
+    for model in models:           
+      x = model.x[:, 0]
+      y= fields[iplot]
+      
+      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+                      
+      iplot = iplot + 1
+      
+      if min(x) < xmin: xmin = min(x)
+      if max(x) > xmax: xmax = max(x)
+      if min(y) < ymin: ymin = min(y)
+      if max(y) > ymax: ymax = max(y)
+  
+    ax.set_xlim(xmin,xmax)
+    ax.set_ylim(ymin, ymax)              
+    ax.semilogy()
+            
+    ax.set_xlabel(r"r [AU]")    
+    ax.set_ylabel(ylabel)    
+    
+    self._dokwargs(ax, **kwargs) 
+    self._legend(ax,**kwargs)
+    
+    self.pdf.savefig()
+    plt.close(fig) 
+  
+  
+  def plot_midplane(self, models, fieldname, ylabel, species=None,**kwargs):
     '''
     Plots a quantitiy in in the midplane as a function of radius
     fieldname is any field in Data_ProDiMo
@@ -445,7 +504,10 @@ class PlotModels(object):
     ymax = -1.e00 
     for model in models:           
       x = model.x[:, 0]
-      y = getattr(model, fieldname)[:, 0]                    
+      if species!=None:
+        y = getattr(model, fieldname)[:, 0,model.spnames[species]]
+      else:
+        y = getattr(model, fieldname)[:, 0]                    
       
       ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
                       
@@ -464,12 +526,12 @@ class PlotModels(object):
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax, **kwargs) 
-    self._legend(ax)
+    self._legend(ax,**kwargs)
     
     self.pdf.savefig()
     plt.close(fig)    
   
-  def plot_vertical(self, models, r, fieldname, ylabel, ylog=True, **kwargs):
+  def plot_vertical(self, models, r, fieldname, ylabel, species=None,ylog=True,zr=True,**kwargs):
     '''
     Plots a quantity (fieldname) as a function of height (z/r) at a certain
     radius.    
@@ -488,9 +550,16 @@ class PlotModels(object):
       # closed radial point to given radius
       ix = (np.abs(model.x[:, 0] - r)).argmin()
        
-      x = model.z[ix, :] / model.x[ix, 0]
-      y = getattr(model, fieldname)[ix, :]                    
-      
+      if zr: 
+        x = model.z[ix, :] / model.x[ix, 0]
+      else: 
+        x = model.z[ix, :]
+        
+      if species==None:
+        y = getattr(model, fieldname)[ix, :]
+      else:
+        y = getattr(model, fieldname)[ix, :,model.spnames[species]]
+                                  
       ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
                       
       iplot = iplot + 1
@@ -503,23 +572,30 @@ class PlotModels(object):
 
     if "xlim" in kwargs: 
       ax.set_xlim(kwargs["xlim"])
-    # else:
-    #  ax.set_ylim(xmin,xmax)
+    else:
+      if not zr:
+        ax.set_xlim(xmin,xmax)
       
     if "ylim" in kwargs: 
       ax.set_ylim(kwargs["ylim"])
-    # else:
+    #else:
     #  ax.set_ylim(ymin,ymax)
     
     if ylog: ax.semilogy()
     
-    ax.invert_xaxis()       
-                
-    ax.set_xlabel(r"z/r @ " + rstr)    
+    if zr:
+      ax.invert_xaxis()
+      ax.set_xlabel(r"z/r @ " + rstr)
+    else:
+      ax.set_xlabel(r"z [AU] @ " + rstr)      
+      ax.semilogx()       
+      ax.invert_xaxis()
+                        
     ax.set_ylabel(ylabel)    
     
+    # FIXME: make it general
     #self._dokwargs(ax,kwargs)
-    self._legend(ax)
+    self._legend(ax,**kwargs)
     
     self.pdf.savefig()
     plt.close(fig)    
@@ -554,7 +630,7 @@ class PlotModels(object):
     ax.set_ylabel(r"midplane $\epsilon(\mathrm{" + pplot.spnToLatex(species) + "})$")    
     
     self._dokwargs(ax, **kwargs)  
-    self._legend(ax)
+    self._legend(ax,**kwargs)
     
     self.pdf.savefig()
     plt.close(fig)    
@@ -614,9 +690,9 @@ class PlotModels(object):
     plt.close(fig)      
     
    
-  def plot_line_profil(self,models,wl,**kwargs):
+  def plot_line_profil(self,models,wl,ident=None,**kwargs):
     '''
-    Plots the line profile for the given line (id by wavelength) 
+    Plots the line profile for the given line (id wavelength and line ident) 
     '''  
     print("PLOT: plot_line_profile ...")
     fig, ax = plt.subplots(1, 1)      
@@ -626,8 +702,8 @@ class PlotModels(object):
     xmax = -1.e100 
     ymin = 1.e100
     ymax = -1.e100 
-    for model in models:
-      line=model.getLine(wl)       
+    for model in models:      
+      line=model.getLine(wl,ident=ident)       
       if line==None: continue    
       
       # text for the title
