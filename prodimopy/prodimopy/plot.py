@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+import astropy.units as u
+import math
 
 
 def spnToLatex(spname):      
@@ -145,7 +147,7 @@ class Plot(object):
   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,contour=True,
-                extend="neither",**kwargs):
+                extend="neither",acont=None,**kwargs):
     '''
     plot routine for 2D contour plots.   
     '''
@@ -215,6 +217,10 @@ class Plot(object):
         ax.contour(CS, levels=clevels, colors='black', linestyles="solid",linewidths=0.8)
       else:
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
+    
+    if acont is not None:
+      ACS=ax.contour(x, y,acont, colors='white',linestyles="dashed")
+      ax.clabel(ACS, inline=1, fontsize=7)
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
     CB.ax.tick_params(labelsize=self.fs_legend) 
@@ -598,6 +604,73 @@ class Plot(object):
   
     self.pdf.savefig()
     plt.close(fig)
+  
+  def plot_dust_opac(self,model,dust=None,**kwargs):
+    '''
+    Plots the dust opacities (dust_opac.out) or the data given in the
+    dust object    
+    '''
+    print("PLOT: dust opacities ...")
+    
+    fig, ax = plt.subplots(1, 1)
+    
+    x=model.dust.lam
+    
+    if dust is None: dust=model.dust
+    
+    ax.plot(x,dust.kabs,label="absorption")
+    ax.plot(x,dust.ksca,label="scattering")
+    ax.plot(x,dust.kext,label="extinction")   
+    ax.set_xlabel(r"wavelength $\mathsf{[\mu m]}$")
+    ax.set_ylabel(r"opacity $\mathsf{[cm^2 g(dust)^{-1}]}$")
+    
+    ax.set_xlim(0.09,1500.0)
+    ax.set_ylim(1.e-2,None)
+    
+    ax.semilogx()
+    ax.semilogy()
+            
+    self._dokwargs(ax,**kwargs)
+    self._legend(ax)
+    self._closefig(fig) 
+  
+  
+  def plot_vertical(self, model, r, field, ylabel, ylog=True,zr=True,**kwargs):
+    '''
+    Plots a quantity (field) as a function of height at a certain radius
+    radius.    
+    '''
+    print("PLOT: plot_vertical ...")
+    rstr = r"r$\approx${:.1f} AU".format(r) 
+    
+    fig, ax = plt.subplots(1, 1)      
+    
+    
+    ix = (np.abs(model.x[:, 0] - r)).argmin()
+     
+    if zr: 
+      x = model.z[ix, :] / model.x[ix, 0]
+    else: 
+      x = model.z[ix, :]
+      
+    y = field[ix, :]
+                                    
+    ax.plot(x, y)                    
+    
+    if zr:
+      ax.invert_xaxis()
+      ax.set_xlabel(r"z/r @ " + rstr)
+    else:
+      ax.set_xlabel(r"z [AU] @ " + rstr)                   
+      ax.invert_xaxis()
+                        
+    ax.set_ylabel(ylabel)    
+    
+    self._dokwargs(ax,**kwargs)
+    self._legend(ax,**kwargs)
+    
+    self.pdf.savefig()
+    plt.close(fig)     
     
   def plot_taus(self,model,r,**kwargs):
     '''
@@ -646,3 +719,41 @@ class Plot(object):
       
     self._closefig(fig)     
 
+  def plot_sed(self, model,plot_starSpec=True,**kwargs): 
+    '''
+    Plots the seds and the StarSpectrum
+    '''  
+    print("PLOT: plot_sed ...")
+    fig, ax = plt.subplots(1, 1)      
+        
+    xmin = 0.1
+    ymin = 1.e-13
+    if model.sed == None: return   
+    # only use every 5 element to speed up plotting
+    x = model.sed.lam
+    y = model.sed.nu*model.sed.fnuErg      
+    dist = ((model.sed.distance*u.pc).to(u.cm)).value                          
+    ax.plot(x, y, marker=None, label=model.name)
+    
+    if plot_starSpec:
+      # scale input Stellar Spectrum to the distance for comparison to the SED
+      r= ((model.starSpec.r*u.R_sun).to(u.cm)).value      
+      
+      xStar = model.starSpec.lam[0::10]
+      ystar= (model.starSpec.nu*model.starSpec.Inu)[0::10]
+      yStar = ystar*(r**2.0*math.pi*dist**(-2.0))                                
+      ax.plot(xStar, yStar, color="black")
+                          
+    # set defaults, can be overwritten by the kwargs
+    
+    ax.set_xlim([xmin,None])
+    ax.set_ylim([ymin,None])
+    ax.semilogx()
+    ax.semilogy()
+    ax.set_xlabel(r"wavelength [$\mu$m]")    
+    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
+      
+    self._dokwargs(ax, **kwargs)                        
+    
+    self.pdf.savefig()
+    plt.close(fig)      
