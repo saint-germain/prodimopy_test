@@ -7,6 +7,8 @@ import numpy
 from astropy import units as u
 from astropy import constants as const
 import os
+import math
+from collections import OrderedDict
 
 '''
 Holds all the outputput stuff from a ProDiMo Model
@@ -51,14 +53,17 @@ class Data_ProDiMo(object):
     self.dummyH2 = None
     self.spnames = None  # is a dictionary to access the indices for nmol (species indices)
     self.spmasses = None # dictornary to acess the species masses, same keys at spnames
+    #self.spmassesTot = None # integrated species masses (over the whole model space), is an array for easier handling
     self.nmol = None          
-    self.cdnmol = None  # vertical column number densities    
+    self.cdnmol = None  # vertical column number densities   
+    self.rcdnmol = None # radial column densities (inside out (from star to border)) 
         
     self.lineEstimates = None  # all the line estimate results
     self.lines = None  # all the lines from the line Transfer
     self.sed = None  # the SED (only the "real" one)
     self.starSpec = None
-    self.dust = None  # dust properites (mainly dust opacities)     
+    self.dust = None  # dust properites (mainly dust opacities)  
+    self.env_dust = None # dust properties for the envelope structure   
   
   def __str__(self):
     output = "Info ProDiMo.out: \n"
@@ -82,7 +87,7 @@ class Data_ProDiMo(object):
     return lines
   
   
-  def getLine(self,wl):
+  def getLine(self,wl,ident=None):
     '''
     Finds the line closest to the given wl
     TODO: considers currently only the wavelength
@@ -90,9 +95,17 @@ class Data_ProDiMo(object):
           might be required for some lines
     '''
     if self.lines == None: return None
-    wls=numpy.array([line.wl for line in self.lines])    
-    idx=numpy.argmin(abs(wls[:]-wl))
-    return self.lines[idx]
+        
+    
+    if ident != None:
+      linestmp=[line for line in self.lines if line.ident==ident]      
+      wls=numpy.array([line.wl for line in linestmp])
+      idx=numpy.argmin(abs(wls[:]-wl))
+      return linestmp[idx]    
+    else:
+      wls=numpy.array([line.wl for line in self.lines])
+      idx=numpy.argmin(abs(wls[:]-wl))
+      return self.lines[idx]        
     
   
   def getLineEstimate(self, ident, wl):
@@ -319,7 +332,7 @@ def read_species(directory,pdata,filename="Species.out"):
   # skip the first line
   f.readline()
   
-  pdata.spmasses={} # empty dictonary
+  pdata.spmasses=OrderedDict() # empty dictonary
   for line in f:
     fields=line.strip().split()
     spname=fields[2].strip()
@@ -671,16 +684,16 @@ def read_starSpec(directory):
     
   return starSpec 
 
-def read_dust(directory):
+def read_dust(fileloc):
   '''
   Reads dust_opac.out
   Returns an object of Type DataDust
   Dust not read the dust composition yet
   ''' 
   try:
-    f = open(directory + "/dust_opac.out", 'r')
+    f = open(fileloc, 'r')
   except:
-    print(("WARN: Could not open " + directory + "/dust_opac.out" + "!"))
+    print(("WARN: Could not open " + fileloc+" !"))
     return None
         
   fields = [int(field) for field in f.readline().split()]
@@ -809,7 +822,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
     return None  
   
   # empty dictionary
-  data.spnames = {}
+  data.spnames = OrderedDict()
   # Make a dictionary for the spans
   for i in range(data.nspec):    
     data.spnames[spnames[i]] = i  
@@ -862,8 +875,14 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   else:
     data.lineEstimates = False  
    
-  print("READ: " + directory + "/dust_opac.out")
-  data.dust = read_dust(directory)
+  fileloc=directory + "/dust_opac.out"
+  print("READ: " +fileloc )
+  data.dust = read_dust(fileloc)
+
+  fileloc=directory + "/dust_opac_env.out"
+  if os.path.isfile(fileloc):
+    print("READ: " + fileloc)
+    data.env_dust = read_dust(fileloc)  
 
   print("READ: " + directory + "/StarSpectrum.out")
   data.starSpec = read_starSpec(directory)
@@ -883,7 +902,9 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   if os.path.exists(directory + "/Species.out"):
     print("READ: " + directory + "/Species.out")
     # data is filled in the routine
-    read_species(directory,data)    
+    read_species(directory,data)
+    #print("INFO: Calc total species masses")
+    #calc_spmassesTot(data)        
     
   
   # calculate the columnd densitis
@@ -892,6 +913,38 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   print(" ")
 
   return data
+
+def calc_NHrad_oi(data):
+  '''
+  Calculates the radial column density from out to in (border of model spact to star/center)
+  
+  TODO: move this to utils  
+  '''    
+  data.cdnmol = 0.0 * data.nmol
+  for ix in range(data.nx):          
+    for iz in range(data.nz - 2, -1, -1):  # from top to bottom        
+      dz = (data.z[ix, iz + 1] - data.z[ix, iz])
+      dz = dz * u.au.to(u.cm)
+      nn = 0.5 * (data.nmol[ix, iz + 1, :] + data.nmol[ix, iz, :])
+      data.cdnmol[ix, iz, :] = data.cdnmol[ix, iz + 1, :] + nn * dz
+      
+  # check if integration is correct 
+  # for the total hydrogen column density the error is less than 1.e-3
+  # that should be good enough for plotting
+  #nHverC=data.cdnmol[:,:,data.spnames["H"]]+data.cdnmol[:,:,data.spnames["H+"]]+data.cdnmol[:,:,data.spnames["H2"]]*2.0
+  #print(numpy.max(numpy.abs(1.0-nHverC[:,0]/data.NHver[:,0])))    
+
+  NHradoi = 0.0 * data.nHtot   
+  for ix in range(data.nx-2,1,-1):  # first ix point (ix=0= remains zero  
+    r1= (data.x[ix+1, :]**2+data.z[ix+1, :]**2)**0.5
+    r2 = (data.x[ix, :]**2+data.z[ix, :]**2)**0.5              
+    dr = r1-r2
+    dr = dr * u.au.to(u.cm)
+    nn = 0.5 * (data.nHtot[ix+1, :] + data.nHtot[ix, :])
+    NHradoi[ix, :] = NHradoi[ix+1, :] + nn * dr
+      
+  return NHradoi
+      
 
 def calc_columnd(data):
   '''
@@ -913,6 +966,23 @@ def calc_columnd(data):
   # that should be good enough for plotting
   #nHverC=data.cdnmol[:,:,data.spnames["H"]]+data.cdnmol[:,:,data.spnames["H+"]]+data.cdnmol[:,:,data.spnames["H2"]]*2.0
   #print(numpy.max(numpy.abs(1.0-nHverC[:,0]/data.NHver[:,0])))    
+
+  data.rcdnmol = 0.0 * data.nmol 
+  for iz in range(data.nz):
+    for ix in range(1,data.nx,1):  # first ix point (ix=0= remains zero  
+      r1= (data.x[ix, iz]**2+data.z[ix, iz]**2)**0.5
+      r2 = (data.x[ix-1, iz]**2+data.z[ix-1, iz]**2)**0.5              
+      dr = r1-r2
+      dr = dr * u.au.to(u.cm)
+      nn = 0.5 * (data.nmol[ix, iz , :] + data.nmol[ix-1, iz, :])
+      data.rcdnmol[ix, iz, :] = data.rcdnmol[ix-1, iz, :] + nn * dr
+
+  # FIXME: test the integration error can be at most 16% ... good enough for now (most fields are better)
+  #nHverC=data.rcdnmol[:,:,data.spnames["H"]]+data.rcdnmol[:,:,data.spnames["H+"]]+data.rcdnmol[:,:,data.spnames["H2"]]*2.0
+  #izt=data.nz-2
+  #print(nHverC[:,izt],data.NHrad[:,izt])
+  #print(numpy.max(numpy.abs(1.0-nHverC[1:,:]/data.NHrad[1:,:])))    
+
 
 ###############################################################################
 # For testing
