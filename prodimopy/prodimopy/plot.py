@@ -295,7 +295,10 @@ class Plot(object):
       ax.set_xlim(kwargs["xlim"])
     else:
       ax.set_xlim([17.5, nhver.max()])        
-    if "ylim" in kwargs: ax.set_ylim(kwargs["ylim"])
+    if "ylim" in kwargs: 
+      ax.set_ylim(kwargs["ylim"])
+    else:
+      ax.set_ylim([1.e-21,1.e-9])
      
     # print ax.get_xlim()
   
@@ -624,7 +627,7 @@ class Plot(object):
     ax.set_xlabel(r"wavelength $\mathsf{[\mu m]}$")
     ax.set_ylabel(r"opacity $\mathsf{[cm^2 g(dust)^{-1}]}$")
     
-    ax.set_xlim(0.09,1500.0)
+    ax.set_xlim(0.09,3000.0)
     ax.set_ylim(1.e-2,None)
     
     ax.semilogx()
