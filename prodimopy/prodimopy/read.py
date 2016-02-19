@@ -535,26 +535,36 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat"):
                         float(fields[1].strip()), \
                         float(fields[2].strip()), \
                         float(fields[3].strip()), \
-                        fields[4].strip())    
+                        fields[4].strip())   
+    
+    # FIXME: not very nice
+    # in case of upper limits flux might be zero in that case use sig. 
+    if lineobs.flux <1.e-100:
+      lineobs.flux=lineobs.flux_err
+     
     linesobs.append(lineobs)
   
+  
+  
   # the additional data
-    
-  # FIXME: do this proberly (the reading etc. and different versions)  
-  profile = (records[2 + nlines+1].split())[0:nlines]
-  autoC = (records[2 + nlines+2].split())[0:nlines]
-  vvalid = (records[2 + nlines+3].split())[0:nlines]
+  # check if there is actually more data
+  if (len(records)>2 + nlines+1):    
+    # FIXME: do this proberly (the reading etc. and different versions)  
+    profile = (records[2 + nlines+1].split())[0:nlines]
+    autoC = (records[2 + nlines+2].split())[0:nlines]
+    vvalid = (records[2 + nlines+3].split())[0:nlines]
   
   #speres = (records[2 + nlines+4].split())[0:nlines]
      
-  offset=5
-  if version>=2.0: offset=6
+    offset=5
+    if version>2.0: offset=6
   
-  # now go through the profiles  
-  for i in range(nlines):  
-    proffilename=records[offset+nlines+i+1].strip()
-    if profile[i] == "T":            
-      linesobs[i].profile=read_lineObsProfile(proffilename,directory=directory)
+    # now go through the profiles  
+    for i in range(nlines):       
+      proffilename=records[offset+nlines+i+1].strip()
+      if profile[i] == "T":       
+        if "nodata"==proffilename: print("WARN: Something is wrong with line "+str(i))     
+        linesobs[i].profile=read_lineObsProfile(proffilename,directory=directory)
     
   return linesobs
   
