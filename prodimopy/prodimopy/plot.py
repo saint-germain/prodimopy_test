@@ -108,6 +108,8 @@ class Plot(object):
     if "title" in kwargs:
       if  kwargs["title"] != None and kwargs["title"].strip() != "":
         ax.set_title(kwargs["title"].strip())
+      else:
+        ax.set_title("")
         
   def _closefig(self,fig):
     '''
@@ -143,15 +145,81 @@ class Plot(object):
     self._dokwargs(ax,**kwargs)
     self._legend(ax)
     self._closefig(fig)
+ 
+ 
+  def plot_cont_dion(self, model, zr=True,
+                acont=None,acontl=None,**kwargs):
+    '''
+    plot routine for 2D contour plots.
+    plots the regions where either X-rays, CR or SP are the dominant H2 ionization source   
+    '''
+    
+    values=model.zetaX[:,:]*0.0
+    values[model.zetaX*2.0>(model.zetaCR+model.zetaSTCR)]=0.0
+    values[model.zetaSTCR>(model.zetaCR+model.zetaX*2.0)]=1.0
+    values[model.zetaCR>(model.zetaSTCR+model.zetaX*2.0)]=-1.0
+    print(values)
+    
+    print("PLOT: plot_cont_dion ...")
+        
+      
+    x = model.x  
+    if zr:
+      y = model.z / model.x
+    else:
+      y = np.copy(model.z) 
+      y[:,0]=y[:,0]+0.05 
+  
+    #levels=[1.5,0.5,0.0,-0.5,-1.5]    
+    #levels=MaxNLocator(nbins=4, prune="both").tick_values(-1.0,1.0)
+    levels=[-1.2, -0.01,0.0, 0.01,1.2]
+    ticks=[0.5,0.0,-0.5]
+    
+    #ticks = 
+    #print(ticks)
+  
+    fig, ax = plt.subplots(1, 1)       
+    CS = ax.contourf(x, y, values,levels=levels,colors=("red","green","green","blue"))
+    print(CS.levels)
+    # This is the fix for the white lines between contour levels
+    for c in CS.collections:
+      c.set_edgecolor("face")    
+
+    ax.set_ylim([y.min(), y.max()])
+    ax.set_xlim([x.min(), x.max()])
+    ax.semilogx()        
+    
+    ax.set_xlabel("r [AU]")
+    if zr:
+      ax.set_ylabel("z/r")
+    else:
+      ax.set_ylabel("z [AU]")      
+  
+       
+    self._dokwargs(ax,**kwargs)            
+         
+    
+    if acont is not None:
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="dashed")
+      ax.clabel(ACS, inline=1, fontsize=7)
+    
+    CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
+    CB.ax.set_yticklabels(['SP', 'X', 'CR'])
+    CB.ax.tick_params(labelsize=self.fs_legend) 
+    
+    # CB.set_ticks(ticks)
+    CB.set_label("dominant ion source",fontsize=self.fs_legend)  
+
+    self._closefig(fig)
     
   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,contour=True,
-                extend="neither",acont=None,**kwargs):
+                extend="neither",acont=None,acontl=None,**kwargs):
     '''
     plot routine for 2D contour plots.   
     '''
-  
+    print("PLOT: plot_cont ...")
     if zlog is True:
       pvals = plog(values)
       values[np.isnan(values)] = 0.0
@@ -219,7 +287,7 @@ class Plot(object):
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
     
     if acont is not None:
-      ACS=ax.contour(x, y,acont, colors='white',linestyles="dashed")
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="dashed")
       ax.clabel(ACS, inline=1, fontsize=7)
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
@@ -281,9 +349,9 @@ class Plot(object):
     np.seterr(**old_settings)  # reset to default
   #  print pdata.zetaCR[ix,:]
     y1 = model.zetaCR[ix, :]
-    y2 = model.zetaX[ix, :] / 2.0  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
-    y3 = model.zetaSTCR[ix, :]  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
-  
+    y2 = model.zetaX[ix, :] * 2.0  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
+    y3 = model.zetaSTCR[ix, :]  
+      
     fig, ax = plt.subplots(1, 1)   
     ax.plot(nhver, y1, color="red", label="$\zeta_\mathrm{CR}$")
     ax.plot(nhver, y2, color="blue", label="$\zeta_\mathrm{X}$")
@@ -291,34 +359,30 @@ class Plot(object):
       
     # set the limits
       
-    if "xlim" in kwargs:     
-      ax.set_xlim(kwargs["xlim"])
-    else:
-      ax.set_xlim([17.5, nhver.max()])        
-    if "ylim" in kwargs: 
-      ax.set_ylim(kwargs["ylim"])
-    else:
-      ax.set_ylim([1.e-21,1.e-9])
-     
-    # print ax.get_xlim()
-  
+    ax.set_xlim([17.5, nhver.max()])  
+    ax.set_ylim([1.e-21,1.e-9])
+
+    ax.set_xlabel(r"$\log$ N$_\mathrm{H,ver}$ [cm$^{-2}$]")
+    ax.set_ylabel("ionization rate per H$_2$ [s$^{-1}$]")
+
+    # do axis style
+    ax.semilogy()     
+
+    # title does not work here
+    self._dokwargs(ax,title=None,**kwargs)
+      
     ax2 = ax.twiny()
     ax2.set_xlabel("z/r")
     ax2.set_xlim(ax.get_xlim())
     # ax2.set_xticks(ax.get_xticks())    
     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
-    
-    ax.set_xlabel(r"$\log$ N$_\mathrm{H,ver}$ [cm$^{-2}$]")
-    ax.set_ylabel("ionization rate per H$_2$ [s$^{-1}$]")
-    
-    # do axis style
-    ax.semilogy()     
-    
+            
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc="best", fancybox=True, framealpha=0.5)
+    ax.legend(handles, labels, loc="best")
     ax.text(0.025, 0.025, rstr,
        verticalalignment='bottom', horizontalalignment='left',
        transform=ax.transAxes, alpha=0.75)
+    
       
     self.pdf.savefig()
     plt.close(fig)  
@@ -722,6 +786,37 @@ class Plot(object):
       
     self._closefig(fig)     
 
+  def plot_starspec(self, model,**kwargs): 
+    '''
+    Plots the full Stellar Spectrum
+    '''  
+    print("PLOT: plot_starspec ...")
+    fig, ax = plt.subplots(1, 1)      
+            
+    x = model.starSpec.lam[0::10]
+    
+    xmin=x.min()
+    xmax=1000.0
+    y = (model.starSpec.nu*model.starSpec.Inu)[0::10]      
+         
+    ax.plot(x, y, color="black")
+                          
+    # set defaults, can be overwritten by the kwargs
+    
+    ax.set_xlim([xmin,xmax])
+    #ax.set_ylim([ymin,None])
+    ax.semilogx()
+    ax.semilogy()
+    ax.set_xlabel(r"wavelength [$\mathsf{\mu}$m]")    
+    ax.set_ylabel(r"$\mathsf{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
+      
+    self._dokwargs(ax, **kwargs)                        
+    
+    self.pdf.savefig()
+    plt.close(fig)  
+
+
+
   def plot_sed(self, model,plot_starSpec=True,**kwargs): 
     '''
     Plots the seds and the StarSpectrum
@@ -753,8 +848,8 @@ class Plot(object):
     ax.set_ylim([ymin,None])
     ax.semilogx()
     ax.semilogy()
-    ax.set_xlabel(r"wavelength [$\mu$m]")    
-    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
+    ax.set_xlabel(r"wavelength [$\mathsf{\mu}$m]")    
+    ax.set_ylabel(r"$\mathsf{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
       
     self._dokwargs(ax, **kwargs)                        
     
