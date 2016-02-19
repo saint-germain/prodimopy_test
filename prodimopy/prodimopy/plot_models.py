@@ -11,7 +11,9 @@ from math import pi
 import prodimopy.plot as pplot
 
 import astropy.units as u
+import astropy.constants as const
 from matplotlib import patches
+
 
 class PlotModels(object):
 
@@ -24,7 +26,7 @@ class PlotModels(object):
 
     self.pdf = pdf    
     if colors == None: 
-      self.colors = ["b", "g", "r", "c", "m", "y", "k", "sienna", "lime", "pink", "DarkOrange", "Olive"]
+      self.colors = ["b", "g", "r", "c", "m", "y", "k", "sienna", "lime", "pink", "DarkOrange", "Olive","brown"]
     else:
       self.colors = colors
     
@@ -661,8 +663,8 @@ class PlotModels(object):
         r= ((model.starSpec.r*u.R_sun).to(u.cm)).value      
         
         xStar = model.starSpec.lam[0::10]
-        ystar= (model.starSpec.nu*model.starSpec.Inu)[0::10]
-        yStar = ystar*(r**2.0*pi*dist**(-2.0))                                
+        yStar= (model.starSpec.nu*model.starSpec.Inu)[0::10]
+        yStar = yStar*(r**2.0*pi*dist**(-2.0))                                
         ax.plot(xStar, yStar, self.styles[iplot], marker="*",ms=2,markeredgecolor=self.colors[iplot],color=self.colors[iplot])
                       
       iplot = iplot + 1
@@ -688,7 +690,68 @@ class PlotModels(object):
     
     self.pdf.savefig()
     plt.close(fig)      
+  
+  def plot_starspec(self, models,xonly=False,**kwargs): 
+    '''
+    Plots the full Stellar Spectrum
+    '''  
+    print("PLOT: plot_starspec ...")
+    fig, ax = plt.subplots(1, 1)      
     
+    iplot = 0
+    xmin = 1.e100
+    xmax = 0
+    ymin = 1.e100
+    ymax = -1.e00 
+    for model in models:              
+      
+      if xonly:
+        idx=np.argmin(np.abs(model.starSpec.lam-0.0124))        
+        x=model.starSpec.lam[0:idx:3]
+        x=x*(u.micrometer).cgs        
+        x=(const.h.cgs*const.c.cgs/x).to(u.keV)                              
+        x=x.value
+        y= (model.starSpec.nu*model.starSpec.Inu)[0:idx:3]
+        x=x[::-1]
+        y=y[::-1]
+      else:
+        x = model.starSpec.lam[0::10]
+        y= (model.starSpec.nu*model.starSpec.Inu)[0::10]         
+                                  
+      ax.plot(x, y, color=self.colors[iplot],linestyle=self.styles[iplot],
+              marker=self.markers[iplot],ms=2,markeredgecolor=self.colors[iplot],
+              label=model.name)
+                      
+      iplot = iplot + 1
+      
+      if min(x) < xmin: xmin = min(x)
+      if max(x) > xmax: xmax = max(x)
+      if xonly:
+        if np.nanmin(y) < ymin: ymin=np.nanmin(y)        
+      else:
+        if y[-1] < ymin: ymin = y[-1]
+      
+      if max(y) > ymax: ymax = max(y)          
+      
+    # TODO: sometimes it is just zero  
+    if ymin<1.e-100: ymin=1.e-20
+    # set defaults, can be overwritten by the kwargs
+    ax.set_xlim(xmin,xmax)
+    ax.set_ylim([ymin,ymax])
+    ax.semilogx()
+    ax.semilogy()
+    ax.set_ylabel(r"$\mathsf{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")
+    if xonly:
+      ax.set_xlabel(r"energy [keV]")                    
+    else:
+      ax.set_xlabel(r"wavelength [$\mu$m]")    
+      
+    self._dokwargs(ax, **kwargs)                
+    
+    self._legend(ax)
+    
+    self.pdf.savefig()
+    plt.close(fig)  
    
   def plot_line_profil(self,models,wl,ident=None,**kwargs):
     '''
