@@ -201,7 +201,7 @@ class DataLineObs(DataLine):
     self.flux_err = flux_err
     self.fwhm = fwhm
     self.fwhm_err = fwhm_err
-    self.flag = flag
+    self.flag = flag.lower()
     self.profile=None
 
 
