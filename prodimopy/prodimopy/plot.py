@@ -155,10 +155,10 @@ class Plot(object):
     '''
     
     values=model.zetaX[:,:]*0.0
-    values[model.zetaX*2.0>(model.zetaCR+model.zetaSTCR)]=0.0
-    values[model.zetaSTCR>(model.zetaCR+model.zetaX*2.0)]=1.0
+    values[model.zetaX*2.0>(model.zetaCR+model.zetaSTCR)]=1.0
+    values[model.zetaSTCR>(model.zetaCR+model.zetaX*2.0)]=0.0
     values[model.zetaCR>(model.zetaSTCR+model.zetaX*2.0)]=-1.0
-    print(values)
+    #print(values)
     
     print("PLOT: plot_cont_dion ...")
         
@@ -179,7 +179,7 @@ class Plot(object):
     #print(ticks)
   
     fig, ax = plt.subplots(1, 1)       
-    CS = ax.contourf(x, y, values,levels=levels,colors=("red","green","green","blue"))
+    CS = ax.contourf(x, y, values,levels=levels,colors=("0.1","green","green","red"))
     print(CS.levels)
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
@@ -200,15 +200,15 @@ class Plot(object):
          
     
     if acont is not None:
-      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="dashed")
-      ax.clabel(ACS, inline=1, fontsize=7)
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.0)
+      #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
-    CB.ax.set_yticklabels(['SP', 'X', 'CR'])
+    CB.ax.set_yticklabels(['X', 'SP', 'CR'])
     CB.ax.tick_params(labelsize=self.fs_legend) 
     
     # CB.set_ticks(ticks)
-    CB.set_label("dominant ion source",fontsize=self.fs_legend)  
+    CB.set_label("dominant ionization source",fontsize=self.fs_legend)  
 
     self._closefig(fig)
     
@@ -252,7 +252,12 @@ class Plot(object):
       y[:,0]=y[:,0]+0.05 
   
     levels = MaxNLocator(nbins=100).tick_values(maxval, minval)
-    ticks = MaxNLocator(nbins=6, prune="both").tick_values(minval, maxval)
+        
+    if clevels is not None:
+      if zlog: clevels=np.log10(clevels)    
+      ticks=clevels
+    else: 
+      ticks = MaxNLocator(nbins=6, prune="both").tick_values(minval, maxval)
   
     fig, ax = plt.subplots(1, 1)   
     cmap = plt.get_cmap('jet')        
@@ -279,18 +284,18 @@ class Plot(object):
     self._dokwargs(ax,**kwargs)            
          
     if contour:
-      if clevels != None:
-        if zlog: clevels=np.log10(clevels)
-        ticks=clevels
-        ax.contour(CS, levels=clevels, colors='black', linestyles="solid",linewidths=0.8)
+      if clevels is not None:
+        #if zlog: clevels=np.log10(clevels)
+        #ticks=clevels
+        ax.contour(CS, levels=clevels, colors='black', linestyles="dashed",linewidths=0.8)
       else:
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
     
     if acont is not None:
-      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="dashed")
-      ax.clabel(ACS, inline=1, fontsize=7)
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.0)
+      #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
     
-    CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
+    CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format="%.1f")
     CB.ax.tick_params(labelsize=self.fs_legend) 
     # CB.set_ticks(ticks)
     CB.set_label(label,fontsize=self.fs_legend)  
@@ -353,8 +358,8 @@ class Plot(object):
     y3 = model.zetaSTCR[ix, :]  
       
     fig, ax = plt.subplots(1, 1)   
-    ax.plot(nhver, y1, color="red", label="$\zeta_\mathrm{CR}$")
-    ax.plot(nhver, y2, color="blue", label="$\zeta_\mathrm{X}$")
+    ax.plot(nhver, y1, color="black", label="$\zeta_\mathrm{CR}$")
+    ax.plot(nhver, y2, color="red", label="$\zeta_\mathrm{X}$")
     ax.plot(nhver, y3, color="green", label="$\zeta_\mathrm{SP}$")
       
     # set the limits

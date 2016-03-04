@@ -742,9 +742,9 @@ class PlotModels(object):
     ax.semilogy()
     ax.set_ylabel(r"$\mathsf{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")
     if xonly:
-      ax.set_xlabel(r"energy [keV]")                    
+      ax.set_xlabel(r"Energy [keV]")                    
     else:
-      ax.set_xlabel(r"wavelength [$\mu$m]")    
+      ax.set_xlabel(r"wavelength [$\mathsf{\mu}$m]")    
       
     self._dokwargs(ax, **kwargs)                
     
