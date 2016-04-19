@@ -292,7 +292,7 @@ class Plot(object):
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
     
     if acont is not None:
-      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.0)
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.3)
       #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format="%.1f")
@@ -707,7 +707,8 @@ class Plot(object):
     self._closefig(fig) 
   
   
-  def plot_vertical(self, model, r, field, ylabel, ylog=True,zr=True,**kwargs):
+  def plot_vertical(self, model, r, field, ylabel, ylog=True,zr=True,
+                    xfield="zr",**kwargs):
     '''
     Plots a quantity (field) as a function of height at a certain radius
     radius.    
@@ -720,8 +721,14 @@ class Plot(object):
     
     ix = (np.abs(model.x[:, 0] - r)).argmin()
      
-    if zr: 
+    if zr and xfield=="zr": 
       x = model.z[ix, :] / model.x[ix, 0]
+    elif xfield=="nH":
+      old_settings = np.seterr(divide='ignore')     
+      x = np.log10(model.NHver[ix, :])      
+      np.seterr(**old_settings)  # reset to defaul
+    elif xfield=="tg":
+      x = model.tg[ix, :]
     else: 
       x = model.z[ix, :]
       
@@ -732,6 +739,11 @@ class Plot(object):
     if zr:
       ax.invert_xaxis()
       ax.set_xlabel(r"z/r @ " + rstr)
+    elif xfield=="nH":
+      ax.set_xlabel(r"$\mathsf{\log\,N_{<H>}\,[cm^{-2}]}$ @" + rstr)  
+    elif xfield=="tg":
+      ax.set_xlabel(r"$\mathsf{\log\,T_{gas}\,[K]}$ @" + rstr)
+      ax.invert_xaxis()  
     else:
       ax.set_xlabel(r"z [AU] @ " + rstr)                   
       ax.invert_xaxis()
@@ -739,7 +751,7 @@ class Plot(object):
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax,**kwargs)
-    self._legend(ax,**kwargs)
+    self._legend(ax)
     
     self.pdf.savefig()
     plt.close(fig)     
@@ -842,8 +854,8 @@ class Plot(object):
       # scale input Stellar Spectrum to the distance for comparison to the SED
       r= ((model.starSpec.r*u.R_sun).to(u.cm)).value      
       
-      xStar = model.starSpec.lam[0::10]
-      ystar= (model.starSpec.nu*model.starSpec.Inu)[0::10]
+      xStar = model.starSpec.lam[0::1]
+      ystar= (model.starSpec.nu*model.starSpec.Inu)[0::1]
       yStar = ystar*(r**2.0*math.pi*dist**(-2.0))                                
       ax.plot(xStar, yStar, color="black")
                           
