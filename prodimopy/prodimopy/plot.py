@@ -259,8 +259,9 @@ class Plot(object):
     else: 
       ticks = MaxNLocator(nbins=6, prune="both").tick_values(minval, maxval)
   
-    fig, ax = plt.subplots(1, 1)   
-    cmap = plt.get_cmap('jet')        
+    fig, ax = plt.subplots(1, 1) 
+    # FIXME: make a check if colormap exists  
+    cmap = plt.get_cmap('viridis') 
     CS = ax.contourf(x, y, pvals, levels=levels, cmap=cmap,extend=extend)
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
@@ -292,7 +293,7 @@ class Plot(object):
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
     
     if acont is not None:
-      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.3)
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.5)
       #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format="%.1f")
