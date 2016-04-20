@@ -292,8 +292,10 @@ class Plot(object):
       else:
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
     
-    if acont is not None:
+    if acont is not None:            
       ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.5)
+      # quick fix for second contour ... 
+      ACS2=ax.contour(x, y,model.nHtot,levels=[1.e6], colors='black',linestyles="solid",linewidths=2.5)
       #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format="%.1f")
