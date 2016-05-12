@@ -9,11 +9,14 @@ from inspect import ismethod
 class Compare(object):
   """
   Class for comparing to ProDiMo models.
-  Initialization requires to ProDiMo_Data model, where the second one
+  Initialization requires two ProDiMo_Data models, where the second one
   is the "reference" model
   
   Every compare Function returns true or false, and the relative differences
-  (in case of arrays these are arrays)
+  (in case of arrays these are arrays). 
+  
+  Can be used in e.g. automatic testing routines or in simple command line
+  tools to compare ProDiMo model results. 
   """
   def __init__(self,model,modelref):
     self.m=model
