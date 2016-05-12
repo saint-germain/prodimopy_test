@@ -4,7 +4,7 @@ from __future__ import print_function
 '''
 Holds all the output stuff from a ProDiMo Molecular Cloud model
 
-Currently only selected data is include
+Currently only selected data is included
 
 @author: rab
 '''

@@ -7,13 +7,12 @@ import numpy
 from astropy import units as u
 from astropy import constants as const
 import os
-import math
 from collections import OrderedDict
 
 '''
-Holds all the outputput stuff from a ProDiMo Model
+Holds all the output stuff from a ProDiMo Model
 
-Currently only selected data is include
+Currently only selected data is included
 
 @author: rab
 '''
@@ -52,7 +51,7 @@ class Data_ProDiMo(object):
     self.AVver = None
     self.dummyH2 = None
     self.spnames = None  # is a dictionary to access the indices for nmol (species indices)
-    self.spmasses = None # dictornary to acess the species masses, same keys at spnames
+    self.spmasses = None # dictionary to access the species masses, same keys at spnames
     #self.spmassesTot = None # integrated species masses (over the whole model space), is an array for easier handling
     self.nmol = None          
     self.cdnmol = None  # vertical column number densities   
@@ -254,7 +253,7 @@ class DataLineEstimate(object):
 class DataGas(object):
   '''
   Holds the data for the gas (mainly from dust_opac.out)
-  TODO: currently only the init cs a read, not the x,y data
+  TODO: currently only the init cs is read, not the x,y data
   '''
   def __init__(self, nlam):
     self.nlam = nlam
@@ -638,8 +637,7 @@ def read_sed(directory):
     f = open(rfile, 'r')
   except:
     print("WARN: Could not read " + rfile + "!")
-    return None  
-  
+    return None    
   
   elems = f.readline().split()
   distance = float(elems[len(elems) - 1])
@@ -958,8 +956,8 @@ def calc_NHrad_oi(data):
 
 def calc_columnd(data):
   '''
-  Calculated the vertical column number density for every species at every point 
-  in the disk (from top to bottom). Very simple and rough method.
+  Calculated the vertical and radial column number densities for every species 
+  at every point in the disk (from top to bottom). Very simple and rough method.
   
   TODO: move this to utils
   '''    
