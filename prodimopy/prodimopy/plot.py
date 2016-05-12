@@ -4,7 +4,6 @@ from __future__ import print_function
 from scipy.interpolate import interp1d
 
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import astropy.units as u
@@ -29,6 +28,9 @@ def spnToLatex(spname):
       newname += "\#"       
     else:
       newname += c
+      
+  # repair the double ionized case
+  if "^+^+" in newname: newname=newname.replace("^+^+", "^{++}")
       
   return newname
 
