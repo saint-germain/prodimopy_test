@@ -67,7 +67,11 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     # FIXME: include proper version numbers
-    # install_requires=['numpy,scipy,astropy'],
+    install_requires=[
+                      'matplotlib>1.5',
+                      'numpy',
+                      'scipy',
+                      'astropy'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
