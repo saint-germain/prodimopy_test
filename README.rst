@@ -12,8 +12,7 @@ Currently the easiest way to use it is to clone this repository and install the 
 
 * click on the Clone link in the menu and copy the git command
 * change into a directory of your choice and execute the command
-* change into the prodimopy directory 
-* type
+* change into the prodimopy directory and type:
 
 ::
 
