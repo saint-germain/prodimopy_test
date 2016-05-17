@@ -16,9 +16,8 @@ Currently the easiest way to use it is to clone this repository and install the 
 * type
 
 ::
-  python setup.py develop
-  Test
 
+  python setup.py develop
 
 This will install the package in your current python environment (should be the one you want to use for ProDiMo). 
 
@@ -26,8 +25,8 @@ Code Update
 ***********
 Simply type 
 
-```
-git pull 
-```
+::
+
+  git pull 
 
 in the prodimopy directory. Than you can directly use the new code (no reinstall required).
