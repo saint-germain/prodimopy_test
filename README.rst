@@ -15,9 +15,9 @@ Currently the easiest way to use it is to clone this repository and install the 
 * change into the prodimopy directory 
 * type
 
-```
+::
 python setup.py develop
-```
+
 
 This will install the package in your current python environment (should be the one you want to use for ProDiMo). 
 
