@@ -18,6 +18,7 @@ Currently the easiest way to use it is to clone this repository and install the 
 ::
 
 python setup.py develop
+Test
 
 
 This will install the package in your current python environment (should be the one you want to use for ProDiMo). 
