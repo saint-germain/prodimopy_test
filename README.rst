@@ -16,6 +16,7 @@ Currently the easiest way to use it is to clone this repository and install the 
 * type
 
 ::
+
 python setup.py develop
 
 
