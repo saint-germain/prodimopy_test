@@ -8,7 +8,7 @@ This is still under development, but you can use it already, if you want.
 
 Installation
 ************
-Currently the easiest way to use it is to clone this repository and install the package directly.
+Currently the easiest way to use it is to clone this repository and install the package directly from the source:
 
 * click on the Clone link in the menu and copy the git command
 * change into a directory of your choice and execute the command
