@@ -215,5 +215,8 @@ class Compare(object):
             print("{:8s}".format("OK"))
           else:
             print("{:8s}".format("FAILED"),end="")
-            print("  Max rel. Error: ","{:.2%}".format(np.max(val)))
+            if val is not None:
+              print("  Max rel. Error: ","{:.2%}".format(np.max(val)))
+            else:
+              print("  Max rel. Error: ",str(val))
           
