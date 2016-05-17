@@ -28,4 +28,4 @@ Simply type
 
   git pull 
 
-in the prodimopy directory. Than you can directly use the new code (no reinstall required).
+in the prodimopy directory. You can directly use the updated code (no reinstall required).
