@@ -152,12 +152,11 @@ class Compare(object):
   
   def compareZetaX(self):
     '''
-    checks the cosmic ray ionisation rate
+    checks the Xray ionisation rate
     '''
         # set low values to zero 
     self.m.zetaX[self.m.zetaX < self.lZetaX]=self.lZetaX
     self.mref.zetaX[self.mref.zetaX < self.lZetaX]=self.lZetaX
-
     
     return self.diffArray(self.m.zetaX,self.mref.zetaX,self.dZetaX) 
 
