@@ -141,7 +141,7 @@ class Plot(object):
          
     ax.semilogy()  
     ax.semilogx()   
-    ax.set_xlabel(r"r [AU]")
+    ax.set_xlabel(r"r [au]")
     ax.set_ylabel(r"N$_\mathrm{<H>}$ cm$^{-2}$")
   
     self._dokwargs(ax,**kwargs)
@@ -191,11 +191,11 @@ class Plot(object):
     ax.set_xlim([x.min(), x.max()])
     ax.semilogx()        
     
-    ax.set_xlabel("r [AU]")
+    ax.set_xlabel("r [au]")
     if zr:
       ax.set_ylabel("z/r")
     else:
-      ax.set_ylabel("z [AU]")      
+      ax.set_ylabel("z [au]")      
   
        
     self._dokwargs(ax,**kwargs)            
@@ -263,7 +263,8 @@ class Plot(object):
   
     fig, ax = plt.subplots(1, 1) 
     # FIXME: make a check if colormap exists  
-    cmap = plt.get_cmap('viridis') 
+    #cmap = plt.get_cmap('viridis')
+    cmap = plt.get_cmap('jet') 
     CS = ax.contourf(x, y, pvals, levels=levels, cmap=cmap,extend=extend)
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
@@ -273,11 +274,11 @@ class Plot(object):
     ax.set_xlim([x.min(), x.max()])
     ax.semilogx()        
     
-    ax.set_xlabel("r [AU]")
+    ax.set_xlabel("r [au]")
     if zr:
       ax.set_ylabel("z/r")
     else:
-      ax.set_ylabel("z [AU]")      
+      ax.set_ylabel("z [au]")      
   
   
       #ax.text(0.27, 0.95,kwargs["title"], horizontalalignment='center',
@@ -295,9 +296,9 @@ class Plot(object):
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
     
     if acont is not None:            
-      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.5)
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='black',linestyles="solid",linewidths=1.5)
       # quick fix for second contour ... 
-      ACS2=ax.contour(x, y,model.nHtot,levels=[1.e6], colors='black',linestyles="solid",linewidths=2.5)
+      #ACS2=ax.contour(x, y,model.nHtot,levels=[1.e6], colors='black',linestyles="solid",linewidths=2.5)
       #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format="%.1f")
@@ -331,7 +332,7 @@ class Plot(object):
      
     # print ax.get_xlim()
     
-    ax.set_xlabel(r"r [AU]")
+    ax.set_xlabel(r"r [au]")
     ax.set_ylabel("ionization rate per H$_2$ [s$^{-1}$]")
     
     # do axis style
@@ -342,7 +343,7 @@ class Plot(object):
     ax.semilogy()     
     
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc="best", fancybox=True)    
+    ax.legend(handles, labels, loc="best", fancybox=False)    
       
     self.pdf.savefig(transparent=False)
     plt.close(fig)  
@@ -352,7 +353,7 @@ class Plot(object):
   def plot_ionrates(self, model, r, **kwargs):
               
     ix = (np.abs(model.x[:, 0] - r)).argmin()
-    rstr = "r={:.2f} AU".format(model.x[ix, 0])   
+    rstr = "r={:.2f} au".format(model.x[ix, 0])   
          
     old_settings = np.seterr(divide='ignore')     
     nhver = np.log10(model.NHver[ix, :])      
@@ -424,7 +425,7 @@ class Plot(object):
       print("Species "+species+ " not found in any model!")
       return 
             
-    ax.set_xlabel(r"r [AU]")
+    ax.set_xlabel(r"r [au]")
     ax.set_ylabel(r"average abundance")
     ax.set_xlim([x.min(),x.max()])
     
@@ -434,7 +435,7 @@ class Plot(object):
     self._dokwargs(ax,**kwargs)    
     self._legend(ax)
     
-    self.pdf.savefig()
+    self.pdf.savefig(transparent=False)
     plt.close(fig)
 
   def plot_midplane(self, model, fieldname, ylabel, **kwargs):
@@ -455,13 +456,13 @@ class Plot(object):
     ax.set_ylim(np.min(y),np.max(y))                                 
     ax.semilogy()
             
-    ax.set_xlabel(r"r [AU]")    
+    ax.set_xlabel(r"r [au]")    
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax, **kwargs) 
     #self._legend(ax)
     
-    self.pdf.savefig()
+    self.pdf.savefig(transparent=False)
     plt.close(fig)   
     
   def plot_abunvert(self, model, r, species, useNH=True,
@@ -473,7 +474,7 @@ class Plot(object):
          
     print("PLOT: plot_abunvert ...")     
           
-    rstr = r"r$\approx${:.2f} AU".format(r)   
+    rstr = r"r$\approx${:.2f} au".format(r)   
     
     fig, ax = plt.subplots(1, 1)     
 
@@ -622,7 +623,7 @@ class Plot(object):
     if useNH:
       ax.set_xlabel(r"$\mathsf{\log\,N_{<H,rad>}\,[cm^{-2}]}$")
     else:
-      ax.set_xlabel(r"r [AU]")
+      ax.set_xlabel(r"r [au]")
     ax.set_ylabel(r"$\mathsf{\epsilon(X)}$")    
     
     self._dokwargs(ax,**kwargs)
@@ -673,7 +674,7 @@ class Plot(object):
     ax.set_xlim(xmin,xmax)
     ax.set_ylim(ymin, ymax)              
     ax.semilogy()
-    ax.set_xlabel("r [AU]")
+    ax.set_xlabel("r [au]")
     ax.set_ylabel(r"$\mathrm{\epsilon(X)}$")
             
     self._dokwargs(ax, **kwargs)
@@ -719,7 +720,7 @@ class Plot(object):
     radius.    
     '''
     print("PLOT: plot_vertical ...")
-    rstr = r"r$\approx${:.1f} AU".format(r) 
+    rstr = r"r$\approx${:.1f} au".format(r) 
     
     fig, ax = plt.subplots(1, 1)      
     
@@ -750,7 +751,7 @@ class Plot(object):
       ax.set_xlabel(r"$\mathsf{\log\,T_{gas}\,[K]}$ @" + rstr)
       ax.invert_xaxis()  
     else:
-      ax.set_xlabel(r"z [AU] @ " + rstr)                   
+      ax.set_xlabel(r"z [au] @ " + rstr)                   
       ax.invert_xaxis()
                         
     ax.set_ylabel(ylabel)    
@@ -766,7 +767,7 @@ class Plot(object):
     Plot's taus (A_V, X-rays) as a function of vertical column density
     '''  
     ir=(np.abs(model.x[:, 0] - r)).argmin()
-    rstr = "r={:.2f} AU".format(model.x[ir,0])     
+    rstr = "r={:.2f} au".format(model.x[ir,0])     
     
     fig, ax = plt.subplots(1, 1)
           
@@ -801,7 +802,7 @@ class Plot(object):
     self._dokwargs(ax,**kwargs)
     
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc="best", fancybox=True, framealpha=0.5)
+    ax.legend(handles, labels, loc="best", fancybox=False)
     ax.text(0.025, 0.025, rstr,
        verticalalignment='bottom', horizontalalignment='left',
        transform=ax.transAxes,alpha=0.75)
