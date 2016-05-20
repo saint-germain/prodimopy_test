@@ -217,7 +217,7 @@ class Plot(object):
   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,contour=True,
-                extend="neither",acont=None,acontl=None,**kwargs):
+                extend="neither",acont=None,acontl=None,nbins=100,**kwargs):
     '''
     plot routine for 2D contour plots.   
     '''
@@ -253,7 +253,7 @@ class Plot(object):
       y = np.copy(model.z) 
       y[:,0]=y[:,0]+0.05 
   
-    levels = MaxNLocator(nbins=100).tick_values(maxval, minval)
+    levels = MaxNLocator(nbins=nbins).tick_values(maxval, minval)
         
     if clevels is not None:
       if zlog: clevels=np.log10(clevels)    
