@@ -68,7 +68,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     # FIXME: include proper version numbers
     install_requires=[
-                      'matplotlib>1.5',
+                      'matplotlib>1.4',
                       'numpy',
                       'scipy',
                       'astropy'],
@@ -101,6 +101,7 @@ setup(
     entry_points={
       'console_scripts': [
         'pplot=script_plot:main',
+        'pcompare=script_compare:main'
          ],
     },
 )
