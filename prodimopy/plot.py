@@ -196,11 +196,9 @@ class Plot(object):
       ax.set_ylabel("z/r")
     else:
       ax.set_ylabel("z [au]")      
-  
-       
-    self._dokwargs(ax,**kwargs)            
          
-    
+    self._dokwargs(ax,**kwargs)            
+             
     if acont is not None:
       ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.0)
       #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
@@ -262,10 +260,8 @@ class Plot(object):
       ticks = MaxNLocator(nbins=6, prune="both").tick_values(minval, maxval)
   
     fig, ax = plt.subplots(1, 1) 
-    # FIXME: make a check if colormap exists  
-    #cmap = plt.get_cmap('viridis')
-    cmap = plt.get_cmap('jet') 
-    CS = ax.contourf(x, y, pvals, levels=levels, cmap=cmap,extend=extend)
+
+    CS = ax.contourf(x, y, pvals, levels=levels, extend=extend)
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
       c.set_edgecolor("face")    
