@@ -23,7 +23,8 @@ class Compare(object):
     self.mref=modelref
     # the allowed difference between the line fluxes
     self.d=1.e-2
-    self.dcdnmol=1.e-1 # the allowed differences for the column densities (radial and vertical) 
+    self.dcdnmol=5.e-1 # the allowed differences for the column densities (radial and vertical)
+                       # chemistry is difficult and uncertain :) 
     self.dLineFluxes=5.e-2  # 5% for line fluxes
     self.dAbundances=1.e-2  # chemistry is difficult and uncertain :)     
     self.lAbundances=1.e-30
@@ -215,7 +216,7 @@ class Compare(object):
           else:
             print("{:8s}".format("FAILED"),end="")
             if val is not None:
-              print("  Max rel. Error: ","{:.2%}".format(np.max(val)))
+              print("  Max/Avg rel. Error: ","{:10.2%}".format(np.max(val)),"{:10.2%}".format(np.average(val)))
             else:
               print("  Max rel. Error: ",str(val))
           
