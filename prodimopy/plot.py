@@ -215,7 +215,8 @@ class Plot(object):
   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,contour=True,
-                extend="neither",acont=None,acontl=None,nbins=100,**kwargs):
+                extend="neither",acont=None,acontl=None,nbins=100,
+                bgcolor=None,**kwargs):
     '''
     plot routine for 2D contour plots.   
     '''
@@ -296,6 +297,9 @@ class Plot(object):
       # quick fix for second contour ... 
       #ACS2=ax.contour(x, y,model.nHtot,levels=[1.e6], colors='black',linestyles="solid",linewidths=2.5)
       #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
+      
+    if bgcolor is not None:
+      ax.set_axis_bgcolor(bgcolor)
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format="%.1f")
     CB.ax.tick_params(labelsize=self.fs_legend) 
