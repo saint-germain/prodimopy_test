@@ -293,10 +293,13 @@ class Plot(object):
         ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
     
     if acont is not None:            
-      ACS=ax.contour(x, y,acont,levels=acontl, colors='black',linestyles="solid",linewidths=1.5)
+      #for l in acontl:
+      #  ACS=ax.contour(x, y,pvals,levels=[l], colors='black',linestyles="solid",linewidths=1.5)
+      #  ax.clabel(ACS, inline=1, fontsize=8,fmt=str(l))
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=1.5)
       # quick fix for second contour ... 
       #ACS2=ax.contour(x, y,model.nHtot,levels=[1.e6], colors='black',linestyles="solid",linewidths=2.5)
-      #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
+      ax.clabel(ACS, inline=1, fontsize=8,fmt="%.0f")
       
     if bgcolor is not None:
       ax.set_axis_bgcolor(bgcolor)
