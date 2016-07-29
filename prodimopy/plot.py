@@ -4,6 +4,7 @@ from __future__ import print_function
 from scipy.interpolate import interp1d
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import astropy.units as u
@@ -55,9 +56,12 @@ def plog(array):
   return array
 
 class Plot(object):
-  def __init__(self, pdf, fs_legend=7.5,title=None):
+  def __init__(self, pdf, fs_legend=None,title=None):
     self.pdf = pdf
-    self.fs_legend = fs_legend
+    if fs_legend is None:
+      self.fs_legend = mpl.rcParams['legend.fontsize']
+    else:
+      self.fs_legend=fs_legend
     self.ncol_legend = 5
     self.title=title
   
@@ -149,6 +153,7 @@ class Plot(object):
     self._closefig(fig)
  
  
+  # FIXME: this is not really a general plot .... 
   def plot_cont_dion(self, model, zr=True,
                 acont=None,acontl=None,**kwargs):
     '''
@@ -163,6 +168,9 @@ class Plot(object):
     #print(values)
     
     print("PLOT: plot_cont_dion ...")
+    cX="#F15854"
+    cSP="#5DA5DA"
+    cCR="#4D4D4D"
         
       
     x = model.x  
@@ -181,8 +189,7 @@ class Plot(object):
     #print(ticks)
   
     fig, ax = plt.subplots(1, 1)       
-    CS = ax.contourf(x, y, values,levels=levels,colors=("0.1","green","green","red"))
-    print(CS.levels)
+    CS = ax.contourf(x, y, values,levels=levels,colors=(cCR,cSP,cSP,cX))
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
       c.set_edgecolor("face")    
@@ -214,7 +221,7 @@ class Plot(object):
     
   
   def plot_cont(self, model, values, label="value", zlog=True, 
-                zlim=[None, None],zr=True,clevels=None,contour=True,
+                zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
                 extend="neither",acont=None,acontl=None,nbins=100,
                 bgcolor=None,**kwargs):
     '''
@@ -288,9 +295,9 @@ class Plot(object):
       if clevels is not None:
         #if zlog: clevels=np.log10(clevels)
         #ticks=clevels
-        ax.contour(CS, levels=clevels, colors='black', linestyles="dashed",linewidths=0.8)
+        ax.contour(CS, levels=clevels, colors='white', linestyles="dashed",linewidths=0.8)
       else:
-        ax.contour(CS, levels=ticks, colors='black', linestyles="dashed",linewidths=0.8)
+        ax.contour(CS, levels=ticks, colors='white', linestyles="dashed",linewidths=0.8)
     
     if acont is not None:            
       #for l in acontl:
@@ -299,15 +306,18 @@ class Plot(object):
       ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=1.5)
       # quick fix for second contour ... 
       #ACS2=ax.contour(x, y,model.nHtot,levels=[1.e6], colors='black',linestyles="solid",linewidths=2.5)
-      ax.clabel(ACS, inline=1, fontsize=8,fmt="%.0f")
+      #ax.clabel(ACS, inline=1, fontsize=8,fmt="%.0f")
       
     if bgcolor is not None:
       ax.set_axis_bgcolor(bgcolor)
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format="%.1f")
-    CB.ax.tick_params(labelsize=self.fs_legend) 
+    # FIXME: this is not very flexible and confusing
+    if clabels is not None:
+      CB.ax.set_yticklabels(clabels)
+    #CB.ax.tick_params(labelsize=self.fs_legend) 
     # CB.set_ticks(ticks)
-    CB.set_label(label,fontsize=self.fs_legend)  
+    CB.set_label(label)  
 
     self._closefig(fig)
   
@@ -352,8 +362,12 @@ class Plot(object):
     plt.close(fig)  
   
   
-    
+  #FIXME: this routing is also not very general (e.g. colors)  
   def plot_ionrates(self, model, r, **kwargs):
+              
+    cX="#F15854"
+    cSP="#5DA5DA"
+    cCR="#4D4D4D"          
               
     ix = (np.abs(model.x[:, 0] - r)).argmin()
     rstr = "r={:.2f} au".format(model.x[ix, 0])   
@@ -367,9 +381,9 @@ class Plot(object):
     y3 = model.zetaSTCR[ix, :]  
       
     fig, ax = plt.subplots(1, 1)   
-    ax.plot(nhver, y1, color="black", label="$\zeta_\mathrm{CR}$")
-    ax.plot(nhver, y2, color="red", label="$\zeta_\mathrm{X}$")
-    ax.plot(nhver, y3, color="green", label="$\zeta_\mathrm{SP}$")
+    ax.plot(nhver, y1, color=cCR, label="$\zeta_\mathrm{CR}$")
+    ax.plot(nhver, y2, color=cX, label="$\zeta_\mathrm{X}$")
+    ax.plot(nhver, y3, color=cSP, label="$\zeta_\mathrm{SP}$")
       
     # set the limits
       
@@ -377,7 +391,7 @@ class Plot(object):
     ax.set_ylim([1.e-21,1.e-9])
 
     ax.set_xlabel(r"$\log$ N$_\mathrm{H,ver}$ [cm$^{-2}$]")
-    ax.set_ylabel("ionization rate per H$_2$ [s$^{-1}$]")
+    ax.set_ylabel("$\zeta$ per H$_2$ [s$^{-1}$]")
 
     # do axis style
     ax.semilogy()     
