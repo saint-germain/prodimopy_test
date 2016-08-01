@@ -250,7 +250,7 @@ class PlotModels(object):
     ax.set_xlim(xmin, xmax)
          
     ax.semilogy()     
-    ax.set_xlabel(r"r [AU]")
+    ax.set_xlabel(r"r [au]")
     ax.set_ylabel(r"N$_\mathrm{<H>}$ cm$^{-2}$")
   
     self._dokwargs(ax,**kwargs)
@@ -298,7 +298,7 @@ class PlotModels(object):
     ax.set_xlim(xmin, xmax)        
     ax.semilogy()
     
-    ax.set_xlabel(r"r [AU]")    
+    ax.set_xlabel(r"r [au]")    
     if relToH==True:
       ax.set_ylabel(r"average $\mathsf{\epsilon(" + pplot.spnToLatex(species) + ")}$ ")
     else:
@@ -352,7 +352,7 @@ class PlotModels(object):
         
     ax.semilogy()
     
-    ax.set_xlabel(r"r [AU]")    
+    ax.set_xlabel(r"r [au]")    
     ax.set_ylabel(r"$\mathrm{\tau_{line}}$")
     ax.set_title(lineEstimate.ident + " " + "{:.2f}".format(lineEstimate.wl) + " $\mathrm{\mu m}$")
   
@@ -386,7 +386,7 @@ class PlotModels(object):
       print("Species "+species+ " not found in any model!")
       return 
             
-    ax.set_xlabel(r"r [AU]")
+    ax.set_xlabel(r"r [au]")
     ax.set_ylabel(r"average $\epsilon(\mathrm{" + pplot.spnToLatex(species) + "})$")
     
     # do axis style
@@ -406,7 +406,7 @@ class PlotModels(object):
          
     print("PLOT: plot_abunvert ...")     
           
-    rstr = r"r$\approx${:.2f} AU".format(r)   
+    rstr = r"r$\approx${:.2f} au".format(r)   
     
     fig, ax = plt.subplots(1, 1)     
 
@@ -481,7 +481,7 @@ class PlotModels(object):
     ax.set_ylim(ymin, ymax)              
     ax.semilogy()
             
-    ax.set_xlabel(r"r [AU]")    
+    ax.set_xlabel(r"r [au]")    
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax, **kwargs) 
@@ -524,7 +524,7 @@ class PlotModels(object):
     ax.set_ylim(ymin, ymax)              
     ax.semilogy()
             
-    ax.set_xlabel(r"r [AU]")    
+    ax.set_xlabel(r"r [au]")    
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax, **kwargs) 
@@ -539,7 +539,7 @@ class PlotModels(object):
     radius.    
     '''
     print("PLOT: plot_vertical ...")
-    rstr = r"r$\approx${:.1f} AU".format(r) 
+    rstr = r"r$\approx${:.1f} au".format(r) 
     
     fig, ax = plt.subplots(1, 1)      
     
@@ -589,7 +589,7 @@ class PlotModels(object):
       ax.invert_xaxis()
       ax.set_xlabel(r"z/r @ " + rstr)
     else:
-      ax.set_xlabel(r"z [AU] @ " + rstr)      
+      ax.set_xlabel(r"z [au] @ " + rstr)      
       ax.semilogx()       
       ax.invert_xaxis()
                         
@@ -628,7 +628,7 @@ class PlotModels(object):
     ax.set_xlim(xmin,xmax)
     ax.semilogy()    
             
-    ax.set_xlabel(r"r [AU]")    
+    ax.set_xlabel(r"r [au]")    
     ax.set_ylabel(r"midplane $\epsilon(\mathrm{" + pplot.spnToLatex(species) + "})$")    
     
     self._dokwargs(ax, **kwargs)  
