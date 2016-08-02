@@ -21,12 +21,15 @@ class PlotModels(object):
                colors=None,
                styles=None,
                markers=None,
-               fs_legend=6,  # TODO: init it with the system default legend font size
+               fs_legend=None,  # TODO: init it with the system default legend font size
                ncol_legend=0):
 
     self.pdf = pdf    
     if colors == None: 
-      self.colors = ["b", "g", "r", "c", "m", "y", "k", "sienna", "lime", "pink", "DarkOrange", "Olive","brown"]
+      # use system default colors not fixed ones.
+      # FIXME: could be done more elegant (simply set colors to None, needs changes in the plot routines)
+      self.colors=[None]*20
+      #self.colors = ["b", "g", "r", "c", "m", "y", "k", "sienna", "lime", "pink", "DarkOrange", "Olive","brown"]
     else:
       self.colors = colors
     
@@ -40,7 +43,10 @@ class PlotModels(object):
     else:
       self.markers = markers    
       
-    self.fs_legend = fs_legend
+    if fs_legend is None:
+      self.fs_legend = mpl.rcParams['legend.fontsize']
+    else:
+      self.fs_legend=fs_legend
     self.ncol_legend = ncol_legend              
 
   def _sfigs(self,wfac=2.0,hfac=1.0):
@@ -280,7 +286,7 @@ class PlotModels(object):
         
         linewidth=1.5
         if self.styles[iplot]=="--": linewidth=2.5
-                
+                            
         ax.plot(x, y, self.styles[iplot], marker=None,linewidth=linewidth, 
                 color=self.colors[iplot], label=model.name)
             
