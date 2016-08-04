@@ -65,7 +65,9 @@ class PlotModels(object):
     ncol = 1
     if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
       ncol = int(len(labels) / self.ncol_legend)
-    ax.legend(handles, labels, loc="best", fancybox=False, ncol=ncol, fontsize=self.fs_legend)
+    leg=ax.legend(handles, labels, loc="best", fancybox=False, ncol=ncol, fontsize=self.fs_legend)
+    lw=mpl.rcParams['axes.linewidth']
+    leg.get_frame().set_linewidth(lw)    
 
   def _dokwargs(self,ax,**kwargs):
     '''
@@ -306,9 +308,9 @@ class PlotModels(object):
     
     ax.set_xlabel(r"r [au]")    
     if relToH==True:
-      ax.set_ylabel(r"average $\mathsf{\epsilon(" + pplot.spnToLatex(species) + ")}$ ")
+      ax.set_ylabel(r"average $\mathrm{\epsilon(" + pplot.spnToLatex(species) + ")}$ ")
     else:
-      ax.set_ylabel(r"N$_\mathsf{" + pplot.spnToLatex(species) + "}$ " + "[cm$^{-2}$]")
+      ax.set_ylabel(r"N$_\mathrm{" + pplot.spnToLatex(species) + "}$ " + "[cm$^{-2}$]")
   
     self._dokwargs(ax,**kwargs)          
     self._legend(ax,**kwargs)
@@ -441,8 +443,8 @@ class PlotModels(object):
 #     #ax2.set_xticks(ax.get_xticks())    
 #     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
     
-    ax.set_xlabel(r"$\mathsf{\log N_{<H>} [cm^{-2}]}$ @" + rstr)
-    ax.set_ylabel(r"$\mathsf{\epsilon(" + pplot.spnToLatex(species) + "})$")    
+    ax.set_xlabel(r"$\mathrm{\log N_{<H>} [cm^{-2}]}$ @" + rstr)
+    ax.set_ylabel(r"$\mathrm{\epsilon(" + pplot.spnToLatex(species) + "})$")    
     
     # do axis style
     ax.semilogy()     
@@ -539,6 +541,57 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
   
+  def plot_vertical_nH(self, models, r, fieldname, ylabel, species=None,**kwargs):
+    '''
+    Plots a quantity (fieldname) as a function of height (z/r) at a certain
+    radius.    
+    '''
+    print("PLOT: plot_vertical_nH ...")
+    rstr = r"r$\approx${:.1f} au".format(r) 
+    
+    fig, ax = plt.subplots(1, 1)      
+    
+    iplot = 0
+    xmin = 1.e100
+    xmax = -1.e100
+    ymin = 1.e100
+    ymax = -1.e100 
+    for model in models:    
+      # closest radial point to given radius
+      ix = (np.abs(model.x[:, 0] - r)).argmin()
+      
+      old_settings=np.seterr(divide='ignore')     
+      x=np.log10(model.NHver[ix,:])    
+      np.seterr(**old_settings)  # reset to default
+               
+      if species==None:
+        y = getattr(model, fieldname)[ix, :]
+      else:
+        y = getattr(model, fieldname)[ix, :,model.spnames[species]]
+                                  
+      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+                      
+      iplot = iplot + 1
+      
+      if min(x) < xmin: xmin = min(x)
+      if max(x) > xmax: xmax = max(x)
+      if min(y) < ymin: ymin = min(y)
+      if max(y) > ymax: ymax = max(y)
+
+
+    
+    #ax.semilogx()
+    ax.semilogy()
+    ax.set_xlabel(r"$\mathrm{N_{H,ver}\,[cm^{-2}]}$ at "+rstr)                        
+    ax.set_ylabel(ylabel)    
+    
+    self._dokwargs(ax,**kwargs)
+    self._legend(ax,**kwargs)
+    
+    self.pdf.savefig()
+    plt.close(fig)   
+  
+  
   def plot_vertical(self, models, r, fieldname, ylabel, species=None,ylog=True,zr=True,**kwargs):
     '''
     Plots a quantity (fieldname) as a function of height (z/r) at a certain
@@ -555,7 +608,7 @@ class PlotModels(object):
     ymin = 1.e100
     ymax = -1.e100 
     for model in models:    
-      # closed radial point to given radius
+      # closest radial point to given radius
       ix = (np.abs(model.x[:, 0] - r)).argmin()
        
       if zr: 
@@ -695,9 +748,67 @@ class PlotModels(object):
     self._legend(ax)
     
     self.pdf.savefig()
-    plt.close(fig)      
+    plt.close(fig)    
+    
+  def plot_starspec_xray(self, models,**kwargs): 
+    '''
+    Plots the full Stellar Spectrum
+    '''  
+    print("PLOT: plot_xraystarspec ...")
+    fig, ax = plt.subplots(1, 1)      
+    
+    iplot = 0    
+    xmax = 0
+    ymin = 1.e100
+    ymax = -1.e00 
+    for model in models:              
+            
+      idx=np.argmin(np.abs(model.starSpec.lam-0.0124))        
+      x=model.starSpec.lam[0:idx:3]
+      x=x*(u.micrometer).cgs        
+      x=(const.h.cgs*const.c.cgs/x).to(u.keV)                              
+      x=x.value
+      y= (model.starSpec.Inu)[0:idx:3]
+      x=x[::-1]
+      y=y[::-1]     
+
+      ax.plot(x, y, color=self.colors[iplot],linestyle=self.styles[iplot],              
+              label=model.name)
+
+                                  
+#      ax.plot(x, y, color=self.colors[iplot],linestyle=self.styles[iplot],
+#              marker=self.markers[iplot],ms=2,markeredgecolor=self.colors[iplot],
+#              label=model.name)
+                      
+      iplot = iplot + 1
+            
+      if max(x) > xmax: xmax = max(x)
+      if np.nanmin(y) < ymin: ymin=np.nanmin(y)        
+      
+      
+      if max(y) > ymax: ymax = max(y)          
+      
+    xmin=0.1 # keV  
+      
+    # TODO: sometimes it is just zero  
+    if ymin<1.e-100: ymin=1.e-20
+    # set defaults, can be overwritten by the kwargs
+    ax.set_xlim(xmin,xmax)
+    ax.set_ylim([ymin,ymax])
+    ax.semilogx()
+    ax.semilogy()
+    ax.set_ylabel(r"$\mathrm{I\,[erg\,cm^{-2}\,s^{-1}\,sr^{-1}\,Hz^{-1}]}$")
+    ax.set_xlabel(r"Energy [keV]")                          
+      
+    self._dokwargs(ax, **kwargs)                
+    
+    self._legend(ax)
+    
+    self.pdf.savefig()
+    plt.close(fig)   
+      
   
-  def plot_starspec(self, models,xonly=False,**kwargs): 
+  def plot_starspec(self, models,**kwargs): 
     '''
     Plots the full Stellar Spectrum
     '''  
@@ -711,18 +822,8 @@ class PlotModels(object):
     ymax = -1.e00 
     for model in models:              
       
-      if xonly:
-        idx=np.argmin(np.abs(model.starSpec.lam-0.0124))        
-        x=model.starSpec.lam[0:idx:3]
-        x=x*(u.micrometer).cgs        
-        x=(const.h.cgs*const.c.cgs/x).to(u.keV)                              
-        x=x.value
-        y= (model.starSpec.nu*model.starSpec.Inu)[0:idx:3]
-        x=x[::-1]
-        y=y[::-1]
-      else:
-        x = model.starSpec.lam[0::10]
-        y= (model.starSpec.nu*model.starSpec.Inu)[0::10]         
+      x = model.starSpec.lam[0::10]
+      y= (model.starSpec.nu*model.starSpec.Inu)[0::10]         
                                   
       ax.plot(x, y, color=self.colors[iplot],linestyle=self.styles[iplot],
               marker=self.markers[iplot],ms=2,markeredgecolor=self.colors[iplot],
@@ -732,10 +833,7 @@ class PlotModels(object):
       
       if min(x) < xmin: xmin = min(x)
       if max(x) > xmax: xmax = max(x)
-      if xonly:
-        if np.nanmin(y) < ymin: ymin=np.nanmin(y)        
-      else:
-        if y[-1] < ymin: ymin = y[-1]
+      if y[-1] < ymin: ymin = y[-1]
       
       if max(y) > ymax: ymax = max(y)          
       
@@ -746,11 +844,8 @@ class PlotModels(object):
     ax.set_ylim([ymin,ymax])
     ax.semilogx()
     ax.semilogy()
-    ax.set_ylabel(r"$\mathsf{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")
-    if xonly:
-      ax.set_xlabel(r"Energy [keV]")                    
-    else:
-      ax.set_xlabel(r"wavelength [$\mathsf{\mu}$m]")    
+    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")
+    ax.set_xlabel(r"wavelength [$\mathrm{\mu}$m]")    
       
     self._dokwargs(ax, **kwargs)                
     
