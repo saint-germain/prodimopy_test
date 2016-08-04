@@ -76,7 +76,9 @@ class Plot(object):
       if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
         ncol = int(len(labels) / self.ncol_legend)
             
-      ax.legend(handles, labels, loc=loc, fancybox=False, ncol=ncol, fontsize=self.fs_legend)  
+      leg=ax.legend(handles, labels, loc=loc, fancybox=False, ncol=ncol, fontsize=self.fs_legend) 
+      lw=mpl.rcParams['axes.linewidth']
+      leg.get_frame().set_linewidth(lw)   
   
   def _dokwargs(self,ax,**kwargs):
     '''
@@ -557,10 +559,10 @@ class Plot(object):
 #     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
     
     if useNH:
-      ax.set_xlabel(r"$\mathsf{\log\,N_{<H>}\,[cm^{-2}]}$ @" + rstr)
+      ax.set_xlabel(r"$\mathrm{\log\,N_{<H>}\,[cm^{-2}]}$ @" + rstr)
     else:
       ax.set_xlabel(r"z/r @" + rstr)
-    ax.set_ylabel(r"$\mathsf{\epsilon(X)}$")    
+    ax.set_ylabel(r"$\mathrm{\epsilon(X)}$")    
     
     self._dokwargs(ax,**kwargs)
     self._legend(ax)
@@ -638,10 +640,10 @@ class Plot(object):
 #     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
     
     if useNH:
-      ax.set_xlabel(r"$\mathsf{\log\,N_{<H,rad>}\,[cm^{-2}]}$")
+      ax.set_xlabel(r"$\mathrm{\log\,N_{<H,rad>}\,[cm^{-2}]}$")
     else:
       ax.set_xlabel(r"r [au]")
-    ax.set_ylabel(r"$\mathsf{\epsilon(X)}$")    
+    ax.set_ylabel(r"$\mathrm{\epsilon(X)}$")    
     
     self._dokwargs(ax,**kwargs)
     self._legend(ax)
@@ -716,8 +718,8 @@ class Plot(object):
     ax.plot(x,dust.kabs,label="absorption")
     ax.plot(x,dust.ksca,label="scattering")
     ax.plot(x,dust.kext,label="extinction")   
-    ax.set_xlabel(r"wavelength $\mathsf{[\mu m]}$")
-    ax.set_ylabel(r"opacity $\mathsf{[cm^2 g(dust)^{-1}]}$")
+    ax.set_xlabel(r"wavelength $\mathrm{[\mu m]}$")
+    ax.set_ylabel(r"opacity $\mathrm{[cm^2 g(dust)^{-1}]}$")
     
     ax.set_xlim(0.09,3000.0)
     ax.set_ylim(1.e-2,None)
@@ -763,9 +765,9 @@ class Plot(object):
       ax.invert_xaxis()
       ax.set_xlabel(r"z/r @ " + rstr)
     elif xfield=="nH":
-      ax.set_xlabel(r"$\mathsf{\log\,N_{<H>}\,[cm^{-2}]}$ @" + rstr)  
+      ax.set_xlabel(r"$\mathrm{\log\,N_{<H>}\,[cm^{-2}]}$ @" + rstr)  
     elif xfield=="tg":
-      ax.set_xlabel(r"$\mathsf{\log\,T_{gas}\,[K]}$ @" + rstr)
+      ax.set_xlabel(r"$\mathrm{\log\,T_{gas}\,[K]}$ @" + rstr)
       ax.invert_xaxis()  
     else:
       ax.set_xlabel(r"z [au] @ " + rstr)                   
@@ -847,8 +849,8 @@ class Plot(object):
     #ax.set_ylim([ymin,None])
     ax.semilogx()
     ax.semilogy()
-    ax.set_xlabel(r"wavelength [$\mathsf{\mu}$m]")    
-    ax.set_ylabel(r"$\mathsf{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
+    ax.set_xlabel(r"wavelength [$\mathrm{\mu}$m]")    
+    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
       
     self._dokwargs(ax, **kwargs)                        
     
@@ -888,8 +890,8 @@ class Plot(object):
     ax.set_ylim([ymin,None])
     ax.semilogx()
     ax.semilogy()
-    ax.set_xlabel(r"wavelength [$\mathsf{\mu}$m]")    
-    ax.set_ylabel(r"$\mathsf{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
+    ax.set_xlabel(r"wavelength [$\mathrm{\mu}$m]")    
+    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
       
     self._dokwargs(ax, **kwargs)                        
     
