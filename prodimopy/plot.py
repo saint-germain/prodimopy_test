@@ -325,46 +325,40 @@ class Plot(object):
   
   def plot_ionrates_midplane(self, model, **kwargs):                       
     
-    x = np.log10(model.x[:,0])      
+    print("PLOT: plot_ionrates_midplane ...") 
+    
+    cX="#F15854"
+    cSP="#5DA5DA"
+    cCR="#4D4D4D"  
+    
+    x = model.x[:,0]      
 
   #  print pdata.zetaCR[ix,:]
     y1 = model.zetaCR[:, 0]
-    y2 = model.zetaX[:, 0] / 2.0  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
+    y2 = model.zetaX[:, 0] * 2.0  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
     y3 = model.zetaSTCR[:, 0]  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
   
     fig, ax = plt.subplots(1, 1)   
-    ax.plot(x, y1, color="red", label="$\zeta_\mathrm{CR}$")
-    ax.plot(x, y2, color="blue", label="$\zeta_\mathrm{X}$")
-    ax.plot(x, y3, color="green", label="$\zeta_\mathrm{SP}$")
-      
-    # set the limits
-      
-    if "xlim" in kwargs:     
-      ax.set_xlim(kwargs["xlim"])
-    else:
-      ax.set_xlim([x.min(),x.max()])        
-    if "ylim" in kwargs: ax.set_ylim(kwargs["ylim"])
-     
+    ax.plot(x, y2, color=cX, label="$\zeta_\mathrm{X}$")
+    ax.plot(x, y3, color=cSP, label="$\zeta_\mathrm{SP}$")
+    ax.plot(x, y1, color=cCR, label="$\zeta_\mathrm{CR}$")
+               
     # print ax.get_xlim()
     
     ax.set_xlabel(r"r [au]")
-    ax.set_ylabel("ionization rate per H$_2$ [s$^{-1}$]")
-    
-    # do axis style
-    if "xlog" in kwargs:
-      if kwargs["xlog"]:
-        ax.semilogx()
-    
-    ax.semilogy()     
-    
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc="best", fancybox=False)    
+    ax.set_ylabel("$\mathrm{\zeta\,per\,H_2\,[s^{-1}]}$")
+        
+    ax.semilogy()
+    self._dokwargs(ax,**kwargs)         
+    self._legend(ax)
+    #handles, labels = ax.get_legend_handles_labels()
+    #ax.legend(handles, labels, loc="best", fancybox=False)    
       
     self.pdf.savefig(transparent=False)
     plt.close(fig)  
   
   
-  #FIXME: this routing is also not very general (e.g. colors)  
+  #FIXME: this routine is also not very general (e.g. colors)  
   def plot_ionrates(self, model, r, **kwargs):
               
     cX="#F15854"
@@ -372,7 +366,7 @@ class Plot(object):
     cCR="#4D4D4D"          
               
     ix = (np.abs(model.x[:, 0] - r)).argmin()
-    rstr = "r={:.2f} au".format(model.x[ix, 0])   
+    rstr = "r={:.1f} au".format(model.x[ix, 0])   
          
     old_settings = np.seterr(divide='ignore')     
     nhver = np.log10(model.NHver[ix, :])      
@@ -383,9 +377,9 @@ class Plot(object):
     y3 = model.zetaSTCR[ix, :]  
       
     fig, ax = plt.subplots(1, 1)   
-    ax.plot(nhver, y1, color=cCR, label="$\zeta_\mathrm{CR}$")
     ax.plot(nhver, y2, color=cX, label="$\zeta_\mathrm{X}$")
     ax.plot(nhver, y3, color=cSP, label="$\zeta_\mathrm{SP}$")
+    ax.plot(nhver, y1, color=cCR, label="$\zeta_\mathrm{CR}$")
       
     # set the limits
       
