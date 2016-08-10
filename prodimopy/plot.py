@@ -64,6 +64,18 @@ class Plot(object):
       self.fs_legend=fs_legend
     self.ncol_legend = 5
     self.title=title
+    
+    # special colors, forgot the source for it :( somewhere from the internet)
+    # FIXME: make an option to aktivate them
+    self.pcolors={"blue"   : "#5DA5DA",
+                  "orange" : "#FAA43A",
+                  "green"  : "#60BD68",
+                  "pink"   : "#F17CB0",
+                  "brown"  : "#B2912F",
+                  "purple" : "#B276B2",
+                  "yellow" : "#DECF3F",
+                  "red"    : "#F15854",
+                  "gray"   : "#4D4D4D"}    
   
   def _legend(self, ax,loc="best"):
     '''
@@ -327,9 +339,9 @@ class Plot(object):
     
     print("PLOT: plot_ionrates_midplane ...") 
     
-    cX="#F15854"
-    cSP="#5DA5DA"
-    cCR="#4D4D4D"  
+    cX=self.pcolors["red"]
+    cSP=self.pcolors["blue"]
+    cCR=self.pcolors["gray"]  
     
     x = model.x[:,0]      
 
@@ -361,9 +373,9 @@ class Plot(object):
   #FIXME: this routine is also not very general (e.g. colors)  
   def plot_ionrates(self, model, r, **kwargs):
               
-    cX="#F15854"
-    cSP="#5DA5DA"
-    cCR="#4D4D4D"          
+    cX=self.pcolors["red"]
+    cSP=self.pcolors["blue"]
+    cCR=self.pcolors["gray"]          
               
     ix = (np.abs(model.x[:, 0] - r)).argmin()
     rstr = "r={:.1f} au".format(model.x[ix, 0])   
@@ -656,10 +668,14 @@ class Plot(object):
     xmax = 0
     ymin = 1.e100
     ymax = -1.e00 
-    for spec in species:           
+    for spec in species:       
+      if spec not in model.spnames:
+        print("WARN: Species "+spec+" not found") 
+        continue
+       
       x = model.x[:, 0]
       y = model.nmol[:,0,model.spnames[spec]]/model.nHtot[:,0]
-      if norm != None:
+      if norm is not None:
         y=y/norm                    
       
       # FIXME: add proper treatment for styles and colors 
@@ -691,7 +707,7 @@ class Plot(object):
     ax.set_ylabel(r"$\mathrm{\epsilon(X)}$")
             
     self._dokwargs(ax, **kwargs)
-    self._legend(ax, loc="lower left") 
+    self._legend(ax, loc="best") 
   
     self.pdf.savefig()
     plt.close(fig)
