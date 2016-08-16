@@ -176,6 +176,7 @@ class Plot(object):
     '''
     
     values=model.zetaX[:,:]*0.0
+    values[:,:]=None
     values[model.zetaX*2.0>(model.zetaCR+model.zetaSTCR)]=1.0
     values[model.zetaSTCR>(model.zetaCR+model.zetaX*2.0)]=0.0
     values[model.zetaCR>(model.zetaSTCR+model.zetaX*2.0)]=-1.0
