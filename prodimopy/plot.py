@@ -142,6 +142,20 @@ class Plot(object):
     
     self.pdf.savefig(figure=fig,transparent=False)
     plt.close(fig)
+    
+  def _sfigs(self,**kwargs):
+    '''
+    Scale the figure size from matplotlibrc by the factors given in the 
+    array sfigs (in kwargs) the first element is for the width the second for
+    the hieght
+    '''            
+    figsize=mpl.rcParams['figure.figsize']
+    
+    if "sfigs" in kwargs:
+      fac=kwargs["sfigs"]               
+      return (figsize[0]*fac[0],figsize[1]*fac[1])
+    else:
+      return (figsize[0],figsize[1])
   
   def plot_NH(self, model, **kwargs):
     '''
@@ -176,7 +190,7 @@ class Plot(object):
     '''
     
     values=model.zetaX[:,:]*0.0
-    values[:,:]=None
+    values[:,:]=np.nan
     values[model.zetaX*2.0>(model.zetaCR+model.zetaSTCR)]=1.0
     values[model.zetaSTCR>(model.zetaCR+model.zetaX*2.0)]=0.0
     values[model.zetaCR>(model.zetaSTCR+model.zetaX*2.0)]=-1.0
@@ -203,11 +217,24 @@ class Plot(object):
     #ticks = 
     #print(ticks)
   
-    fig, ax = plt.subplots(1, 1)       
-    CS = ax.contourf(x, y, values,levels=levels,colors=(cCR,cSP,cSP,cX))
+    # sclae the figure size if necessary
+    # TODO: maybe provide a routine for this, including scaling the figure size
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))                        
+    
+    # stupid trick to plot the masked areas
+    # plot everything with one color, and than overplot the other stuff. 
+    valinv=model.zetaX[:,:]*0.0
+    valinv[:,:]=10
+    #valinv[valinv != 10.0]=np.nan     
+    CS2 = ax.contourf(x, y, valinv,levels=[9.0,10.0,11.0], colors="lightgray",hatches=["////","////","////"])
+    for c in CS2.collections:
+      c.set_edgecolor("face")   
+    
+    CS = ax.contourf(x, y, values,levels=levels,colors=(cCR,cSP,cSP,cX))            
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
-      c.set_edgecolor("face")    
+      c.set_edgecolor("face")   
+        
 
     ax.set_ylim([y.min(), y.max()])
     ax.set_xlim([x.min(), x.max()])
@@ -228,6 +255,7 @@ class Plot(object):
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
     CB.ax.set_yticklabels(['X', 'SP', 'CR'])
     CB.ax.tick_params(labelsize=self.fs_legend) 
+    
     
     # CB.set_ticks(ticks)
     CB.set_label("dominant ionization source",fontsize=self.fs_legend)  
