@@ -310,7 +310,8 @@ class Plot(object):
     else: 
       ticks = MaxNLocator(nbins=6, prune="both").tick_values(minval, maxval)
   
-    fig, ax = plt.subplots(1, 1) 
+    # TODO: maybe provide a routine for this, including scaling the figure size
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs)) 
 
     CS = ax.contourf(x, y, pvals, levels=levels, extend=extend)
     # This is the fix for the white lines between contour levels
