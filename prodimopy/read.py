@@ -26,6 +26,7 @@ class Data_ProDiMo(object):
     self.nheat = None
     self.ncool = None
     self.nlam = None
+    self.lams = None  # wavelengths used in the band RT in micron
     self.dust2gas = None
     # 2D quantities 
     self.x = None
@@ -39,6 +40,7 @@ class Data_ProDiMo(object):
     self.damean = None  # mean dust radius
     self.chi = None
     self.chiRT= None
+    self.Hx=None     # energy deposition rate
     self.zetaX = None  # the X-ray ionisation rate at every point
     self.zetaCR = None
     self.zetaSTCR = None
@@ -48,7 +50,9 @@ class Data_ProDiMo(object):
     self.NHver = None
     self.NHrad = None
     self.AVrad = None
-    self.AVver = None
+    self.AVver = None        
+    self.radFields = None # radiation field for each band wl
+    
     self.dummyH2 = None
     self.spnames = None  # is a dictionary to access the indices for nmol (species indices)
     self.spmasses = None # dictionary to access the species masses, same keys at spnames
@@ -791,6 +795,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   # TODO: move this to the constructure which takes nx,nz
   data.x = numpy.zeros(shape=(data.nx, data.nz))
   data.z = numpy.zeros(shape=(data.nx, data.nz))
+  data.lams=numpy.zeros(shape=(data.nlam))
   data.AVrad = numpy.zeros(shape=(data.nx, data.nz))
   data.AVver = numpy.zeros(shape=(data.nx, data.nz))  
   data.NHver = numpy.zeros(shape=(data.nx, data.nz))
@@ -802,6 +807,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.rho = numpy.zeros(shape=(data.nx, data.nz))
   data.nHtot = numpy.zeros(shape=(data.nx, data.nz))
   data.damean = numpy.zeros(shape=(data.nx, data.nz))
+  data.Hx=numpy.zeros(shape=(data.nx, data.nz))
   data.tauX1 = numpy.zeros(shape=(data.nx, data.nz))
   data.tauX5 = numpy.zeros(shape=(data.nx, data.nz))
   data.tauX10 = numpy.zeros(shape=(data.nx, data.nz))  
@@ -809,17 +815,22 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.dummyH2 = numpy.zeros(shape=(data.nx, data.nz))
   data.chi = numpy.zeros(shape=(data.nx, data.nz))
   data.chiRT = numpy.zeros(shape=(data.nx, data.nz))
+  data.radFields=numpy.zeros(shape=(data.nx,data.nz,data.nlam))
   data.zetaCR = numpy.zeros(shape=(data.nx, data.nz))
   data.zetaSTCR = numpy.zeros(shape=(data.nx, data.nz))
   data.nmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec))
   data.cdnmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec)) 
-    
-    # number of fixed fields in ProDiMo.out (before heating and cooling rates)
+  
+  
+  # FIXME: that is not very nice
+  #        make at least some checks if the output format has changed or something
+  # number of fixed fields in ProDiMo.out (before heating and cooling rates)
   nfixFields = 21  
   # index after the J data/fields in ProDiMo 
   iAJJ = nfixFields + data.nheat + data.ncool + 1 + data.nspec + data.nlam
   iACool = nfixFields + data.nheat + data.ncool  
-  
+  iASpec= nfixFields + data.nheat + data.ncool + 1 + data.nspec
+    
   # read the species names, these are taken from the column titles
   colnames = lines[idata - 1]
   specStart = 233 + data.nheat * 13 + data.ncool * 13 + 13  
@@ -838,7 +849,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   i = 0            
   for iz in range(data.nz):
     for ix in range(data.nx): 
-      # stupid workaround for big disks envelops wher x,y can be large than 10000 AU
+      # stupid workaround for big disks envelops where x,y can be large than 10000 AU
       # there is no space between the numbers for x and z so always add one if none is there
       if lines[idata+i][20]!= " ":        
         line=lines[idata + i][:20]+" "+lines[idata + i][20:]        
@@ -863,6 +874,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       data.nHtot[ix, zidx] = float(fields[iACool])
       data.damean[ix, zidx] = float(fields[iAJJ + 3])
       data.d2g[ix, zidx] = float(fields[iAJJ + 4])
+      data.Hx[ix, zidx] = float(fields[iAJJ + 5])
       data.tauX1[ix, zidx] = float(fields[iAJJ + 6])
       data.tauX5[ix, zidx] = float(fields[iAJJ + 7])
       data.tauX10[ix, zidx] = float(fields[iAJJ + 8])      
@@ -871,10 +883,18 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       if len(fields) > (iAJJ + 17): data.zetaSTCR[ix, zidx] = float(fields[iAJJ + 17]) 
       data.dummyH2[ix, zidx] = float(fields[iACool + 5])      
       data.nmol[ix, zidx, :] = numpy.array(list(map(float, fields[iACool + 1:iACool + 1 + data.nspec])))
+      data.radFields[ix,zidx,:]=numpy.array(list(map(float, fields[iASpec :iASpec + data.nlam])))      
       
       i = i + 1
 
   data.rhod = data.rho * data.d2g
+  
+  # read additonal data (now only the band wavelenghts)
+  iwls=idata+data.nx*data.nz+2+data.ncool+2+data.nheat+2
+  i=0
+  for i in range(data.nlam):      
+    data.lams[i]=float((lines[iwls+i].split())[1])
+  
   
   # Read FlineEstimates.out
   if readlineEstimates == True:
