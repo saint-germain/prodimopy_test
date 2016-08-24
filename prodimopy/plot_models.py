@@ -144,7 +144,8 @@ class PlotModels(object):
         
         if imodel == 0:
           # lticks.append(r"$\mathrm{"+pplot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
-          lticks.append(r"$\mathrm{" + pplot.spnToLatex(line.ident) + r"}$ " + r"{:.2f}".format(line.wl))   
+          # FIXME: spnToLatex does not work here with all line names ... 
+          lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.2f}".format(line.wl))   
            
         iline = iline + 1  
 
