@@ -49,6 +49,7 @@ class Data_ProDiMo(object):
     self.tauX10 = None
     self.NHver = None
     self.NHrad = None
+    self.AV = None      # combination of AVrad and AVver (like in the prodimo idl scripts) (see read routine)
     self.AVrad = None
     self.AVver = None        
     self.radFields = None # radiation field for each band wl
@@ -796,6 +797,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.x = numpy.zeros(shape=(data.nx, data.nz))
   data.z = numpy.zeros(shape=(data.nx, data.nz))
   data.lams=numpy.zeros(shape=(data.nlam))
+  data.AV = numpy.zeros(shape=(data.nx, data.nz))
   data.AVrad = numpy.zeros(shape=(data.nx, data.nz))
   data.AVver = numpy.zeros(shape=(data.nx, data.nz))  
   data.NHver = numpy.zeros(shape=(data.nx, data.nz))
@@ -887,7 +889,14 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       
       i = i + 1
 
+
+  # derived quantitites
   data.rhod = data.rho * data.d2g
+  
+  # AV like defined in the prodimo idl script  
+  for ix in range(data.nx):
+    for iz in range(data.nz):
+      data.AV[ix,iz] = numpy.min([data.AVver[ix,iz],data.AVrad[ix,iz],data.AVrad[data.nx-1,iz]-data.AVrad[ix,iz]])  
   
   # read additonal data (now only the band wavelenghts)
   iwls=idata+data.nx*data.nz+2+data.ncool+2+data.nheat+2
