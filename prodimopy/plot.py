@@ -265,10 +265,13 @@ class Plot(object):
   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
-                extend="neither",acont=None,acontl=None,nbins=100,
+                extend="neither",oconts=None,acont=None,acontl=None,nbins=100,
                 bgcolor=None,**kwargs):
     '''
-    plot routine for 2D contour plots.   
+    plot routine for 2D contour plots.
+    oconts needs to be an array of Countour objectes
+    FIXME: acont is deprectated use oconts only 
+       
     '''
     print("PLOT: plot_cont ...")
     if zlog is True:
@@ -339,11 +342,17 @@ class Plot(object):
       if clevels is not None:
         #if zlog: clevels=np.log10(clevels)
         #ticks=clevels
-        ax.contour(CS, levels=clevels, colors='white', linestyles="dashed",linewidths=0.8)
+        ax.contour(CS, levels=clevels, colors='white', linestyles="--",linewidths=1.0)
       else:
-        ax.contour(CS, levels=ticks, colors='white', linestyles="dashed",linewidths=0.8)
+        ax.contour(CS, levels=ticks, colors='white', linestyles="--",linewidths=1.0)
     
-    if acont is not None:            
+    if oconts is not None:
+      for cont in oconts:
+        ACS=ax.contour(x, y,cont.field,levels=cont.levels, 
+                       colors=cont.colors,linestyles=cont.linestyles,linewidths=cont.linewidths)
+    
+    if acont is not None:      
+      print("WARN: plot_cont: please use the oconts for additional contours ...")      
       #for l in acontl:
       #  ACS=ax.contour(x, y,pvals,levels=[l], colors='black',linestyles="solid",linewidths=1.5)
       #  ax.clabel(ACS, inline=1, fontsize=8,fmt=str(l))
@@ -937,3 +946,17 @@ class Plot(object):
     
     self.pdf.savefig()
     plt.close(fig)      
+
+class Contour(object):
+  '''
+  Define contourlines for one Contour for the filled contour plots.
+  field needs to be an array of the same shape as the array data used for the
+  filled 2D contour plots 
+  '''
+  def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5):
+    self.field = field
+    self.levels=levels
+    self.colors=colors
+    self.linestyles=linestyles
+    self.linewidths=linewidths
+
