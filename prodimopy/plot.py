@@ -182,8 +182,7 @@ class Plot(object):
  
  
   # FIXME: this is not really a general plot .... 
-  def plot_cont_dion(self, model, zr=True,
-                acont=None,acontl=None,**kwargs):
+  def plot_cont_dion(self, model, zr=True,oconts=None,**kwargs):
     '''
     plot routine for 2D contour plots.
     plots the regions where either X-rays, CR or SP are the dominant H2 ionization source   
@@ -248,9 +247,10 @@ class Plot(object):
          
     self._dokwargs(ax,**kwargs)            
              
-    if acont is not None:
-      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=2.0)
-      #ax.clabel(ACS, inline=1, fontsize=7,fmt="%.2f")
+    if oconts is not None:
+      for cont in oconts:
+        ACS=ax.contour(x, y,cont.field,levels=cont.levels, 
+                       colors=cont.colors,linestyles=cont.linestyles,linewidths=cont.linewidths)
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
     CB.ax.set_yticklabels(['X', 'SP', 'CR'])
@@ -265,10 +265,13 @@ class Plot(object):
   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
-                extend="neither",acont=None,acontl=None,nbins=100,
+                extend="neither",oconts=None,acont=None,acontl=None,nbins=100,
                 bgcolor=None,**kwargs):
     '''
-    plot routine for 2D contour plots.   
+    plot routine for 2D contour plots.
+    oconts needs to be an array of Countour objectes
+    FIXME: acont is deprectated use oconts only 
+       
     '''
     print("PLOT: plot_cont ...")
     if zlog is True:
@@ -339,11 +342,17 @@ class Plot(object):
       if clevels is not None:
         #if zlog: clevels=np.log10(clevels)
         #ticks=clevels
-        ax.contour(CS, levels=clevels, colors='white', linestyles="dashed",linewidths=0.8)
+        ax.contour(CS, levels=clevels, colors='white', linestyles="--",linewidths=1.0)
       else:
-        ax.contour(CS, levels=ticks, colors='white', linestyles="dashed",linewidths=0.8)
+        ax.contour(CS, levels=ticks, colors='white', linestyles="--",linewidths=1.0)
     
-    if acont is not None:            
+    if oconts is not None:
+      for cont in oconts:
+        ACS=ax.contour(x, y,cont.field,levels=cont.levels, 
+                       colors=cont.colors,linestyles=cont.linestyles,linewidths=cont.linewidths)
+    
+    if acont is not None:      
+      print("WARN: plot_cont: please use the oconts for additional contours ...")      
       #for l in acontl:
       #  ACS=ax.contour(x, y,pvals,levels=[l], colors='black',linestyles="solid",linewidths=1.5)
       #  ax.clabel(ACS, inline=1, fontsize=8,fmt=str(l))
@@ -380,7 +389,7 @@ class Plot(object):
     y2 = model.zetaX[:, 0] * 2.0  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
     y3 = model.zetaSTCR[:, 0]  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
   
-    fig, ax = plt.subplots(1, 1)   
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))   
     ax.plot(x, y2, color=cX, label="$\zeta_\mathrm{X}$")
     ax.plot(x, y3, color=cSP, label="$\zeta_\mathrm{SP}$")
     ax.plot(x, y1, color=cCR, label="$\zeta_\mathrm{CR}$")
@@ -418,7 +427,7 @@ class Plot(object):
     y2 = model.zetaX[ix, :] * 2.0  # convert to per H2 TODO: maybe do this in ProDiMo already to be consistent
     y3 = model.zetaSTCR[ix, :]  
       
-    fig, ax = plt.subplots(1, 1)   
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))   
     ax.plot(nhver, y2, color=cX, label="$\zeta_\mathrm{X}$")
     ax.plot(nhver, y3, color=cSP, label="$\zeta_\mathrm{SP}$")
     ax.plot(nhver, y1, color=cCR, label="$\zeta_\mathrm{CR}$")
@@ -428,7 +437,7 @@ class Plot(object):
     ax.set_xlim([17.5, nhver.max()])  
     ax.set_ylim([1.e-21,1.e-9])
 
-    ax.set_xlabel(r"$\log$ N$_\mathrm{H,ver}$ [cm$^{-2}$]")
+    ax.set_xlabel(r"$\log$ N$_\mathrm{<H>,ver}$ [cm$^{-2}$]")
     ax.set_ylabel("$\zeta$ per H$_2$ [s$^{-1}$]")
 
     # do axis style
@@ -445,7 +454,7 @@ class Plot(object):
             
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, loc="best")
-    ax.text(0.025, 0.025, rstr,
+    ax.text(0.025, 0.020, rstr,
        verticalalignment='bottom', horizontalalignment='left',
        transform=ax.transAxes, alpha=0.75)
     
@@ -937,3 +946,17 @@ class Plot(object):
     
     self.pdf.savefig()
     plt.close(fig)      
+
+class Contour(object):
+  '''
+  Define contourlines for one Contour for the filled contour plots.
+  field needs to be an array of the same shape as the array data used for the
+  filled 2D contour plots 
+  '''
+  def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5):
+    self.field = field
+    self.levels=levels
+    self.colors=colors
+    self.linestyles=linestyles
+    self.linewidths=linewidths
+
