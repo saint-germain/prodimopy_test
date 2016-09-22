@@ -40,6 +40,7 @@ class Data_ProDiMo(object):
     self.damean = None  # mean dust radius
     self.chi = None
     self.chiRT= None
+    self.kappaRos=None
     self.Hx=None     # energy deposition rate
     self.zetaX = None  # the X-ray ionisation rate at every point
     self.zetaCR = None
@@ -49,10 +50,11 @@ class Data_ProDiMo(object):
     self.tauX10 = None
     self.NHver = None
     self.NHrad = None
+    self.AV = None      # combination of AVrad and AVver (like in the prodimo idl scripts) (see read routine)
     self.AVrad = None
     self.AVver = None        
     self.radFields = None # radiation field for each band wl
-    
+     
     self.dummyH2 = None
     self.spnames = None  # is a dictionary to access the indices for nmol (species indices)
     self.spmasses = None # dictionary to access the species masses, same keys at spnames
@@ -796,6 +798,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.x = numpy.zeros(shape=(data.nx, data.nz))
   data.z = numpy.zeros(shape=(data.nx, data.nz))
   data.lams=numpy.zeros(shape=(data.nlam))
+  data.AV = numpy.zeros(shape=(data.nx, data.nz))
   data.AVrad = numpy.zeros(shape=(data.nx, data.nz))
   data.AVver = numpy.zeros(shape=(data.nx, data.nz))  
   data.NHver = numpy.zeros(shape=(data.nx, data.nz))
@@ -815,6 +818,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.dummyH2 = numpy.zeros(shape=(data.nx, data.nz))
   data.chi = numpy.zeros(shape=(data.nx, data.nz))
   data.chiRT = numpy.zeros(shape=(data.nx, data.nz))
+  data.kappaRoss = numpy.zeros(shape=(data.nx, data.nz))  
   data.radFields=numpy.zeros(shape=(data.nx,data.nz,data.nlam))
   data.zetaCR = numpy.zeros(shape=(data.nx, data.nz))
   data.zetaSTCR = numpy.zeros(shape=(data.nx, data.nz))
@@ -870,7 +874,8 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       data.td[ix, zidx] = float(fields[10])
       data.rho[ix, zidx] = float(fields[12])
       data.chi[ix, zidx] = float(fields[15])
-      data.chiRT[ix, zidx] = float(fields[iAJJ])      
+      data.chiRT[ix, zidx] = float(fields[iAJJ])
+      data.kappaRoss[ix, zidx] = float(fields[iAJJ+1])            
       data.nHtot[ix, zidx] = float(fields[iACool])
       data.damean[ix, zidx] = float(fields[iAJJ + 3])
       data.d2g[ix, zidx] = float(fields[iAJJ + 4])
@@ -887,7 +892,14 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       
       i = i + 1
 
+
+  # derived quantitites
   data.rhod = data.rho * data.d2g
+  
+  # AV like defined in the prodimo idl script  
+  for ix in range(data.nx):
+    for iz in range(data.nz):
+      data.AV[ix,iz] = numpy.min([data.AVver[ix,iz],data.AVrad[ix,iz],data.AVrad[data.nx-1,iz]-data.AVrad[ix,iz]])  
   
   # read additonal data (now only the band wavelenghts)
   iwls=idata+data.nx*data.nz+2+data.ncool+2+data.nheat+2
