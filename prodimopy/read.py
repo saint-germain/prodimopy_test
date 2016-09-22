@@ -54,7 +54,7 @@ class Data_ProDiMo(object):
     self.AVrad = None
     self.AVver = None        
     self.radFields = None # radiation field for each band wl
-     
+    
     self.dummyH2 = None
     self.spnames = None  # is a dictionary to access the indices for nmol (species indices)
     self.spmasses = None # dictionary to access the species masses, same keys at spnames
