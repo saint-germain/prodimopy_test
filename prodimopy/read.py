@@ -40,6 +40,7 @@ class Data_ProDiMo(object):
     self.damean = None  # mean dust radius
     self.chi = None
     self.chiRT= None
+    self.kappaRos=None
     self.Hx=None     # energy deposition rate
     self.zetaX = None  # the X-ray ionisation rate at every point
     self.zetaCR = None
@@ -817,6 +818,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.dummyH2 = numpy.zeros(shape=(data.nx, data.nz))
   data.chi = numpy.zeros(shape=(data.nx, data.nz))
   data.chiRT = numpy.zeros(shape=(data.nx, data.nz))
+  data.kappaRoss = numpy.zeros(shape=(data.nx, data.nz))  
   data.radFields=numpy.zeros(shape=(data.nx,data.nz,data.nlam))
   data.zetaCR = numpy.zeros(shape=(data.nx, data.nz))
   data.zetaSTCR = numpy.zeros(shape=(data.nx, data.nz))
@@ -872,7 +874,8 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       data.td[ix, zidx] = float(fields[10])
       data.rho[ix, zidx] = float(fields[12])
       data.chi[ix, zidx] = float(fields[15])
-      data.chiRT[ix, zidx] = float(fields[iAJJ])      
+      data.chiRT[ix, zidx] = float(fields[iAJJ])
+      data.kappaRoss[ix, zidx] = float(fields[iAJJ+1])            
       data.nHtot[ix, zidx] = float(fields[iACool])
       data.damean[ix, zidx] = float(fields[iAJJ + 3])
       data.d2g[ix, zidx] = float(fields[iAJJ + 4])
