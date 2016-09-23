@@ -529,7 +529,7 @@ class Plot(object):
     self.pdf.savefig(transparent=False)
     plt.close(fig)   
     
-  def plot_abunvert(self, model, r, species, useNH=True,
+  def plot_abunvert(self, model, r, species, useNH=True,scaling_fac=None,
                     norm=None,styles=None,colors=None,markers=None,linewidths=None,**kwargs):
     '''
     Plot vertical abundances at a certain radius for the given species
@@ -558,8 +558,11 @@ class Plot(object):
       
       if spec in model.spnames:
         y = model.nmol[ix,:,model.spnames[spec]]/model.nHtot[ix,:]
-        if norm != None:
-          y=y/norm                    
+        if norm is not None:
+          y=y/norm     
+          
+        if scaling_fac is not None:
+          y=y*scaling_fac[iplot]                 
         
         # FIXME: add proper treatment for styles and colors       
         if styles==None:         
