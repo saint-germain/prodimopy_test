@@ -13,6 +13,7 @@ import prodimopy.plot as pplot
 import astropy.units as u
 import astropy.constants as const
 from matplotlib import patches
+import types
 
 
 class PlotModels(object):
@@ -68,6 +69,14 @@ class PlotModels(object):
     leg=ax.legend(handles, labels, loc="best", fancybox=False, ncol=ncol, fontsize=self.fs_legend)
     lw=mpl.rcParams['axes.linewidth']
     leg.get_frame().set_linewidth(lw)    
+    
+  def _set_dashes(self,line):
+    '''
+    Utility routine to set the dashed stuff for a line. 
+    This routine should be used instead of using set_dashes directly, if the 
+    default value (still hardcoded) should be used.         
+    '''  
+    line.set_dashes((4,4))
 
   def _dokwargs(self,ax,**kwargs):
     '''
@@ -248,7 +257,8 @@ class PlotModels(object):
       y = model.NHver[:, 0]
       
       # print y.min() 
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot],alpha=0.7, label=model.name)
+      line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot],alpha=0.7, label=model.name)
+      if line.is_dashed(): self._set_dashed(line)
           
       iplot = iplot + 1
       
@@ -290,8 +300,9 @@ class PlotModels(object):
         linewidth=1.5
         if self.styles[iplot]=="--": linewidth=2.5
                             
-        ax.plot(x, y, self.styles[iplot], marker=None,linewidth=linewidth, 
+        line, = ax.plot(x, y, self.styles[iplot], marker=None,linewidth=linewidth, 
                 color=self.colors[iplot], label=model.name)
+        if line.is_dashed(): self._set_dashes(line)      
             
         iplot = iplot + 1
         
@@ -430,7 +441,8 @@ class PlotModels(object):
 
       y = model.nmol[ix, :, model.spnames[species]] / model.nHtot[ix, :]
       
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      if line.is_dashed(): self._set_dashes(line)
                       
       iplot = iplot + 1
       
@@ -477,7 +489,8 @@ class PlotModels(object):
       x = model.x[:, 0]
       y= fields[iplot]
       
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      if line.is_dashed(): self._set_dashes(line)
                       
       iplot = iplot + 1
       
@@ -520,7 +533,8 @@ class PlotModels(object):
       else:
         y = getattr(model, fieldname)[:, 0]                    
       
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      if line.is_dashed(): self._set_dashes(line) 
                       
       iplot = iplot + 1
       
@@ -542,10 +556,13 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
   
-  def plot_vertical_nH(self, models, r, fieldname, ylabel, species=None,**kwargs):
+  def plot_vertical_nH(self, models, r, field, ylabel, species=None,**kwargs):
     '''
-    Plots a quantity (fieldname) as a function of height (z/r) at a certain
+    Plots a quantity (field) as a function of height (column density) at a certain
     radius.    
+    If field is a string it is interpreted as a field name in the ProDiMo 
+    data structure. If field is a list the list is directly used. 
+    The list needs to contain 2D arrays with the same shape as other ProDiMo fields
     '''
     print("PLOT: plot_vertical_nH ...")
     rstr = r"r$\approx${:.1f} au".format(r) 
@@ -566,9 +583,12 @@ class PlotModels(object):
       np.seterr(**old_settings)  # reset to default
                
       if species==None:
-        y = getattr(model, fieldname)[ix, :]
+        if isinstance(field, types.StringTypes):
+          y = getattr(model, field)[ix, :]
+        else: 
+          y=(field[iplot])[ix,:]          
       else:
-        y = getattr(model, fieldname)[ix, :,model.spnames[species]]
+        y = getattr(model, field)[ix, :,model.spnames[species]]
                                   
       ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
                       
@@ -678,7 +698,11 @@ class PlotModels(object):
       x = model.x[:, 0]            
       y = model.nmol[:, 0, model.spnames[species]] / model.nHtot[:, 0]
       
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      if iplot==0 or iplot == (len(models)-1):       
+        line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name,linewidth=2.5)
+      else:
+        line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+        if line.is_dashed(): self._set_dashes(line)
                       
       iplot = iplot + 1
       
