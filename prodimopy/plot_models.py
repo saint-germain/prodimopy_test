@@ -278,7 +278,7 @@ class PlotModels(object):
     self.pdf.savefig(transparent=mpl.rcParams['savefig.transparent'])
     plt.close(fig)
     
-  def plot_tcdspec(self, models, species, relToH=False, **kwargs):
+  def plot_tcdspec(self, models, species, relToH=False,facGrayBox=3.0, **kwargs):
     '''
     Plots the total vertical columndensity for the given species for all the models
     as a function of the radius
@@ -314,7 +314,8 @@ class PlotModels(object):
       plt.close(fig)
       return
     
-    ax.fill_between(x, y / 3.0, y * 3.0, color='0.8')     
+    if facGrayBox is not None:
+      ax.fill_between(x, y / facGrayBox, y * facGrayBox, color='0.8')     
     ax.set_xlim(xmin, xmax)        
     ax.semilogy()
     
