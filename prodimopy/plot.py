@@ -265,7 +265,7 @@ class Plot(object):
   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
-                extend="neither",oconts=None,acont=None,acontl=None,nbins=100,
+                extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
                 bgcolor=None,**kwargs):
     '''
     plot routine for 2D contour plots.
@@ -360,6 +360,13 @@ class Plot(object):
       # quick fix for second contour ... 
       #ACS2=ax.contour(x, y,model.nHtot,levels=[1.e6], colors='black',linestyles="solid",linewidths=2.5)
       #ax.clabel(ACS, inline=1, fontsize=8,fmt="%.0f")
+      
+#    ax.plot(np.sqrt(model.x[:,0]*model.x[:,0]+model.z[:,45]*model.z[:,45]),model.z[:,45],color="black")
+#    ax.plot(np.sqrt(model.x[:,0]*model.x[:,0]+model.z[:,35]*model.z[:,35]),model.z[:,35],color="black")
+
+#    ax.plot(model.x[:,0],model.z[:,48],color="black")
+#    ax.plot(model.x[:,0],model.z[:,35],color="black")
+
       
     if bgcolor is not None:
       ax.set_axis_bgcolor(bgcolor)
