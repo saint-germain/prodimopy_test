@@ -586,7 +586,7 @@ class PlotModels(object):
         
         isstr=False
         try: # this is for pyhton 2/3 compatibility
-          istrs=isinstance(field, basestring)
+          isstr=isinstance(field, basestring)
         except NameError:
           return isinstance(field, str)
         
