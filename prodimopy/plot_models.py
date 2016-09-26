@@ -583,7 +583,14 @@ class PlotModels(object):
       np.seterr(**old_settings)  # reset to default
                
       if species==None:
-        if isinstance(field, types.StringTypes):
+        
+        isstr=False
+        try: # this is for pyhton 2/3 compatibility
+          istrs=isinstance(field, basestring)
+        except NameError:
+          return isinstance(field, str)
+        
+        if isstr:
           y = getattr(model, field)[ix, :]
         else: 
           y=(field[iplot])[ix,:]          
