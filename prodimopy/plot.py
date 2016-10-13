@@ -537,7 +537,8 @@ class Plot(object):
     plt.close(fig)   
     
   def plot_abunvert(self, model, r, species, useNH=True,scaling_fac=None,
-                    norm=None,styles=None,colors=None,markers=None,linewidths=None,**kwargs):
+                    norm=None,styles=None,colors=None,markers=None,linewidths=None,
+                    useT=False,**kwargs):
     '''
     Plot vertical abundances at a certain radius for the given species
     (can be more than one)
@@ -556,10 +557,12 @@ class Plot(object):
     ymax=-1.0
     
     for spec in species:           
-      if useNH:
+      if useT:
+        x = model.td[ix, :]
+      elif useNH:
         old_settings = np.seterr(divide='ignore')     
         x = np.log10(model.NHver[ix, :])      
-        np.seterr(**old_settings)  # reset to defaul
+        np.seterr(**old_settings)  # reset to defaul      
       else:
         x=model.z[ix,:]/model.x[ix,0]
       
@@ -602,7 +605,9 @@ class Plot(object):
         if max(y) > ymax: ymax = max(y)
       
    
-    if useNH:
+    if useT:
+      ax.set_xlim([30, 5])
+    elif useNH:
       ax.set_xlim([17.5, x.max()])    
     ax.set_ylim(ymin,ymax)
     ax.semilogy()
@@ -613,7 +618,9 @@ class Plot(object):
 #     #ax2.set_xticks(ax.get_xticks())    
 #     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
     
-    if useNH:
+    if useT:
+      ax.set_xlabel(r"$\mathrm{T_d [K]}$ @" + rstr)
+    elif useNH:
       ax.set_xlabel(r"$\mathrm{\log\,N_{<H>}\,[cm^{-2}]}$ @" + rstr)
     else:
       ax.set_xlabel(r"z/r @" + rstr)
