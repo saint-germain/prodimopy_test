@@ -297,12 +297,17 @@ class PlotModels(object):
         if relToH==True:
           y=y/model.NHver[:,0]
         
+        # FIXME: harcoded linewidths are not very nice
         linewidth=1.5
-        if self.styles[iplot]=="--": linewidth=2.5
+        if self.styles[iplot]=="--": linewidht=2.5 
+        if self.styles[iplot]==":": linewidth=2.0
                             
         line, = ax.plot(x, y, self.styles[iplot], marker=None,linewidth=linewidth, 
                 color=self.colors[iplot], label=model.name)
-        if line.is_dashed(): self._set_dashes(line)      
+        # FIXME: should only be applied for real dashed
+        # However, there are other ways to set the dashed line style (in words ..)
+        if line.get_linestyle() == "--":            
+          self._set_dashes(line)      
             
         iplot = iplot + 1
         
@@ -530,7 +535,7 @@ class PlotModels(object):
     for model in models:           
       x = model.x[:, 0]
       if species!=None:
-        y = getattr(model, fieldname)[:, 0,model.spnames[species]]
+        y = getattr(model, fieldname)[:, 0,model.spnames[species]]/model.nHtot[:,0]
       else:
         y = getattr(model, fieldname)[:, 0]                    
       
