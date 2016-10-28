@@ -225,7 +225,7 @@ class Plot(object):
     valinv=model.zetaX[:,:]*0.0
     valinv[:,:]=10
     #valinv[valinv != 10.0]=np.nan     
-    CS2 = ax.contourf(x, y, valinv,levels=[9.0,10.0,11.0], colors="lightgray",hatches=["////","////","////"])
+    CS2 = ax.contourf(x, y, valinv,levels=[9.0,10.0,11.0], colors="0.6",hatches=["////","////","////"])
     for c in CS2.collections:
       c.set_edgecolor("face")   
     
@@ -266,7 +266,7 @@ class Plot(object):
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
                 extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
-                bgcolor=None,**kwargs):
+                bgcolor=None,cb_format="%.1f",**kwargs):
     '''
     plot routine for 2D contour plots.
     oconts needs to be an array of Countour objectes
@@ -371,7 +371,7 @@ class Plot(object):
     if bgcolor is not None:
       ax.set_axis_bgcolor(bgcolor)
     
-    CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format="%.1f")
+    CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01,format=cb_format)
     # FIXME: this is not very flexible and confusing
     if clabels is not None:
       CB.ax.set_yticklabels(clabels)
