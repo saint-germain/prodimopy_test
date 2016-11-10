@@ -696,7 +696,7 @@ class PlotModels(object):
     plt.close(fig)    
     
     
-  def plot_abunradial(self, models, species, **kwargs):
+  def plot_abunradial(self, models, species, perH2=False,**kwargs):
     '''
     Plots the abundance of the given species as a function of radius in the
     midplane of the disk
@@ -708,8 +708,12 @@ class PlotModels(object):
     xmin = 1.e100
     xmax = 0 
     for model in models:           
-      x = model.x[:, 0]            
-      y = model.nmol[:, 0, model.spnames[species]] / model.nHtot[:, 0]
+      x = model.x[:, 0] 
+      if not species in model.spnames: continue        
+      if perH2:   
+        y = model.nmol[:, 0, model.spnames[species]] / model.nmol[:, 0, model.spnames["H2"]]
+      else:
+        y = model.nmol[:, 0, model.spnames[species]] / model.nHtot[:, 0]
       
       if iplot==0 or iplot == (len(models)-1):       
         line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name,linewidth=2.5)
@@ -721,6 +725,10 @@ class PlotModels(object):
       
       if min(x) < xmin: xmin = min(x)
       if max(x) > xmax: xmax = max(x)
+    
+    if iplot==0: 
+      print("Species: "+species+" not found.")
+      return
           
     ax.set_xlim(xmin,xmax)
     ax.semilogy()    
