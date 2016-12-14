@@ -163,7 +163,7 @@ class Plot(object):
     as a function of radius
     '''
     print("PLOT: plot_NH ...")
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
     
     x = model.x[:, 0]
     y = model.NHver[:, 0]    
@@ -173,8 +173,13 @@ class Plot(object):
          
     ax.semilogy()  
     ax.semilogx()   
+    
     ax.set_xlabel(r"r [au]")
-    ax.set_ylabel(r"N$_\mathrm{<H>}$ cm$^{-2}$")
+    ax.set_ylabel(r"N$_\mathrm{<H>,ver}\,\mathrm{[cm^{-2}]}$")
+    #ax.yaxis.tick_right()
+    #ax.yaxis.set_label_position("right")
+    #ax.yaxis.set_ticks_position('both')
+    
   
     self._dokwargs(ax,**kwargs)
     self._legend(ax)
