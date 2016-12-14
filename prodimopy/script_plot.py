@@ -55,6 +55,10 @@ def main(args=None):
       
     # This plots the Stellar spectrum  
     pp.plot_starspec(pd,ylim=[1.e-1,1.e11])  
+    
+    if pd.sed is not None: 
+      pp.plot_sed(pd)
+      
     pp.plot_dust_opac(pd,ylim=[1.e-1,None])
       
     pp.plot_NH(pd)
@@ -70,6 +74,13 @@ def main(args=None):
                     zlim=[1.e-25,None],extend="both")
     pp.plot_cont(pd, pd.nd, r"$\mathsf{n_{dust} [cm^{-3}]}$",contour=True,zr=False,xlog=False,ylog=False,
                     zlim=[1.e-8,None],extend="both")
+    
+    # Plot radiation field at certain wavelengths (here simply done with the index)
+    pp.plot_cont(pd,pd.radFields[:,:,0],zr=False,xlog=False,label="lam="+str(pd.lams[0]),
+                 xlim=[0,3500],ylim=[0,3500])
+
+    pp.plot_cont(pd,pd.radFields[:,:,5],zr=False,xlog=False,label="lam="+str(pd.lams[5]),
+                 xlim=[0,3500],ylim=[0,3500])
   
     # this plots the vertical abundances at different radii for different species
     rs=[1,10,100]
