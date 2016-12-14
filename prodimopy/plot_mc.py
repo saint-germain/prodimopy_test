@@ -78,6 +78,11 @@ class PlotMcModels(object):
         xmin=min([min(model.ages[model.ages>0.0]),xmin])
  
         i = i+1            
+    
+    # no data to plot just return 
+    if i==0:
+      print("Species "+spname+" not found.")
+      return
      
     ax.set_xlim(xmin, xmax)
     ax.semilogx()
@@ -97,5 +102,50 @@ class PlotMcModels(object):
     self.pdf.savefig()
     plt.close(fig) 
     
+ 
+  def plot_abunratio(self,models,spname1,spname2,**kwargs):
+    fig, ax = plt.subplots(1, 1)  
+     
+    i = 0
+    xmax=1.e-99
+    xmin=1.e99
+    for model in models:     
+      if (spname1 in model.species and spname2 in model.species):
+        ratio=model.abundances[:,model.species.index(spname1)]/model.abundances[:,model.species.index(spname2)]
+        ax.plot(model.ages,ratio,
+              self.styles[i],
+              marker=self.markers[i],
+              color=self.colors[i],label=model.name)
+        xmax=max([max(model.ages),xmax])
+        # exclude zero because of log plot        
+        #nozeros=   
+        xmin=min([min(model.ages[model.ages>0.0]),xmin])
+ 
+        i = i+1            
+    
+    if i==0:
+      print("Species "+spname1+"and/or "+spname2+" not found.")
+      return
+
+    
+     
+    ax.set_xlim(xmin, xmax)
+    ax.semilogx()
+    ax.semilogy()
+    self._dokwargs(ax,**kwargs)
+      
+     
+    ax.set_xlabel(r"years")         
+
+    ax.set_ylabel(r" $\mathrm{\epsilon("+pplt.spnToLatex(spname1)+")/"
+                  +"\epsilon("+pplt.spnToLatex(spname2)+")}$")
+           
+    self._legend(ax)
+      
+    #if "title" in kwargs and kwargs["title"] != None:
+    #  ax.set_title(kwargs["title"])
+       
+    self.pdf.savefig()
+    plt.close(fig) 
     
     
