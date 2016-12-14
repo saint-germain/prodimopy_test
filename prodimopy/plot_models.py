@@ -50,10 +50,23 @@ class PlotModels(object):
       self.fs_legend=fs_legend
     self.ncol_legend = ncol_legend              
 
-  def _sfigs(self,wfac=2.0,hfac=1.0):
-    figsize=mpl.rcParams['figure.figsize']  
-        
-    return (figsize[0]*wfac,figsize[1]*hfac)
+  def _sfigs(self,**kwargs):
+    '''
+    Scale the figure size from matplotlibrc by the factors given in the 
+    array sfigs (in kwargs) the first element is for the width the second for
+    the hieght
+    '''            
+    figsize=mpl.rcParams['figure.figsize']
+    
+    if "sfigs" in kwargs:
+      fac=kwargs["sfigs"]               
+      return (figsize[0]*fac[0],figsize[1]*fac[1])
+    elif "wfac" in kwargs and "hfac" in kwargs:
+      wfac=kwargs["wfac"]
+      hfac=kwargs["hfac"]
+      return (figsize[0]*wfac,figsize[1]*hfac)
+    else:
+      return (figsize[0],figsize[1])    
 
   def _legend(self, ax,**kwargs):
     '''
@@ -120,7 +133,7 @@ class PlotModels(object):
     print("PLOT: plot_lines ...")
     
     if len(lineidents)>10:
-      fig, ax = plt.subplots(1, 1,figsize=self._sfigs())
+      fig, ax = plt.subplots(1, 1,figsize=self._sfigs(sfigs=[2.0,1.0]))
     else:
       fig, ax = plt.subplots(1, 1)  
          
@@ -518,11 +531,19 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig) 
   
-  
-  def plot_midplane(self, models, fieldname, ylabel, species=None,**kwargs):
+  # FIXME: plot radial and plot_midplane are more or less the same thing
+  # extend plot_radial so that also a string can be used as a field name 
+  # e.g. that does not require to bould the fields array ... 
+  # however, also the species thing should still work ...
+  # FIXME: xlim is difficult to set automatically if a field is given. 
+  #        however, in that case xlim can always be set manually
+  def plot_midplane(self, models, fieldname, ylabel, 
+                    xfieldname=None, xlabel=None,species=None,**kwargs):
     '''
     Plots a quantitiy in in the midplane as a function of radius
     fieldname is any field in Data_ProDiMo
+    
+    if xfieldName (String) is given as this field from the ProDiMo model data will be used.  
     '''
     print("PLOT: plot_midplane ...")
     fig, ax = plt.subplots(1, 1)      
@@ -532,15 +553,25 @@ class PlotModels(object):
     xmax = 0
     ymin = 1.e100
     ymax = -1.e00 
-    for model in models:           
-      x = model.x[:, 0]
+    for model in models:        
+      if xfieldname is not None:
+        x=getattr(model, xfieldname)[:, 0]      
+        print(x)
+      else:         
+        x = model.x[:, 0]
+        
       if species!=None:
         y = getattr(model, fieldname)[:, 0,model.spnames[species]]/model.nHtot[:,0]
       else:
         y = getattr(model, fieldname)[:, 0]                    
       
       line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
-      if line.is_dashed(): self._set_dashes(line) 
+      if line.is_dashed(): self._set_dashes(line)
+      
+      if "markradius" in kwargs:
+        r=kwargs["markradius"]
+        ix = (np.abs(model.x[:, 0] - r)).argmin()
+        ax.scatter(x[ix],y[ix],marker="o",color=self.colors[iplot],edgecolor="face")         
                       
       iplot = iplot + 1
       
@@ -552,8 +583,12 @@ class PlotModels(object):
     ax.set_xlim(xmin,xmax)
     ax.set_ylim(ymin, ymax)              
     ax.semilogy()
-            
-    ax.set_xlabel(r"r [au]")    
+
+    if xlabel is not None:            
+      ax.set_xlabel(xlabel)
+    else:
+      ax.set_xlabel(r"r [au]")
+        
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax, **kwargs) 
@@ -573,8 +608,8 @@ class PlotModels(object):
     print("PLOT: plot_vertical_nH ...")
     rstr = r"r$\approx${:.1f} au".format(r) 
     
-    fig, ax = plt.subplots(1, 1)      
-    
+    fig, ax = plt.subplots(1, 1)   
+        
     iplot = 0
     xmin = 1.e100
     xmax = -1.e100
@@ -604,6 +639,11 @@ class PlotModels(object):
         y = getattr(model, field)[ix, :,model.spnames[species]]
                                   
       ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+            
+      if "markmidplane" in kwargs:
+        print(x)
+        ax.scatter(x[0],y[0],marker="o",color=self.colors[iplot],edgecolor="face")
+      
                       
       iplot = iplot + 1
       
@@ -611,12 +651,10 @@ class PlotModels(object):
       if max(x) > xmax: xmax = max(x)
       if min(y) < ymin: ymin = min(y)
       if max(y) > ymax: ymax = max(y)
-
-
     
     #ax.semilogx()
     ax.semilogy()
-    ax.set_xlabel(r"$\mathrm{N_{H,ver}\,[cm^{-2}]}$ at "+rstr)                        
+    ax.set_xlabel(r"$\mathrm{N_{<H>,ver}\,[cm^{-2}]}$ at "+rstr)                        
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax,**kwargs)
@@ -702,7 +740,7 @@ class PlotModels(object):
     midplane of the disk
     '''  
     print("PLOT: plot_abunradial ...")
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
     
     iplot = 0
     xmin = 1.e100
