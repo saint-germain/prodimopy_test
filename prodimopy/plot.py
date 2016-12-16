@@ -129,7 +129,8 @@ class Plot(object):
       if  kwargs["title"] != None and kwargs["title"].strip() != "":
         ax.set_title(kwargs["title"].strip())
       else:
-        ax.set_title("")
+        ax.set_title("")        
+      
         
   def _closefig(self,fig):
     '''
@@ -147,7 +148,7 @@ class Plot(object):
     '''
     Scale the figure size from matplotlibrc by the factors given in the 
     array sfigs (in kwargs) the first element is for the width the second for
-    the hieght
+    the heigth
     '''            
     figsize=mpl.rcParams['figure.figsize']
     
@@ -325,6 +326,10 @@ class Plot(object):
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
       c.set_edgecolor("face")    
+
+    # axis equal needs to be done here already ... at least it seems so
+    if "axequal" in kwargs:
+      if kwargs["axequal"]: ax.axis('equal')
 
     ax.set_ylim([y.min(), y.max()])
     ax.set_xlim([x.min(), x.max()])
