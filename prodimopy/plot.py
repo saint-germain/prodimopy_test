@@ -345,8 +345,8 @@ class Plot(object):
       #ax.text(0.27, 0.95,kwargs["title"], horizontalalignment='center',
       #   verticalalignment='center',fontsize=8,
       #   transform=ax.transAxes)
-      
-    self._dokwargs(ax,**kwargs)            
+                      
+    self._dokwargs(ax,**kwargs)                      
          
     if contour:
       if clevels is not None:
@@ -360,13 +360,15 @@ class Plot(object):
       for cont in oconts:
         ACS=ax.contour(x, y,cont.field,levels=cont.levels, 
                        colors=cont.colors,linestyles=cont.linestyles,linewidths=cont.linewidths)
+        if cont.showlabels:
+          ax.clabel(ACS, inline=True,inline_spacing=25,fmt=cb_format,manual=cont.label_locations)                        
     
     if acont is not None:      
       print("WARN: plot_cont: please use the oconts for additional contours ...")      
       #for l in acontl:
       #  ACS=ax.contour(x, y,pvals,levels=[l], colors='black',linestyles="solid",linewidths=1.5)
       #  ax.clabel(ACS, inline=1, fontsize=8,fmt=str(l))
-      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=1.5)
+      ACS=ax.contour(x, y,acont,levels=acontl, colors='white',linestyles="solid",linewidths=1.5)      
       # quick fix for second contour ... 
       #ACS2=ax.contour(x, y,model.nHtot,levels=[1.e6], colors='black',linestyles="solid",linewidths=2.5)
       #ax.clabel(ACS, inline=1, fontsize=8,fmt="%.0f")
@@ -980,10 +982,13 @@ class Contour(object):
   field needs to be an array of the same shape as the array data used for the
   filled 2D contour plots 
   '''
-  def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5):
+  def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5,showlabels=False,
+               label_locations=None):
     self.field = field
     self.levels=levels
     self.colors=colors
     self.linestyles=linestyles
     self.linewidths=linewidths
+    self.showlabels=showlabels        # set to true if labels at the contour lines should be shown (experimental)
+    self.label_locations=label_locations
 
