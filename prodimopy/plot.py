@@ -272,11 +272,15 @@ class Plot(object):
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
                 extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
-                bgcolor=None,cb_format="%.1f",**kwargs):
+                bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,**kwargs):
     '''
     plot routine for 2D contour plots.
     oconts needs to be an array of Countour objectes
     FIXME: acont is deprectated use oconts only 
+    
+    scalexy: apply a scaling factor for the x and y coordinate (multiplicative)
+    patches: a list of matplotlib.patches objects. For each object in the list 
+             simply ax.add_patch() is called (at the very end of the routine)
        
     '''
     print("PLOT: plot_cont ...")
@@ -304,12 +308,12 @@ class Plot(object):
       else:
         minval = zlim[0]              
       
-    x = model.x  
+    x = model.x*scalexy[0]  
     if zr:
       y = model.z / model.x
     else:
-      y = np.copy(model.z) 
-      y[:,0]=y[:,0]+0.05 
+      y = np.copy(model.z)*scalexy[1] 
+      y[:,0]=y[:,0]+0.05*scalexy[1] 
   
     levels = MaxNLocator(nbins=nbins).tick_values(maxval, minval)
         
@@ -390,7 +394,11 @@ class Plot(object):
     #CB.ax.tick_params(labelsize=self.fs_legend) 
     # CB.set_ticks(ticks)
     CB.set_label(label)  
-
+    
+    if patches is not None:
+      for patch in patches:
+        ax.add_patch(patch)    
+    
     self._closefig(fig)
   
   def plot_ionrates_midplane(self, model, **kwargs):                       
