@@ -8,6 +8,7 @@ from astropy import units as u
 from astropy import constants as const
 import os
 from collections import OrderedDict
+import math
 
 '''
 Holds all the output stuff from a ProDiMo Model
@@ -297,6 +298,13 @@ class DataSED(object):
     self.nlam = nlam
     self.distance = distance
     self.inclination = inclination
+    
+    # the bolometric luminosity will be calculated by integrating over the whol
+    # frequency range, considering also the distance) 
+    # units are Solar luminosities    
+    self.Lbol=None
+    # is also calculated in read_sed
+    self.Tbol=None               
     self.lam = numpy.zeros(shape=(nlam))
     self.nu = numpy.zeros(shape=(nlam))
     self.fnuErg = numpy.zeros(shape=(nlam))
@@ -667,7 +675,27 @@ def read_sed(directory):
     sed.fnuErg[i] = float(elems[2])
     sed.nuFnu[i] = float(elems[3])
     sed.fnuJy[i] = float(elems[4])
-    
+  
+  # FIXME: correctness needs to be verified
+  # caluclate the bolometric luminosity
+  # *-1.0 because of the ordering of nu
+    #calculate Tbol see Dunhame 2008 Equation 6
+  # check what is here the proper value
+  # in particular Tbol is very sensitive to this value
+  # Lbol does not seem to change much (e.g. if 0.1 is used instead)
+  # for the moment exclude the shortest wavelength as these is most likely scattering
+  mask=sed.lam>1.0  
+  
+  sed.Lbol=numpy.trapz(sed.fnuErg[mask],x=sed.nu[mask])*-1.0
+  sed.Lbol=sed.Lbol*4.0*math.pi*(((distance*u.pc).to(u.cm)).value)**2    
+  sed.Lbol=sed.Lbol/(const.L_sun.cgs).value
+  print(sed.Lbol)  
+  
+  #print(numpy.trapz((sed.nu*sed.fnuErg),x=sed.nu)) 
+  #print(numpy.trapz(sed.fnuErg,x=sed.nu))
+  sed.Tbol=1.25e-11*numpy.trapz((sed.nu[mask]*sed.fnuErg[mask]),x=sed.nu[mask])/numpy.trapz(sed.fnuErg[mask],x=sed.nu[mask])
+  print(sed.Tbol)
+      
   return sed      
 
 def read_starSpec(directory):
