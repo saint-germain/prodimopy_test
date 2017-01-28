@@ -13,7 +13,6 @@ import prodimopy.plot as pplot
 import astropy.units as u
 import astropy.constants as const
 from matplotlib import patches
-import types
 
 
 class PlotModels(object):
@@ -74,12 +73,17 @@ class PlotModels(object):
     '''
     if "slegend" in kwargs:
       if not kwargs["slegend"]: return 
+      
+    if "fs_legend" in kwargs:
+      fs=kwargs["fs_legend"]
+    else:
+      fs=self.fs_legend    # TODO: maype remove fs_legend from init and just use rcparams
     
     handles, labels = ax.get_legend_handles_labels()
     ncol = 1
     if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
       ncol = int(len(labels) / self.ncol_legend)
-    leg=ax.legend(handles, labels, loc="best", fancybox=False, ncol=ncol, fontsize=self.fs_legend)
+    leg=ax.legend(handles, labels, loc="best", fancybox=False, ncol=ncol, fontsize=fs)
     lw=mpl.rcParams['axes.linewidth']
     leg.get_frame().set_linewidth(lw)    
     
@@ -546,7 +550,7 @@ class PlotModels(object):
     if xfieldName (String) is given as this field from the ProDiMo model data will be used.  
     '''
     print("PLOT: plot_midplane ...")
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
     
     iplot = 0
     xmin = 1.e100
