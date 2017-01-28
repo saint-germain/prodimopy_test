@@ -49,6 +49,7 @@ class Data_ProDiMo(object):
     self.tauX1 = None
     self.tauX5 = None
     self.tauX10 = None
+    self.taudiff = None # Diffusien "timescale" in vertical direction
     self.NHver = None
     self.NHrad = None
     self.AV = None      # combination of AVrad and AVver (like in the prodimo idl scripts) (see read routine)
@@ -836,6 +837,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.td = numpy.zeros(shape=(data.nx, data.nz))
   data.nd = numpy.zeros(shape=(data.nx, data.nz))
   data.rho = numpy.zeros(shape=(data.nx, data.nz))
+  data.taudiff = numpy.zeros(shape=(data.nx, data.nz))
   data.nHtot = numpy.zeros(shape=(data.nx, data.nz))
   data.damean = numpy.zeros(shape=(data.nx, data.nz))
   data.Hx=numpy.zeros(shape=(data.nx, data.nz))
@@ -902,6 +904,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       data.td[ix, zidx] = float(fields[10])
       data.rho[ix, zidx] = float(fields[12])
       data.chi[ix, zidx] = float(fields[15])
+      data.taudiff[ix,zidx]=float(fields[18])
       data.chiRT[ix, zidx] = float(fields[iAJJ])
       data.kappaRoss[ix, zidx] = float(fields[iAJJ+1])            
       data.nHtot[ix, zidx] = float(fields[iACool])
