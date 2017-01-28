@@ -529,17 +529,48 @@ class Plot(object):
     self.pdf.savefig(transparent=False)
     plt.close(fig)
 
+  def plot_radial(self, model, values, ylabel, zidx=0, **kwargs):
+    '''
+    Plots a quantitiy along the radial grid for the given zindx (from the ProDiMo Array)
+    as a function of radius
+    values is any ProDiMo 2D array in Data_ProDiMo    
+    '''
+    print("PLOT: plot_midplane ...")
+    fig, ax = plt.subplots(1, 1)      
+    
+    
+    x = np.sqrt(model.x[:, zidx]**2.0+model.z[:, zidx]**2.0)
+    y = values[:,zidx]         
+      
+    ax.plot(x, y,marker=None)
+                 
+    ax.set_xlim(np.min(x),np.max(x))
+    ax.set_ylim(np.min(y),np.max(y))                                 
+    ax.semilogy()
+            
+    ax.set_xlabel(r"r [au]")    
+    ax.set_ylabel(ylabel)    
+    
+    self._dokwargs(ax, **kwargs) 
+    #self._legend(ax)
+    
+    self.pdf.savefig(transparent=False)
+    plt.close(fig)   
+
+
+
   def plot_midplane(self, model, fieldname, ylabel, **kwargs):
     '''
     Plots a quantitiy in in the midplane as a function of radius
     fieldname is any field in Data_ProDiMo
+    FIXME: remove the fieldname stuff passe  the whole array ... 
     '''
     print("PLOT: plot_midplane ...")
     fig, ax = plt.subplots(1, 1)      
     
     
     x = model.x[:, 0]
-    y = getattr(model, fieldname)[:, 0]                    
+    y = getattr(model, fieldname)[:, 0]         
       
     ax.plot(x, y,marker=None)
                  
