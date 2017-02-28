@@ -304,7 +304,7 @@ class DataSED(object):
     # units are Solar luminosities    
     self.Lbol=None
     # is also calculated in read_sed
-    self.Tbol=None               
+    self.Tbol=None                   
     self.lam = numpy.zeros(shape=(nlam))
     self.nu = numpy.zeros(shape=(nlam))
     self.fnuErg = numpy.zeros(shape=(nlam))
@@ -684,7 +684,7 @@ def read_sed(directory):
   # in particular Tbol is very sensitive to this value
   # Lbol does not seem to change much (e.g. if 0.1 is used instead)
   # for the moment exclude the shortest wavelength as these is most likely scattering
-  mask=sed.lam>1.0  
+  mask=sed.lam>0.2  
   
   sed.Lbol=numpy.trapz(sed.fnuErg[mask],x=sed.nu[mask])*-1.0
   sed.Lbol=sed.Lbol*4.0*math.pi*(((distance*u.pc).to(u.cm)).value)**2    
