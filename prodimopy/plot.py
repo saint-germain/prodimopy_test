@@ -826,7 +826,7 @@ class Plot(object):
     '''
     print("PLOT: dust opacities ...")
     
-    fig, ax = plt.subplots(1, 1)
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))
     
     x=model.dust.lam
     
