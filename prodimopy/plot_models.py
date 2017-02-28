@@ -275,7 +275,7 @@ class PlotModels(object):
       
       # print y.min() 
       line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot],alpha=0.7, label=model.name)
-      if line.is_dashed(): self._set_dashed(line)
+      if line.is_dashed(): self._set_dashes(line)
           
       iplot = iplot + 1
       
