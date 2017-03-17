@@ -367,7 +367,7 @@ class PlotModels(object):
     iplot = 0    
     for model in models:
       x = model.x[:, 0]
-      lineEstimate = model.getLineEstimate(lineIdent[0], lineIdent[1])
+      lineEstimate = model.getLineEstimate(lineIdent[0], lineIdent[1])      
       y = list()
       ytauDust = list()
       for rInfo in lineEstimate.rInfo:
@@ -495,7 +495,7 @@ class PlotModels(object):
     plt.close(fig) 
   
   
-  def plot_radial(self, models, fields, ylabel,**kwargs):
+  def plot_radial(self, models, fields, ylabel,zidx=0,**kwargs):
     '''
     Plots a quantitiy in radial direction. Fields must have the same number
     of entries as models and must contain arrays with the dimension of nx   
@@ -509,8 +509,8 @@ class PlotModels(object):
     ymin = 1.e100
     ymax = -1.e00 
     for model in models:           
-      x = model.x[:, 0]
-      y= fields[iplot]
+      x = model.x[:, zidx]
+      y= fields[iplot]      
       
       line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
       if line.is_dashed(): self._set_dashes(line)
