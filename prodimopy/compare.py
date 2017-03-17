@@ -27,6 +27,7 @@ class Compare(object):
                       # chemistry is difficult and uncertain :) FIXME: this has to become better, there 
                       # a simply some columns which usually fail an require time-dependent chemistry and 
                       # the outcome seems to depend on numerical uncertainties ... 
+    self.dTgas=5.e-2   # 5% Tgas is also quite sensitive, but lower would be better
     self.dLineFluxes=5.e-2  # 5% for line fluxes
     self.dAbundances=1.e-2  # chemistry is difficult and uncertain :)     
     self.lAbundances=1.e-30
@@ -139,7 +140,7 @@ class Compare(object):
     '''
     checks the gas Temperature
     '''
-    return self.diffArray(self.m.tg,self.mref.tg,self.d)  
+    return self.diffArray(self.m.tg,self.mref.tg,self.dTgas)  
 
   def compareTd(self):
     '''
