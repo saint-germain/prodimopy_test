@@ -680,7 +680,7 @@ def read_sed(directory):
   # FIXME: correctness needs to be verified
   # caluclate the bolometric luminosity
   # *-1.0 because of the ordering of nu
-    #calculate Tbol see Dunhame 2008 Equation 6
+    #calculate Tbol see Dunham 2008 Equation 6
   # check what is here the proper value
   # in particular Tbol is very sensitive to this value
   # Lbol does not seem to change much (e.g. if 0.1 is used instead)
