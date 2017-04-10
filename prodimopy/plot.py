@@ -364,8 +364,8 @@ class Plot(object):
       for cont in oconts:
         ACS=ax.contour(x, y,cont.field,levels=cont.levels, 
                        colors=cont.colors,linestyles=cont.linestyles,linewidths=cont.linewidths)
-        if cont.showlabels:
-          ax.clabel(ACS, inline=True,inline_spacing=25,fmt=cb_format,manual=cont.label_locations)                        
+        if cont.showlabels:          
+          ax.clabel(ACS, inline=True,inline_spacing=cont.label_inline_spacing,fmt=cont.label_fmt,manual=cont.label_locations,fontsize=cont.label_fontsize)                        
     
     if acont is not None:      
       print("WARN: plot_cont: please use the oconts for additional contours ...")      
@@ -1022,7 +1022,7 @@ class Contour(object):
   filled 2D contour plots 
   '''
   def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5,showlabels=False,
-               label_locations=None):
+               label_locations=None,label_fmt="%.1f",label_fontsize=7,label_inline_spacing=5):
     self.field = field
     self.levels=levels
     self.colors=colors
@@ -1030,4 +1030,7 @@ class Contour(object):
     self.linewidths=linewidths
     self.showlabels=showlabels        # set to true if labels at the contour lines should be shown (experimental)
     self.label_locations=label_locations
+    self.label_fmt=label_fmt
+    self.label_fontsize=label_fontsize
+    self.label_inline_spacing=label_inline_spacing
 
