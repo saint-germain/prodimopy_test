@@ -316,7 +316,7 @@ class PlotModels(object):
         
         # FIXME: harcoded linewidths are not very nice
         linewidth=1.5
-        if self.styles[iplot]=="--": linewidht=2.5 
+        if self.styles[iplot]=="--": linewidth=2.5 
         if self.styles[iplot]==":": linewidth=2.0
                             
         line, = ax.plot(x, y, self.styles[iplot], marker=None,linewidth=linewidth, 
@@ -542,7 +542,7 @@ class PlotModels(object):
   # FIXME: xlim is difficult to set automatically if a field is given. 
   #        however, in that case xlim can always be set manually
   def plot_midplane(self, models, fieldname, ylabel, 
-                    xfieldname=None, xlabel=None,species=None,**kwargs):
+                    xfieldname=None, xlabel=None,species=None,patches=None,**kwargs):
     '''
     Plots a quantitiy in in the midplane as a function of radius
     fieldname is any field in Data_ProDiMo
@@ -583,6 +583,10 @@ class PlotModels(object):
       if max(x) > xmax: xmax = max(x)
       if min(y) < ymin: ymin = min(y)
       if max(y) > ymax: ymax = max(y)
+
+    if patches is not None:
+      for patch in patches:
+        ax.add_patch(patch)
 
     ax.set_xlim(xmin,xmax)
     ax.set_ylim(ymin, ymax)              
