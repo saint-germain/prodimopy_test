@@ -69,6 +69,7 @@ class Data_ProDiMo(object):
     self.lines = None  # all the lines from the line Transfer
     self.sed = None  # the SED (only the "real" one)
     self.starSpec = None
+    self.gas = None
     self.dust = None  # dust properites (mainly dust opacities)  
     self.env_dust = None # dust properties for the envelope structure   
   
@@ -772,7 +773,7 @@ def read_dust(fileloc):
       dust.ksca_an[i] = float(fields[5])  # skip kprn
       dust.kextcs[i] = float(fields[6])
       dust.kabscs[i] = float(fields[7])
-      dust.kscacs[i] = float(fields[7])
+      dust.kscacs[i] = float(fields[8])
       dust.kscacs_an[i] = float(fields[9])
 
   f.close()
