@@ -301,7 +301,7 @@ class PlotModels(object):
     as a function of the radius
     '''
     print("PLOT: plot_tcdspec ...")
-    fig, ax = plt.subplots(1, 1)  
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))  
     
     xmin = 1.e100
     xmax = 0
