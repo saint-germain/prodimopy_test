@@ -313,6 +313,17 @@ class DataSED(object):
     self.fnuJy = numpy.zeros(shape=(nlam))
     self.nuFnu = numpy.zeros(shape=(nlam))
 
+
+class DataBgSpec(object):
+  '''
+  Backgound field input spectrum  
+  '''
+  def __init__(self, nlam):
+    self.nlam = nlam
+    self.lam = numpy.zeros(shape=(nlam))
+    self.nu = numpy.zeros(shape=(nlam))    
+    self.Inu = numpy.zeros(shape=(nlam))
+
 class DataStarSpec(object):
   '''
   Stellar input spectrum  
@@ -727,6 +738,32 @@ def read_starSpec(directory):
     starSpec.Inu[i] = float(elems[2])
     
   return starSpec 
+
+def read_bgSpec(directory,filename=None):
+  ''' 
+  Reads BgSpectrum.out
+  '''
+  if filename is None:
+    rfile = directory + "/BgSpectrum.out"
+  else:
+    rfile = directory + "/"+filename   
+  try:
+    f = open(rfile, 'r')
+  except:
+    print("WARN: Could not read " + rfile + "!")
+    return None  
+             
+  nlam = int(f.readline())
+  f.readline()
+
+  bgSpec = DataBgSpec(nlam)
+  for i in range(nlam):
+    elems = f.readline().split()
+    bgSpec.lam[i] = float(elems[0])
+    bgSpec.nu[i] = float(elems[1])
+    bgSpec.Inu[i] = float(elems[2])
+    
+  return bgSpec 
 
 def read_dust(fileloc):
   '''
