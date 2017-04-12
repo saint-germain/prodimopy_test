@@ -77,13 +77,18 @@ class PlotModels(object):
     if "fs_legend" in kwargs:
       fs=kwargs["fs_legend"]
     else:
-      fs=self.fs_legend    # TODO: maype remove fs_legend from init and just use rcparams
+      fs=self.fs_legend    # TODO: maybe remove fs_legend from init and just use rcparams
+      
+    if "loc_legend" in kwargs:
+      loc=kwargs["loc_legend"]
+    else:
+      loc="best"
     
     handles, labels = ax.get_legend_handles_labels()
     ncol = 1
     if self.ncol_legend > 1 and len(labels) > self.ncol_legend:
       ncol = int(len(labels) / self.ncol_legend)
-    leg=ax.legend(handles, labels, loc="best", fancybox=False, ncol=ncol, fontsize=fs)
+    leg=ax.legend(handles, labels, loc=loc, fancybox=False, ncol=ncol, fontsize=fs)
     lw=mpl.rcParams['axes.linewidth']
     leg.get_frame().set_linewidth(lw)    
     
