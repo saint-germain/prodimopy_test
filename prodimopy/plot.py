@@ -77,11 +77,16 @@ class Plot(object):
                   "red"    : "#F15854",
                   "gray"   : "#4D4D4D"}    
   
-  def _legend(self, ax,loc="best"):
+  def _legend(self, ax,**kwargs):
     '''
     plots the legend, deals with multiple columns
     '''
     handles, labels = ax.get_legend_handles_labels()    
+    
+    if "loc_legend" in kwargs:
+      loc=kwargs["loc_legend"]
+    else:
+      loc="best"
     
     if len(labels)>0:
       ncol = 1
@@ -659,7 +664,9 @@ class Plot(object):
     if useT:
       ax.set_xlim([30, 5])
     elif useNH:
-      ax.set_xlim([17.5, x.max()])    
+      ax.set_xlim([17.5, x.max()]) 
+    else:
+      ax.invert_xaxis() #(z/r=0 on the right)   
     ax.set_ylim(ymin,ymax)
     ax.semilogy()
                          
@@ -678,7 +685,7 @@ class Plot(object):
     ax.set_ylabel(r"$\mathrm{\epsilon(X)}$")    
     
     self._dokwargs(ax,**kwargs)
-    self._legend(ax)
+    self._legend(ax,**kwargs)
     self._closefig(fig)     
   
   def plot_abunrad(self, model, species, useNH=True,
@@ -814,7 +821,7 @@ class Plot(object):
     ax.set_ylabel(r"$\mathrm{\epsilon(X)}$")
             
     self._dokwargs(ax, **kwargs)
-    self._legend(ax, loc="best") 
+    self._legend(ax) 
   
     self.pdf.savefig()
     plt.close(fig)
