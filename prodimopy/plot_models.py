@@ -845,6 +845,73 @@ class PlotModels(object):
     self._legend(ax)
     
     self.pdf.savefig()
+    plt.close(fig)   
+    
+    
+  def plot_dust_opac(self,models,xenergy=False,**kwargs):
+    '''
+    Plots the dust opacities, absorption and scattering
+    The pseudo anisotropic scattering is not plotted yet.
+    '''  
+    print("PLOT: plot_dust_opac ...")
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
+    
+    iplot = 0    
+    xmax = 0
+    ymin = 1.e100
+    ymax = -1.e00 
+    for model in models:
+            
+      # plot versus energy (keV), usefull for xrays
+      if xenergy:       
+        x=((model.dust.lam*u.micron).to(u.keV,equivalencies=u.spectral()).value)
+      else:
+        x=model.dust.lam
+      y=model.dust.kabs
+
+      # TODO: this is not consistent with providing the linestyle via the
+      # command line
+      lineabs,= ax.plot(x, y, color=self.colors[iplot],linestyle="-",
+              label=model.name+" abs")
+
+      # TODO: this is not consistent with providing the linestyle via the
+      # command line
+      y=model.dust.ksca
+      line, =ax.plot(x, y, color=lineabs.get_color(),linestyle="--",
+              label=model.name+" sca")
+      if line.is_dashed(): self._set_dashes(line)
+
+      #y=model.dust.ksca_an*1000.0
+      #line, =ax.plot(x, y, color=lineabs.get_color(),linestyle=":",
+      #        label=model.name+" sca (pa)")
+                                                      
+      iplot = iplot + 1
+            
+      if max(x) > xmax: xmax = max(x)
+      if np.nanmin(y) < ymin: ymin=np.nanmin(y)        
+    
+      if max(y) > ymax: ymax = max(y)          
+      
+    xmin=0.1 # keV  
+      
+    # TODO: sometimes it is just zero  
+    if ymin<1.e-100: ymin=1.e-20
+    # set defaults, can be overwritten by the kwargs
+    #ax.set_xlim(xmin,xmax)
+    #ax.set_ylim([ymin,ymax])
+    ax.semilogx()
+    ax.semilogy()
+    ax.set_ylabel(r"opacity $\mathrm{[cm^2 g(dust)^{-1}]}$")
+    if xenergy:
+      ax.set_xlabel(r"Energy [keV]") 
+    else:
+      ax.set_xlabel(r"wavelength $\mathrm{[\mu m]}$")
+      
+    self._dokwargs(ax, **kwargs)                
+    
+    self._legend(ax,**kwargs)
+    
+    self.pdf.savefig()
     plt.close(fig)    
     
   def plot_starspec_xray(self, models,**kwargs): 
