@@ -283,6 +283,7 @@ class DataDust(object):
     self.apow = apow
     self.nsize = nsize
     self.lam = numpy.zeros(shape=(nlam))
+    self.energy = numpy.zeros(shape=(nlam))  # for convinence e.g. the X-ray range
     self.kext = numpy.zeros(shape=(nlam))  # in cm^2 g^-1
     self.kabs = numpy.zeros(shape=(nlam))
     self.ksca = numpy.zeros(shape=(nlam))  
@@ -814,6 +815,8 @@ def read_dust(fileloc):
       dust.kscacs_an[i] = float(fields[9])
 
   f.close()
+
+  dust.energy[:] = ((dust.lam[:] * u.micron).to(u.eV, equivalencies=u.spectral())).value
 
   return dust  
 
