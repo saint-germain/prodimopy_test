@@ -163,10 +163,12 @@ class Plot(object):
     else:
       return (figsize[0],figsize[1])
   
-  def plot_NH(self, model, **kwargs):
+  def plot_NH(self, model, muH=None, **kwargs):
     '''
     Plots the total vertical hydrogen column number density 
     as a function of radius
+    
+    muH ... if muH is provided a second y scale is plotted (on the right)
     '''
     print("PLOT: plot_NH ...")
     fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
@@ -174,23 +176,40 @@ class Plot(object):
     x = model.x[:, 0]
     y = model.NHver[:, 0]    
     ax.plot(x, y, marker=None, color="black")
-  
+            
     ax.set_xlim(min(x), max(x))
+    
          
     ax.semilogy()  
     ax.semilogx()   
     
     ax.set_xlabel(r"r [au]")
     ax.set_ylabel(r"N$_\mathrm{<H>,ver}\,\mathrm{[cm^{-2}]}$")
+
+    self._dokwargs(ax,**kwargs)
+    self._legend(ax)    
+        
+    # second sale on the right 
+    if muH is not None:        
+      ax2 = ax.twinx()    
+      y = model.NHver[:, 0]*muH
+      # just plot it again, is the easiest way (needs to be the same style etc)
+      ax2.plot(x, y, color="black")
+      ax2.set_ylabel(r"$\Sigma\,\mathrm{[g\,cm^{-2}]}$")
+      ax2.set_xlim(min(x), max(x))
+      
+      # this needs to be done to get the correct scale
+      ylim=np.array(ax.get_ylim())*muH
+      ax2.set_ylim(ylim)
+      ax2.semilogx()
+      ax2.semilogy()    
+    
     #ax.yaxis.tick_right()
     #ax.yaxis.set_label_position("right")
     #ax.yaxis.set_ticks_position('both')
-    
-  
-    self._dokwargs(ax,**kwargs)
-    self._legend(ax)
+        
     self._closefig(fig)
- 
+     
  
   # FIXME: this is not really a general plot .... 
   def plot_cont_dion(self, model, zr=True,oconts=None,**kwargs):
