@@ -610,7 +610,7 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
   
-  def plot_vertical_nH(self, models, r, field, ylabel, species=None,**kwargs):
+  def plot_vertical_nH(self, models, r, field, ylabel, species=None,patches=None,**kwargs):
     '''
     Plots a quantity (field) as a function of height (column density) at a certain
     radius.    
@@ -666,9 +666,13 @@ class PlotModels(object):
       if min(y) < ymin: ymin = min(y)
       if max(y) > ymax: ymax = max(y)
    
+    if patches is not None:
+      for patch in patches:
+        ax.add_patch(patch)
+   
     #ax.semilogx()
     ax.semilogy()
-    ax.set_xlabel(r"$\mathrm{N_{<H>,ver}\,[cm^{-2}]}$ at "+rstr)
+    ax.set_xlabel(r"$\mathrm{log\,N_{<H>,ver}\,[cm^{-2}]}$ at "+rstr)
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax,**kwargs)
