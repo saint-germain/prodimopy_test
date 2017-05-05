@@ -575,7 +575,7 @@ class PlotModels(object):
         y = getattr(model, fieldname)[:, 0]                    
       
       line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
-      if line.is_dashed(): self._set_dashes(line)
+      if self.styles[iplot]=="--": self._set_dashes(line)
       
       if "markradius" in kwargs:
         r=kwargs["markradius"]
@@ -610,7 +610,7 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
   
-  def plot_vertical_nH(self, models, r, field, ylabel, species=None,patches=None,**kwargs):
+  def plot_vertical_nH(self, models, r, field, ylabel, species=None,patches=None,showR=True,**kwargs):
     '''
     Plots a quantity (field) as a function of height (column density) at a certain
     radius.    
@@ -619,9 +619,9 @@ class PlotModels(object):
     The list needs to contain 2D arrays with the same shape as other ProDiMo fields
     '''
     print("PLOT: plot_vertical_nH ...")
-    rstr = r"r$\approx${:.1f} au".format(r) 
+    rstr = r"r$\approx${:.0f} au".format(r) 
     
-    fig, ax = plt.subplots(1, 1)   
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))   
         
     iplot = 0
     xmin = 1.e100
@@ -652,7 +652,10 @@ class PlotModels(object):
       else:
         y = getattr(model, field)[ix, :,model.spnames[species]]
                                   
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      line,=ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      if self.styles[iplot]=="--":
+        self._set_dashes(line)
+      
             
       if "markmidplane" in kwargs:
         print(x)
@@ -672,7 +675,10 @@ class PlotModels(object):
    
     #ax.semilogx()
     ax.semilogy()
-    ax.set_xlabel(r"$\mathrm{log\,N_{<H>,ver}\,[cm^{-2}]}$ at "+rstr)
+    if showR:
+      ax.set_xlabel(r"$\mathrm{log\,N_{<H>,ver}\,[cm^{-2}]}$ at "+rstr)
+    else:
+      ax.set_xlabel(r"$\mathrm{log\,N_{<H>,ver}\,[cm^{-2}]}$")
     ax.set_ylabel(ylabel)    
     
     self._dokwargs(ax,**kwargs)
