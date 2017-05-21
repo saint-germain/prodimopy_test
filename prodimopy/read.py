@@ -124,6 +124,7 @@ class Data_ProDiMo(object):
     found = -1
     i = 0 
     mindiff = 1.e20     
+    
     # print ident, wl
     for le in self.lineEstimates: 
       if le.ident == ident:
@@ -138,6 +139,19 @@ class Data_ProDiMo(object):
       _read_lineEstimateRinfo(self, self.lineEstimates[found])
   
     return self.lineEstimates[found]
+  
+  def getAbun(self,name):
+    '''
+    returns the abundance for a given molecule name, relative to 
+    the total hydrogen nuclei density
+    '''
+    
+    # check if it exists
+    if not name in self.spnames:
+      print("getAbun: Species "+name+" not found.")
+      return None 
+    
+    return self.nmol[:,:,self.spnames[name]]/self.nHtot
    
 
 class DataLineProfile():
