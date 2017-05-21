@@ -296,7 +296,8 @@ class Plot(object):
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
                 extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
-                bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,**kwargs):
+                bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
+                rasterized=False,**kwargs):
     '''
     plot routine for 2D contour plots.
     oconts needs to be an array of Countour objectes
@@ -350,11 +351,16 @@ class Plot(object):
     # TODO: maybe provide a routine for this, including scaling the figure size
     fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs)) 
 
-    CS = ax.contourf(x, y, pvals, levels=levels, extend=extend)
+    # zorder is needed in case if rasterized is true
+    CS = ax.contourf(x, y, pvals, levels=levels, extend=extend,zorder=-20)
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
       c.set_edgecolor("face")    
-
+    
+    # rasterize the filled contours only, text ect. not  
+    if rasterized: 
+      ax.set_rasterization_zorder(-19)  
+  
     # axis equal needs to be done here already ... at least it seems so
     if "axequal" in kwargs:
       if kwargs["axequal"]: ax.axis('equal')
@@ -641,43 +647,50 @@ class Plot(object):
       else:
         x=model.z[ix,:]/model.x[ix,0]
       
-      if spec in model.spnames:
+      # check if list of names in list of names, than sum them up
+      if isinstance(spec, (list, tuple, np.ndarray)):
+        y=model.nHtot[ix,:]*0.0 # just to get an array
+        for name in spec:
+          y=y+(model.getAbun(name)[ix,:])
+      
+      elif spec in model.spnames:
         y = model.nmol[ix,:,model.spnames[spec]]/model.nHtot[ix,:]
-        if norm is not None:
-          y=y/norm     
-          
-        if scaling_fac is not None:
-          y=y*scaling_fac[iplot]                 
+      else:
+        continue  
         
-        # FIXME: add proper treatment for styles and colors       
-        if styles==None:         
-          style="-"
-          if "#" in spec: style="--"
-        else: 
-          style=styles[iplot]
+      if norm is not None:
+        y=y/norm     
+        
+      if scaling_fac is not None:
+        y=y*scaling_fac[iplot]
+      
+      # FIXME: add proper treatment for styles and colors       
+      if styles==None:         
+        style="-"
+        if "#" in spec: style="--"
+      else: 
+        style=styles[iplot]
 
-        color=None          
-        if colors!=None:
-          color=colors[iplot]
+      color=None          
+      if colors!=None:
+        color=colors[iplot]
+        
+      marker=None  
+      if markers!=None:
+        marker=markers[iplot]  
           
-        marker=None  
-        if markers!=None:
-          marker=markers[iplot]  
+       
+      lines=ax.plot(x, y, marker=marker, ms=4, markeredgecolor=color, markerfacecolor=color, 
+              linestyle=style, color=color, 
+              label="$\mathrm{"+spnToLatex(spec)+"}$")
             
-         
-        lines=ax.plot(x, y, marker=marker, ms=4, markeredgecolor=color, markerfacecolor=color, 
-                linestyle=style, color=color, 
-                label="$\mathrm{"+spnToLatex(spec)+"}$")
-              
-        if linewidths != None:
-          if linewidths[iplot] != None:
-            lines[-1].set_linewidth(linewidths[iplot])  
-
-
-                        
-        iplot = iplot + 1
-        if min(y) < ymin: ymin = min(y)
-        if max(y) > ymax: ymax = max(y)
+      if linewidths != None:
+        if linewidths[iplot] != None:
+          lines[-1].set_linewidth(linewidths[iplot])
+                      
+      iplot = iplot + 1
+      if min(y) < ymin: ymin = min(y)
+      if max(y) > ymax: ymax = max(y)
       
    
     if useT:
