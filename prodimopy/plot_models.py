@@ -341,7 +341,11 @@ class PlotModels(object):
       plt.close(fig)
       return
     
+    # TODO: make a paremter so that it is possible to provide the index
+    # of the reference model
     if facGrayBox is not None:
+      #x = models[-2].x[:, 0]                    
+      #y = models[-2].cdnmol[:, 0, model.spnames[species]]
       ax.fill_between(x, y / facGrayBox, y * facGrayBox, color='0.8')     
     ax.set_xlim(xmin, xmax)        
     ax.semilogy()
