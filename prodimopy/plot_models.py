@@ -97,8 +97,12 @@ class PlotModels(object):
     Utility routine to set the dashed stuff for a line. 
     This routine should be used instead of using set_dashes directly, if the 
     default value (still hardcoded) should be used.         
+    TODO: in matplotlib 2.0 is an option for this ... so this function can be removed 
+          in the future
     '''  
-    line.set_dashes((4,4))
+    majver=int((mpl.__version__).split(".")[0])
+    if majver < 2:
+      line.set_dashes((4,4))
 
   def _dokwargs(self,ax,**kwargs):
     '''
@@ -593,6 +597,13 @@ class PlotModels(object):
       if min(y) < ymin: ymin = min(y)
       if max(y) > ymax: ymax = max(y)
 
+    # Some special stuff for the XRT paper, because it did not 
+    # work with patches
+    #ax.axhline(1.e-17,linestyle="-",color="0.7",linewidth=1.0,zorder=-20)
+    #ax.axhline(1.e-19,linestyle="--",color="0.7",linewidth=1.0,zorder=-20)
+    
+    # TODO: check this patches stuff again, it seems to cause problems 
+    # in some of the pdf viewers
     if patches is not None:
       for patch in patches:
         ax.add_patch(patch)
@@ -626,7 +637,7 @@ class PlotModels(object):
     rstr = r"r$\approx${:.0f} au".format(r) 
     
     fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))   
-        
+            
     iplot = 0
     xmin = 1.e100
     xmax = -1.e100
@@ -643,6 +654,7 @@ class PlotModels(object):
       if species==None:
         
         isstr=False
+        # FIXME: the python 3 compiler shows an error here for basestring
         try: # this is for pyhton 2/3 compatibility
           isstr=isinstance(field, basestring)
         except NameError:
@@ -672,11 +684,21 @@ class PlotModels(object):
       if max(x) > xmax: xmax = max(x)
       if min(y) < ymin: ymin = min(y)
       if max(y) > ymax: ymax = max(y)
-   
+
+    # TODO: check this patches stuff again, it seems to cause problems 
+    # in some of the pdf viewers            
     if patches is not None:
-      for patch in patches:
-        ax.add_patch(patch)
-   
+      for p in patches:
+        ax.add_patch(p)
+
+    # some special stuff for the XRT paper    
+    #ax.axhline(1.e-17,linestyle="-",color="0.7",linewidth=1.0,zorder=-20)
+    #ax.axhline(1.e-19,linestyle="--",color="0.7",linewidth=1.0,zorder=-20)
+    #idxr=np.argmin(np.abs(model.x[:,0]-r))
+    #idxNHrad=np.argmin(np.abs(model.NHrad[idxr,:]-2.e24))
+    #nhVer=np.log10(model.NHver[idxr,idxNHrad])
+    #ax.axvline(nhVer,color="0.7",zorder=-20,linewidth=1.0)
+        
     #ax.semilogx()
     ax.semilogy()
     if showR:
@@ -684,6 +706,9 @@ class PlotModels(object):
     else:
       ax.set_xlabel(r"$\mathrm{log\,N_{<H>,ver}\,[cm^{-2}]}$")
     ax.set_ylabel(ylabel)    
+    
+    # TODO: that should be an option and not fixed, I also do not know what the 15 is
+    ax.yaxis.set_major_locator(plticker.LogLocator(base=10.0, numticks=15))
     
     self._dokwargs(ax,**kwargs)
     self._legend(ax,**kwargs)
