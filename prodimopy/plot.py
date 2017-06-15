@@ -1020,7 +1020,7 @@ class Plot(object):
     Plots the seds and the StarSpectrum
     '''  
     print("PLOT: plot_sed ...")
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
         
     xmin = 0.1
     ymin = 1.e-13
@@ -1029,7 +1029,6 @@ class Plot(object):
     x = model.sed.lam
     y = model.sed.nu*model.sed.fnuErg      
     dist = ((model.sed.distance*u.pc).to(u.cm)).value                          
-    ax.plot(x, y, marker=None, label=model.name)
     
     if plot_starSpec:
       # scale input Stellar Spectrum to the distance for comparison to the SED
@@ -1039,9 +1038,12 @@ class Plot(object):
       ystar= (model.starSpec.nu*model.starSpec.Inu)[0::1]
       yStar = ystar*(r**2.0*math.pi*dist**(-2.0))                                
       ax.plot(xStar, yStar, color="black")
+
+    # plot the SED  
+    ax.plot(x, y, marker=None, label=model.name)
+
                           
     # set defaults, can be overwritten by the kwargs
-    
     ax.set_xlim([xmin,None])
     ax.set_ylim([ymin,None])
     ax.semilogx()

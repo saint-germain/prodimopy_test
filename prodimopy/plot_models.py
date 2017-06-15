@@ -1086,12 +1086,12 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)  
    
-  def plot_line_profil(self,models,wl,ident=None,**kwargs):
+  def plot_line_profil(self,models,wl,ident=None,linetxt=None,**kwargs):
     '''
     Plots the line profile for the given line (id wavelength and line ident) 
     '''  
     print("PLOT: plot_line_profile ...")
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
     
     iplot = 0
     xmin = 1.e100
@@ -1103,8 +1103,8 @@ class PlotModels(object):
       if line==None: continue    
       
       # text for the title
-      if iplot==0:
-        lintxt=line.species+"@"+"{:.2f}".format(line.wl)+" $\mathrm{\mu m}$" 
+      if iplot==0 and linetxt is None:
+        linetxt=line.species+"@"+"{:.2f}".format(line.wl)+" $\mathrm{\mu m}$" 
       x = line.profile.velo           
       y = line.profile.flux-line.fcont  # remove the continuum
       
@@ -1125,14 +1125,14 @@ class PlotModels(object):
     ax.set_xlim(xmin,xmax)
     ax.set_ylim([ymin,ymax*1.1])
 
-    ax.set_xlabel(r"$\mathrm{velocity\,[km s^{-1}}$]")    
+    ax.set_xlabel(r"$\mathrm{velocity\,[km\;s^{-1}}$]")    
     ax.set_ylabel(r"$\mathrm{flux\,[Jy]}$")    
       
     self._dokwargs(ax, **kwargs)                
     
-    ax.text(0.03, 0.97,lintxt, ha='left', va='top', transform=ax.transAxes)
+    ax.text(0.03, 0.96,linetxt, ha='left', va='top', transform=ax.transAxes)
     
-    self._legend(ax)
+    self._legend(ax,**kwargs)
                
     self.pdf.savefig()
     plt.close(fig)      
