@@ -27,12 +27,12 @@ class Compare(object):
                       # chemistry is difficult and uncertain :) FIXME: this has to become better, there 
                       # a simply some columns which usually fail an require time-dependent chemistry and 
                       # the outcome seems to depend on numerical uncertainties ... 
-    self.dTgas=5.e-2   # 5% Tgas is also quite sensitive, but lower would be better
+    self.dTgas=5e-1   # FIXME: 50% Tgas is also quite sensitive, but lower would be better
     self.dLineFluxes=5.e-2  # 5% for line fluxes
     self.dAbundances=1.e-2  # chemistry is difficult and uncertain :)     
     self.lAbundances=1.e-30
     self.dZetaCR=self.d
-    self.dZetaX=self.d
+    self.dZetaX=5.e-1 # FIXME: 50% , should not be that high
     self.lZetaX=1.e-25
     self.specCompare=("e-","H2","CO","H2O","N2","N2#","CO#","H2O#","H3","H3+","HCO+","HN2+","SO2","SiO",
                       "Ne+","Ne++","H+","OH","C+","S+","Si+","CN","HCN","NH3")
