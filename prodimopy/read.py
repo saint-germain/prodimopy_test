@@ -726,11 +726,11 @@ def read_sed(directory):
       
   return sed      
 
-def read_starSpec(directory):
+def read_starSpec(directory,filename="StarSpectrum.out"):
   ''' 
   Reads StarSpectrum.out
   '''
-  rfile = directory + "/StarSpectrum.out"    
+  rfile = directory + "/"+filename    
   try:
     f = open(rfile, 'r')
   except:
