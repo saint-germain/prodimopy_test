@@ -982,12 +982,12 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
     
-  def plot_starspec_xray(self, models,**kwargs): 
+  def plot_starspec_xray(self, models,nuInu=False,**kwargs): 
     '''
     Plots the full Stellar Spectrum
     '''  
     print("PLOT: plot_xraystarspec ...")
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
     
     iplot = 0    
     xmax = 0
@@ -996,11 +996,13 @@ class PlotModels(object):
     for model in models:              
             
       idx=np.argmin(np.abs(model.starSpec.lam-0.0124))        
-      x=model.starSpec.lam[0:idx:3]
+      x=model.starSpec.lam[0:idx:2]
       x=x*(u.micrometer).cgs        
       x=(const.h.cgs*const.c.cgs/x).to(u.keV)                              
       x=x.value
-      y= (model.starSpec.Inu)[0:idx:3]
+      y= (model.starSpec.Inu)[0:idx:2]
+      if nuInu:
+        y=y*model.starSpec.nu[0:idx:2]
       x=x[::-1]
       y=y[::-1]     
 
@@ -1029,12 +1031,15 @@ class PlotModels(object):
     ax.set_ylim([ymin,ymax])
     ax.semilogx()
     ax.semilogy()
-    ax.set_ylabel(r"$\mathrm{I\,[erg\,cm^{-2}\,s^{-1}\,sr^{-1}\,Hz^{-1}]}$")
+    if nuInu:
+      ax.set_ylabel(r"$\mathrm{\nu I_\nu\,[erg\,cm^{-2}\,s^{-1}\,sr^{-1}]}$")    
+    else:
+      ax.set_ylabel(r"$\mathrm{I_\nu\,[erg\,cm^{-2}\,s^{-1}\,sr^{-1}\,Hz^{-1}]}$")
     ax.set_xlabel(r"Energy [keV]")                          
       
     self._dokwargs(ax, **kwargs)                
     
-    self._legend(ax)
+    self._legend(ax,**kwargs)
     
     self.pdf.savefig()
     plt.close(fig)   
