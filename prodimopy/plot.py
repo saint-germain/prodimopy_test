@@ -12,10 +12,12 @@ import math
 
 
 def spnToLatex(spname):      
-  name = spname        
+  name = spname     
+  # TODO: make this a bit smarter    
   if spname == "HN2+": name = "N2H+" 
   if spname == "C18O": return "C^{18}O"
-  if spname == "13CO": return "^13CO" 
+  if spname == "13CO": return "^{13}CO"
+  if spname == "H13CO+": return "H^{13}CO^+"
   
   newname = ""
   for c in name:    
@@ -1054,7 +1056,56 @@ class Plot(object):
     self._dokwargs(ax, **kwargs)                        
     
     self.pdf.savefig()
-    plt.close(fig)      
+    plt.close(fig)
+    
+  def plot_taulines(self, model, lineIdents, **kwargs):
+    '''
+    Plots the line optical depth as a function of radius for the given lines.
+    The lines are identified via a list of lineIdents containt of an array with 
+    ident and wavelength of the line e.g. ["CO",1300.0]. 
+    It searches for the closest lines.
+    
+    TODO: there is no options for linestyles and colors yet (the defaults are used). 
+    '''
+    print("PLOT: plot_taulines ...")
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))  
+    
+    xmin = 1.e100
+    xmax = 0
+        
+    iplot = 0   
+    for lineIdent in lineIdents: 
+      x = model.x[:, 0]
+      lineEstimate = model.getLineEstimate(lineIdent[0], lineIdent[1])      
+      y = list()
+      # FIXME: why is there a loop
+      for rInfo in lineEstimate.rInfo:
+        y.append(rInfo.tauLine)
+      
+      ax.axhline(y=1.0, linestyle="-", color="black", linewidth=0.5)
+      label=r"$\mathrm{"+spnToLatex(lineEstimate.ident) + "}$ " + "{:.2f}".format(lineEstimate.wl) + " $\mathrm{\mu m}$"      
+      ax.plot(x, y, marker=None, label=label)     
+          
+      iplot = iplot + 1
+      
+      if min(x) < xmin: xmin = min(x)
+      if max(x) > xmax: xmax = max(x)
+         
+    ax.set_xlim(xmin, xmax)
+       
+    ax.semilogx()       
+    ax.semilogy()
+    
+    ax.set_xlabel(r"r [au]")    
+    ax.set_ylabel(r"$\mathrm{\tau_{line}}$")
+    
+  
+    self._dokwargs(ax,**kwargs)
+    self._legend(ax,**kwargs)  
+  
+    self.pdf.savefig()
+    plt.close(fig)     
+          
 
 class Contour(object):
   '''
