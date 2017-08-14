@@ -10,6 +10,7 @@ Welcome to prodimopy's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   code
 
 
 Indices and tables
