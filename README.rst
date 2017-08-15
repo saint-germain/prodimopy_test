@@ -29,3 +29,7 @@ Simply type
   git pull 
 
 in the prodimopy directory. You can directly use the updated code (no reinstall required).
+
+Documentation
+*************
+Some preliminary documentation can be found here http://prodimopy.readthedocs.io
