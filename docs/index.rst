@@ -9,6 +9,9 @@ prodimopy documentation
 The python package provides routines for reading and plotting the output of one or more ProDiMo model.
 
 
+Source Documentation
+====================
+
 .. toctree::
    :maxdepth: 2
    :caption: Modules:
