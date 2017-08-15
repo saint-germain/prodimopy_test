@@ -20,19 +20,49 @@ import math
 
 class Data_ProDiMo(object):
   """ Holds all the output data from a single ProDiMo model.
+  
+  Parameters
+  ----------
+  name : string
+    The name of the model (can be empty).  
+
 
   Attributes
   ----------
-  name : string
-    The name of the model (can be None).
+  name : see Parameters
     
-  nz : int
+  nx: int
+    The number of grind points in the x (radial) direction.
+    
+  nz: int
     The number of grid points in the z (vertical) direction.
     
-  radFields : array_like(float)    
+  nspec: int
+    The number of species.
+  
+  nheat: int
+    The number of heating processes
+  
+  ncool: int
+    The number of cooling processes
+  
+  nlam: int 
+    The number of wavelength bands in the continuum radiative transfer
+  
+  lams: array_like(float)
+    The wavelengths of the bands used in the radiative transfer. 
+    
+    unit: microns, dimension: [nlam]  
+        
+  radFields: array_like(float)    
     Radiation fields (mean intensity) for each wavelength band.
     
     unit: erg |s^-1| |cm^-2| |sr^-1| |Hz^-1|, dimension: [nx,nz,nlam]
+  
+  nmol: array_like(float)
+    Number densities of all chemical species 
+    
+    unit: |cm^-2|, dimension: [nx,nz,nspec]
         
   cdnmol: array_like(float) 
   
@@ -42,7 +72,7 @@ class Data_ProDiMo(object):
     unit: |cm^-2|, dimension: [nx,nz,nspec]
     
   rcdnmol: array_like(float)     
-    Radial column number densities for each species at each point in the disk (unit: |cm^-2|, dimension: [nx,nz,nspec]). 
+    Radial column number densities for each species at each point in the disk. 
     Integrated from the star outwards along fixed radial rays given by the vertical grid.
     
     unit: |cm^-2|, dimension: [nx,nz,nspec]
@@ -50,6 +80,10 @@ class Data_ProDiMo(object):
     
   Notes
   -----
+  This is simply a data container for most of the output produced by |prodimo|. 
+  However, the glass also inclused some convenience functions and also derives/calculates 
+  some addtionialy quantities not directly included in the |prodimo| output. 
+    
   .. warning:: 
   
     Not all the data included in ProDiMo.out and not all .out files 
@@ -119,12 +153,24 @@ class Data_ProDiMo(object):
     output += "dust2gas: " + str(self.dust2gas)
     return output   
   
-  
-  
+    
   def selectLineEstimates(self, ident):
-    '''
-    Returns a list with all lineEstimates with given ident
-    '''
+    """Returns a list with all lineEstimates with given ident
+    
+    Parameters
+    ----------
+    ident : string
+      The species identification as defined in |prodimo|.
+      The ident is not necessarely equal to the chemial species 
+      name (e.g. isotopologues)    
+      
+    Returns
+    -------
+    array_like
+      List of :class:`prodimopy.read.DataLineEstimate` objects, 
+      or empty list if nothing was found.
+         
+    """    
     lines = list()     
     for le in self.lineEstimates: 
       if le.ident == ident:
