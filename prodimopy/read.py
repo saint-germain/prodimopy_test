@@ -52,39 +52,50 @@ class Data_ProDiMo(object):
     self.rhod = None      #: The dust density (unit: |gcm^-3| , dimension: [nx,nz])
     self.nHtot = None     #: The total hydrogen number density (unit: |cm^-3| , dimension: [nx,nz])
     self.damean = None    #: The mean dust radius TODO: units, dimension
-    self.chi = None
-    self.chiRT= None
+    self.chi = None       #: geometrial UV radiation field in units of the Drain field (dimension: [nx,nz])
+    self.chiRT= None      #: UV radiation field, calculated in the radiative transfer, in units of the Drain field (dimension: [nx,nz]) 
     self.kappaRos=None
-    self.Hx=None     # energy deposition rate
-    self.zetaX = None  # the X-ray ionisation rate at every point
-    self.zetaCR = None
-    self.zetaSTCR = None
+    self.Hx=None          #: X-ray energy deposition rate
+    self.zetaX = None     #: X-ray ionisation rate per H at every point (unit: |s^-1|, dimension: [nx,nz]) TODO: check if this is correct
+    self.zetaCR = None    #: Cosmic-ray ionisation rate per H2 (unit: |s^-1|, dimension: [nx,nz])
+    self.zetaSTCR = None  #: Stellar energetic particle ionisation rate per H2 (unit: |s^-1|, dimension: [nx,nz])
     self.tauX1 = None
     self.tauX5 = None
     self.tauX10 = None
-    self.taudiff = None # Diffusien "timescale" in vertical direction
-    self.NHver = None
-    self.NHrad = None
-    self.AV = None      # combination of AVrad and AVver (like in the prodimo idl scripts) (see read routine)
-    self.AVrad = None
-    self.AVver = None        
-    self.radFields = None # radiation field for each band wl
-    
+    self.taudiff = None   #: Diffussion "timescale" in vertical direction
+    self.NHver = None     #: Vertical total hydrogen column density (unit: |cm^-2|, dimension: [nx,nz,nspec])
+    self.NHrad = None     #: Radial total hydrogen column density  
+    self.AV = None        #: combination of AVrad and AVver (like in the prodimo idl scripts) (see read routine)
+    self.AVrad = None     #: radial visual extinction (dimension: [nx,nz])
+    self.AVver = None     #: vertical visual extinction (dimension: [nx,nz])   
+    self.radFields = None 
+    '''
+    Radiation fields (mean intensity) for each wavelength band (unit: erg |s^-1| |cm^-2| |sr^-1| |Hz^-1|, dimension: [nx,nz,nlam])
+    '''
     self.dummyH2 = None
-    self.spnames = None  # is a dictionary to access the indices for nmol (species indices)
-    self.spmasses = None # dictionary to access the species masses, same keys at spnames
+    self.spnames = None  #: is a dictionary to access the indices for nmol (species indices, e.g. spnames["CO"])
+    self.spmasses = None #: dictionary to access the species masses, same keys at spnames
     #self.spmassesTot = None # integrated species masses (over the whole model space), is an array for easier handling
-    self.nmol = None          
-    self.cdnmol = None  # vertical column number densities   
-    self.rcdnmol = None # radial column densities (inside out (from star to border)) 
+    self.nmol = None #: number densities of all chemical species (unit: |cm^-2|, dimension: [nx,nz,nspec])    
+    self.cdnmol = None      
+    '''
+    Vertical column number densities for each species at each point in the disk (unit: |cm^-2|, dimension: [nx,nz,nspec]). 
+    Integrated from the surface to the midplane at each radial grid point.
+    '''      
+    self.rcdnmol = None #: radial column densities for each vertical grid point (inside out (from star to border)) 
+    '''
+    Radial column number densities for each species at each point in the disk (unit: |cm^-2|, dimension: [nx,nz,nspec]). 
+    Integrated from the star outwards along fixed radial rays given by the vertical grid.  
+    '''      
         
-    self.lineEstimates = None  # all the line estimate results
-    self.lines = None  # all the lines from the line Transfer
-    self.sed = None  # the SED (only the "real" one)
+    self.lineEstimates = None  #: all the line estimate results
+    self.lines = None          #: all the lines from the proper line transfer
+    self.sed = None            #: the spectral energy distribution (from proper ray tracing)
     self.starSpec = None
-    self.gas = None
-    self.dust = None  # dust properites (mainly dust opacities)  
-    self.env_dust = None # dust properties for the envelope structure   
+    
+    self.gas = None            #: gas properties (mainly gas opacities) see :class:`prodimopy.read.DataGas`
+    self.dust = None           #: dust properites (mainly dust opacities) see :class:`prodimopy.read.DataDust`  
+    self.env_dust = None       #: dust properties for the envelope structure see :class:`prodimopy.read.DataDust`  
   
   def __str__(self):
     output = "Info ProDiMo.out: \n"
@@ -170,7 +181,7 @@ class Data_ProDiMo(object):
     
     :param spname: the name of the species as defined in |prodimo|
     
-    :returns: a 2D array with the species abundances or None if the species wasn't found
+    :returns: a 2D array (dimension [nx,nz]) with the species abundances or None if the species wasn't found
     
     '''        
     # check if it exists
