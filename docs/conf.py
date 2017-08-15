@@ -39,6 +39,8 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode']
 
+needs_extensions = {'sphinx.ext.autodoc': '1.0'}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -89,7 +91,7 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'classic'
+html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -159,8 +161,11 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-
+# bysource does not work at readdocs ... 
 autodoc_member_order = 'bysource'
 
 autodoc_default_flags = ['members', 'undoc-members']
 
+rst_epilog = """
+.. |prodimo| replace:: ProDiMo
+"""

@@ -1,3 +1,11 @@
+"""
+.. module:: read 
+   :synopsis: Reads the output data of a ProDiMo model.
+
+.. moduleauthor:: Ch. Rab
+
+
+"""
 from __future__ import print_function
 from __future__ import division 
 from __future__ import unicode_literals
@@ -14,7 +22,10 @@ class Data_ProDiMo(object):
   '''
   Holds all the output data from a single ProDiMo model.
 
-  So far not all the data is read.
+  .. warning:: 
+  
+    Not all the data included in ProDiMo.out and not all .out files 
+    are considered yet.
 
   .. todo:: better documentation
   .. todo:: really read all the data ...
@@ -36,10 +47,10 @@ class Data_ProDiMo(object):
     self.z = None         #: The z coordinates (unit: au, dimension: [nx,nz]) 
     self.tg = None        #: The gas temperature (unit: K, dimension: [nx,nz])
     self.td = None        #: The dust temperature (unit: K, dimension: [nx,nz]) 
-    self.nd = None        #: The dust number density (unit: cm\ :sup:`-3` , dimension: [nx,nz])
-    self.rho = None       #: The gas density (unit: g cm\ :sup:`-3` , dimension: [nx,nz])
-    self.rhod = None      #: The dust density (unit: g cm\ :sup:`-3` , dimension: [nx,nz])
-    self.nHtot = None     #: The total hydrogen number density (unit: cm\ :sup:`-3` , dimension: [nx,nz])
+    self.nd = None        #: The dust number density (unit: |cm^-3| , dimension: [nx,nz])
+    self.rho = None       #: The gas density (unit: |gcm^-3| , dimension: [nx,nz])
+    self.rhod = None      #: The dust density (unit: |gcm^-3| , dimension: [nx,nz])
+    self.nHtot = None     #: The total hydrogen number density (unit: |cm^-3| , dimension: [nx,nz])
     self.damean = None    #: The mean dust radius TODO: units, dimension
     self.chi = None
     self.chiRT= None
@@ -99,11 +110,12 @@ class Data_ProDiMo(object):
   
   def getLine(self,wl,ident=None):
     '''
-    Finds the line closest to the given wl.
+    Finds and returns the spectral line closest to the given wavelength.
     
-    TODO: considers currently only the wavelength
-    should be fine for most of the lines but including the species
-    might be required for some lines
+    :param wl: the wavelenght of the disered spectral line (unit: micron)
+    :param ident: the identification string of the line (optional)
+    
+    :returns: a :class:`prodimopy.read.DataLine` object 
           
     '''
     if self.lines == None: return None
@@ -122,8 +134,13 @@ class Data_ProDiMo(object):
   
   def getLineEstimate(self, ident, wl):
     '''
-    Finds one particular line from lineEstimates array
-    is probably slow
+    Finds and returns the line estimate closest to the given wavelength.
+    
+    :param ident: the identification string of the line as defined in |prodimo|
+    :param wl: the wavelenght of the disered spectral line (unit: micron)    
+    
+    :returns: a :class:`prodimopy.read.DataLineEstimate` object 
+          
     '''
     found = -1
     i = 0 
@@ -144,18 +161,24 @@ class Data_ProDiMo(object):
   
     return self.lineEstimates[found]
   
-  def getAbun(self,name):
+  def getAbun(self,spname):
     '''
-    returns the abundance for a given molecule name, relative to 
-    the total hydrogen nuclei density
-    '''
-        
+    Returns the abundance for a given species, relative to 
+    the total hydrogen nuclei density.
+    
+    Prints out a warning in case the species was not found.
+    
+    :param spname: the name of the species as defined in |prodimo|
+    
+    :returns: a 2D array with the species abundances or None if the species wasn't found
+    
+    '''        
     # check if it exists
-    if not name in self.spnames:
-      print("getAbun: Species "+name+" not found.")
+    if not spname in self.spnames:
+      print("getAbun: Species "+spname+" not found.")
       return None 
     
-    return self.nmol[:,:,self.spnames[name]]/self.nHtot
+    return self.nmol[:,:,self.spnames[spname]]/self.nHtot
    
 
 class DataLineProfile():

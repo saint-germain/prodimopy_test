@@ -11,3 +11,7 @@ possible to only read certain model data (e.g. only the SED of a model).
 .. automodule:: prodimopy.read
 
 
+.. some usefull replacements for units
+
+.. |gcm^-3| replace:: g cm\ :sup:`-3`
+.. |cm^-3| replace:: cm\ :sup:`-3`

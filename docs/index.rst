@@ -8,6 +8,13 @@ prodimopy documentation
 
 The python package provides routines for reading and plotting the output of one or more ProDiMo model.
 
+Installation
+============
+
+The package can be installed from a bitbucket repository. 
+For details see https://bitbucket.org/cheesyog/prodimopy
+
+
 
 Source Documentation
 ====================
@@ -27,7 +34,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-TODO's
-======
-
-.. todolist::
+.. TODO's
+.. ======
+.. .. todolist::
