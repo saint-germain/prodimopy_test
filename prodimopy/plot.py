@@ -299,7 +299,7 @@ class Plot(object):
     
   
   def plot_cont(self, model, values, label="value", zlog=True, 
-                zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
+                zlim=[None,None],zr=True,clevels=None,clabels=None,contour=True,
                 extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
                 bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
                 rasterized=False,**kwargs):
@@ -435,64 +435,6 @@ class Plot(object):
         ax.add_patch(patch)    
     
     self._closefig(fig)
-
-  def plot_abun2d(self, model, species='O', rel2H=True, label="value", zlog=True, 
-                zlim=[None, None],zr=True,clevels=None,clabels=None,contour=True,
-                extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
-                bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
-                rasterized=False,**kwargs):
-    """
-    Plots the abundance of a species using the plot_contour routine
-    arguments:
-    model   -- the prodimo object (Class instance)
-    species -- the name of the species, key of the spnames dict (str)
-    rel2H   -- plot abundances relative to H (default) or absolut (bool)
-    all arguments of plot_contour routie (expect values) so please
-    also use oconts instead of acont
-    Comments:
-    -I put the rel2H in front of the label keyword, since it is
-    routine specific, but than label needs to be used as label=''
-    putting it in 3rd position as in the example file will no longer work
-    so please switch keywords as you prefer
-    -If the species does not exist or is mispelled (which tends to happen
-    to the unexperienced prodimo user like me), the routine informs the user
-    via the stdout and exits the plot_abundace routine. The programm should
-    continue without further interruption.
-    -The species is not automatically tured into a label, I think it is
-    better to leave these things to the user
-    -This routine has been written and tested with care, but I can give no
-    garanties for its correctnes
-     
-    """
-    try:
-      n_rel_index = model.spnames[species]
-
-    except KeyError:
-      print('KeyError')
-      print('''The species you want to access does not exist or is
-            spelled incorrectly. Exiting plot_abundance routine''')
-      return()
-
-    print('PLOT: plot_abundance...')
-    #n_rel_index = model.spnames[species]
-    n_rel       = model.nmol[:,:,n_rel_index]
-    values      = n_rel
-
-    if rel2H == False:
-      n_H_index = model.spnames['H']
-      n_H       = model.nmol[:,:,n_H_index]
-      n_abs     = n_rel * n_H
-      values    = n_abs
-        
-
-    self.plot_cont(model, values, label=label, zlog=zlog, 
-                zlim=zlim,zr=zr,clevels=clevels,clabels=clabels,contour=contour,
-                extend=extend,oconts=oconts,acont=acont,acontl=acontl,nbins=nbins,
-                bgcolor=bgcolor,cb_format=cb_format,scalexy=scalexy,patches=patches,
-                rasterized=rasterized,**kwargs)
-
-    return
-
 
   def plot_ionrates_midplane(self, model, **kwargs):                       
     
@@ -679,6 +621,75 @@ class Plot(object):
     
     self.pdf.savefig(transparent=False)
     plt.close(fig)   
+
+    
+  def plot_abuncont(self, model, species='O', rel2H=True, label=None, zlog=True, 
+                zlim=[None,None],zr=True,clevels=None,clabels=None,contour=True,
+                extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
+                bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
+                rasterized=False,**kwargs):
+    """
+    Plots the 2D abundance structure of a species using the 
+    :func:`prodimopy.plot.Plot.plot_cont` routine.
+        
+    :param model: a :class:`prodimopy.read.Data_ProDiMo` object
+    :param species: the name of the species as given in |prodimo|
+    :param rel2H: plot abundances relative to the total H nuclei number density. 
+                  If False the number density of the species is plotted
+    :param label: the label for the colorbar. If None the default is plotted
+    
+    For all other parameters see :func:`prodimopy.plot.Plot.plot_cont`
+
+    This is a convenience function and simple is a wrapper for the :func:`prodimopy.plot.Plot.plot_cont` routine.
+    
+    The routine checks if the species exists, calculates the abundance and sets some 
+    defaults (e.g. label) for the :func:`prodimopy.plot.Plot.plot_cont` routine and calls it. 
+    However, all the defaults can be overwritten by providing the corresponding parameter.
+             
+    Contributors: L. Klarmann, Ch. Rab 
+    
+    TODO: can be improved with better and smarter default values (e.g. for the colorbar)
+    
+    """
+
+    print('PLOT: plot_abuncont ...')
+
+    # Check if species names exists
+    try:
+      n_rel_index = model.spnames[species]
+
+    except KeyError:      
+      print("The species "+species+ '''you want to access does not exist  
+             or is spelled incorrectly. Exiting plot_abuncont routine''')
+      return
+    
+    
+    if rel2H:
+      values=model.getAbun(species)      
+      
+      if label is None:
+        label=r"$\mathrm{\epsilon("+spnToLatex(species)+")}$"
+        if zlog: label="log "+label
+      
+      # define some default lower limit
+      if zlim == [None,None]:
+        zlim=[3.e-13,None]
+        extend="both"
+        
+    else:
+      values=model.nmol[:,:,n_rel_index]
+      if label is None:
+        label=r"$\mathrm{n("+spnToLatex(species)+") [cm^{-3}]}$"
+        if zlog: label="log "+label
+             
+    self.plot_cont(model, values, label=label, zlog=zlog, 
+                zlim=zlim,zr=zr,clevels=clevels,clabels=clabels,contour=contour,
+                extend=extend,oconts=oconts,acont=acont,acontl=acontl,nbins=nbins,
+                bgcolor=bgcolor,cb_format=cb_format,scalexy=scalexy,patches=patches,
+                rasterized=rasterized,**kwargs)
+
+    return
+  
     
   def plot_abunvert(self, model, r, species, useNH=True,scaling_fac=None,
                     norm=None,styles=None,colors=None,markers=None,linewidths=None,
