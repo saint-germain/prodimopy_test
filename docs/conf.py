@@ -160,4 +160,7 @@ texinfo_documents = [
 ]
 
 
+autodoc_member_order = 'bysource'
+
+autodoc_default_flags = ['members', 'undoc-members']
 

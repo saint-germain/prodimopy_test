@@ -9,7 +9,5 @@ The module provides routines to read "all" data of a ProDiMo model but it is als
 possible to only read certain model data (e.g. only the SED of a model).
 
 .. automodule:: prodimopy.read
-  :members:
-  :member-order: bysource
 
 
