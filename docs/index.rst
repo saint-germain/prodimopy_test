@@ -3,14 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to prodimopy's documentation!
-=====================================
+prodimopy documentation
+=======================
+
+The python package provides routines for reading and plotting the output of one or more ProDiMo model.
+
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Modules:
 
-   code
+   read
+   plot
 
 
 Indices and tables
@@ -19,3 +23,8 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+TODO's
+======
+
+.. todolist::

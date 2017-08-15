@@ -10,35 +10,37 @@ import os
 from collections import OrderedDict
 import math
 
-'''
-Holds all the output stuff from a ProDiMo Model
-
-Currently only selected data is included
-
-@author: rab
-'''
 class Data_ProDiMo(object):
+  '''
+  Holds all the output data from a single ProDiMo model.
+
+  So far not all the data is read.
+
+  .. todo:: better documentation
+  .. todo:: really read all the data ...
+    
+  '''  
   def __init__(self, name):  
-    self.name = name
+    self.name = name #: The name of the model (can be empty)
     self.__fpFlineEstimates = None  # The path to the FlineEstimates.out File
-    self.nx = None
-    self.nz = None 
-    self.nspec = None
-    self.nheat = None
-    self.ncool = None
-    self.nlam = None
-    self.lams = None  # wavelengths used in the band RT in micron
-    self.dust2gas = None
+    self.nx = None        #: The number of grid points in the x (radial) direction
+    self.nz = None        #: The number of grid points in the z (vertical) direction
+    self.nspec = None     #: The number of species
+    self.nheat = None     #: The number of heating processes
+    self.ncool = None     #: The number of cooling processes
+    self.nlam = None      #: The number of wavelength bands in the continuum radiative transfer
+    self.lams = None      #: The wavelengths of the bands (unit: microns)
+    self.dust2gas = None  #: The global dust to gass mass ratio (single value)
     # 2D quantities 
-    self.x = None
-    self.z = None  
-    self.tg = None
-    self.td = None 
-    self.nd = None
-    self.rho = None
-    self.rhod = None   
-    self.nHtot = None    
-    self.damean = None  # mean dust radius
+    self.x = None         #: The x coordinates (unit: au, dimension: [nx,nz])  
+    self.z = None         #: The z coordinates (unit: au, dimension: [nx,nz]) 
+    self.tg = None        #: The gas temperature (unit: K, dimension: [nx,nz])
+    self.td = None        #: The dust temperature (unit: K, dimension: [nx,nz]) 
+    self.nd = None        #: The dust number density (unit: cm\ :sup:`-3` , dimension: [nx,nz])
+    self.rho = None       #: The gas density (unit: g cm\ :sup:`-3` , dimension: [nx,nz])
+    self.rhod = None      #: The dust density (unit: g cm\ :sup:`-3` , dimension: [nx,nz])
+    self.nHtot = None     #: The total hydrogen number density (unit: cm\ :sup:`-3` , dimension: [nx,nz])
+    self.damean = None    #: The mean dust radius TODO: units, dimension
     self.chi = None
     self.chiRT= None
     self.kappaRos=None
@@ -97,10 +99,12 @@ class Data_ProDiMo(object):
   
   def getLine(self,wl,ident=None):
     '''
-    Finds the line closest to the given wl
+    Finds the line closest to the given wl.
+    
     TODO: considers currently only the wavelength
-          should be fine for most of the lines but including the species
-          might be required for some lines
+    should be fine for most of the lines but including the species
+    might be required for some lines
+          
     '''
     if self.lines == None: return None
         
@@ -145,7 +149,7 @@ class Data_ProDiMo(object):
     returns the abundance for a given molecule name, relative to 
     the total hydrogen nuclei density
     '''
-    
+        
     # check if it exists
     if not name in self.spnames:
       print("getAbun: Species "+name+" not found.")
@@ -352,6 +356,223 @@ class DataStarSpec(object):
     self.lam = numpy.zeros(shape=(nlam))
     self.nu = numpy.zeros(shape=(nlam))    
     self.Inu = numpy.zeros(shape=(nlam))    
+
+
+def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", filenameLineFlux="line_flux.out",td_fileIdx=None):
+  '''
+  Reads in all (not all yet) the output of a ProDiMo model in the given directory.
+  
+  :param directory: the directory of the model (if None the current working directory is used)
+  :param name: an optional name for the model (e.g. can be used in the plotting routines) 
+  :param readlineEstimates: read the line estimates file (can be slow, so it is possible to deactivate it)
+  :param filename: the filename of the main prodimo output 
+  :param filenameLineEstimates: the filename of the line estimates output 
+  :param filenameLineFlux: the filename of the line flux output
+  :param td_fileIdx: in case of time-dependent model the index of a particular timestep can be provided (e.g. "03")
+  
+  :returns: a :class:`prodimopy.read.Data_ProDiMo` object
+  '''
+  # guess a name if not set
+  if name == None:
+    if directory==None or directory=="." or directory=="":
+      dirfields=os.getcwd().split("/")
+    else:  
+      dirfields = directory.split("/")
+    
+    name = dirfields[-1]  
+  
+  # if td_fileIdx is given alter the filenames so that the timedependent
+  # files can be read. However this would actually also workd with other kind
+  # of indices as td_fileIdx is a strong
+  if td_fileIdx != None:    
+    rpstr="_"+td_fileIdx+".out"
+    filename=filename.replace(".out",rpstr)
+    filenameLineEstimates=filenameLineEstimates.replace(".out",rpstr)
+    filenameLineFlux=filenameLineFlux.replace(".out",rpstr)  
+    
+  pfilename = directory + "/" + filename
+  f = open(pfilename, 'r')
+  print("READ: Reading File: ", pfilename, " ...")
+  # read all date into the memory
+  # easier to handle afterwards
+  lines = f.readlines()  
+  f.close()
+  idata = 24
+   
+  data = Data_ProDiMo(name)
+  
+  data.dust2gas = float(lines[9].split()[1])
+  
+  strs = lines[21].split()  
+  data.nx = int(strs[1])
+  data.nz = int(strs[2])
+  data.nspec = int(strs[3]) + 1  # +1 for the electron
+  data.nheat = int(strs[4])
+  data.ncool = int(strs[5])
+  data.nlam = int(strs[6])
+  
+  # TODO: move this to the constructure which takes nx,nz
+  data.x = numpy.zeros(shape=(data.nx, data.nz))
+  data.z = numpy.zeros(shape=(data.nx, data.nz))
+  data.lams=numpy.zeros(shape=(data.nlam))
+  data.AV = numpy.zeros(shape=(data.nx, data.nz))
+  data.AVrad = numpy.zeros(shape=(data.nx, data.nz))
+  data.AVver = numpy.zeros(shape=(data.nx, data.nz))  
+  data.NHver = numpy.zeros(shape=(data.nx, data.nz))
+  data.NHrad = numpy.zeros(shape=(data.nx, data.nz))
+  data.d2g = numpy.zeros(shape=(data.nx, data.nz))
+  data.tg = numpy.zeros(shape=(data.nx, data.nz))
+  data.td = numpy.zeros(shape=(data.nx, data.nz))
+  data.nd = numpy.zeros(shape=(data.nx, data.nz))
+  data.rho = numpy.zeros(shape=(data.nx, data.nz))
+  data.taudiff = numpy.zeros(shape=(data.nx, data.nz))
+  data.nHtot = numpy.zeros(shape=(data.nx, data.nz))
+  data.damean = numpy.zeros(shape=(data.nx, data.nz))
+  data.Hx=numpy.zeros(shape=(data.nx, data.nz))
+  data.tauX1 = numpy.zeros(shape=(data.nx, data.nz))
+  data.tauX5 = numpy.zeros(shape=(data.nx, data.nz))
+  data.tauX10 = numpy.zeros(shape=(data.nx, data.nz))  
+  data.zetaX = numpy.zeros(shape=(data.nx, data.nz))
+  data.dummyH2 = numpy.zeros(shape=(data.nx, data.nz))
+  data.chi = numpy.zeros(shape=(data.nx, data.nz))
+  data.chiRT = numpy.zeros(shape=(data.nx, data.nz))
+  data.kappaRoss = numpy.zeros(shape=(data.nx, data.nz))  
+  data.radFields=numpy.zeros(shape=(data.nx,data.nz,data.nlam))
+  data.zetaCR = numpy.zeros(shape=(data.nx, data.nz))
+  data.zetaSTCR = numpy.zeros(shape=(data.nx, data.nz))
+  data.nmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec))
+  data.cdnmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec)) 
+  
+  
+  # FIXME: that is not very nice
+  #        make at least some checks if the output format has changed or something
+  # number of fixed fields in ProDiMo.out (before heating and cooling rates)
+  nfixFields = 21  
+  # index after the J data/fields in ProDiMo 
+  iAJJ = nfixFields + data.nheat + data.ncool + 1 + data.nspec + data.nlam
+  iACool = nfixFields + data.nheat + data.ncool  
+  iASpec= nfixFields + data.nheat + data.ncool + 1 + data.nspec
+    
+  # read the species names, these are taken from the column titles
+  colnames = lines[idata - 1]
+  specStart = 233 + data.nheat * 13 + data.ncool * 13 + 13  
+  spnames = colnames[specStart:specStart + (data.nspec) * 13]
+  spnames = spnames.split()
+  if (len(spnames) != data.nspec): 
+    print("ERROR: something is wrong with the number of Species!")
+    return None  
+  
+  # empty dictionary
+  data.spnames = OrderedDict()
+  # Make a dictionary for the spans
+  for i in range(data.nspec):    
+    data.spnames[spnames[i]] = i  
+  
+  i = 0            
+  for iz in range(data.nz):
+    for ix in range(data.nx): 
+      # stupid workaround for big disks envelops where x,y can be larger than 10000 AU
+      # there is no space between the numbers for x and z so always add one if none is there
+      if lines[idata+i][20]!= " ":        
+        line=lines[idata + i][:20]+" "+lines[idata + i][20:]        
+      else:
+        line=lines[idata + i]
+            
+      fields = line.split()      
+            
+      zidx = data.nz - iz - 1            
+      data.x[ix, zidx] = float(fields[2])
+      data.z[ix, zidx] = float(fields[3])
+      data.NHrad[ix, zidx] = float(fields[4])
+      data.NHver[ix, zidx] = float(fields[5])
+      data.AVrad[ix, zidx] = float(fields[6])
+      data.AVver[ix, zidx] = float(fields[7])      
+      data.nd[ix, zidx] = float(fields[8])
+      data.tg[ix, zidx] = float(fields[9])
+      data.td[ix, zidx] = float(fields[10])
+      data.rho[ix, zidx] = float(fields[12])
+      data.chi[ix, zidx] = float(fields[15])
+      data.taudiff[ix,zidx]=float(fields[18])
+      data.chiRT[ix, zidx] = float(fields[iAJJ])
+      data.kappaRoss[ix, zidx] = float(fields[iAJJ+1])            
+      data.nHtot[ix, zidx] = float(fields[iACool])
+      data.damean[ix, zidx] = float(fields[iAJJ + 3])
+      data.d2g[ix, zidx] = float(fields[iAJJ + 4])
+      data.Hx[ix, zidx] = float(fields[iAJJ + 5])
+      data.tauX1[ix, zidx] = float(fields[iAJJ + 6])
+      data.tauX5[ix, zidx] = float(fields[iAJJ + 7])
+      data.tauX10[ix, zidx] = float(fields[iAJJ + 8])      
+      data.zetaX[ix, zidx] = float(fields[iAJJ + 9])
+      data.zetaCR[ix, zidx] = float(fields[iAJJ + 16])      
+      if len(fields) > (iAJJ + 17): data.zetaSTCR[ix, zidx] = float(fields[iAJJ + 17]) 
+      data.dummyH2[ix, zidx] = float(fields[iACool + 5])      
+      data.nmol[ix, zidx, :] = numpy.array(list(map(float, fields[iACool + 1:iACool + 1 + data.nspec])))
+      data.radFields[ix,zidx,:]=numpy.array(list(map(float, fields[iASpec :iASpec + data.nlam])))      
+      
+      i = i + 1
+
+
+  # derived quantitites
+  data.rhod = data.rho * data.d2g
+  
+  # AV like defined in the prodimo idl script  
+  for ix in range(data.nx):
+    for iz in range(data.nz):
+      data.AV[ix,iz] = numpy.min([data.AVver[ix,iz],data.AVrad[ix,iz],data.AVrad[data.nx-1,iz]-data.AVrad[ix,iz]])  
+  
+  # read additonal data (now only the band wavelenghts)
+  iwls=idata+data.nx*data.nz+2+data.ncool+2+data.nheat+2
+  i=0
+  for i in range(data.nlam):      
+    data.lams[i]=float((lines[iwls+i].split())[1])
+  
+  
+  # Read FlineEstimates.out
+  if readlineEstimates == True:
+    print(("READ: " + directory + "/" + filenameLineEstimates))
+    read_lineEstimates(directory, data, filename=filenameLineEstimates)
+  else:
+    data.lineEstimates = False  
+   
+  fileloc=directory + "/dust_opac.out"
+  print("READ: " +fileloc )
+  data.dust = read_dust(fileloc)
+
+  fileloc=directory + "/dust_opac_env.out"
+  if os.path.isfile(fileloc):
+    print("READ: " + fileloc)
+    data.env_dust = read_dust(fileloc)  
+
+  print("READ: " + directory + "/StarSpectrum.out")
+  data.starSpec = read_starSpec(directory)
+
+  if os.path.exists(directory + "/gas_cs.out"):
+    print("READ: " + directory + "/gas_cs.out")
+    data.gas = read_gas(directory)
+  
+  if os.path.exists(directory + "/"+filenameLineFlux):
+    print("READ: " + directory + "/"+filenameLineFlux)
+    data.lines = read_linefluxes(directory,filename=filenameLineFlux)  
+
+  if os.path.exists(directory + "/SED.out"):
+    print("READ: " + directory + "/SED.out")
+    data.sed = read_sed(directory)
+
+  if os.path.exists(directory + "/Species.out"):
+    print("READ: " + directory + "/Species.out")
+    # data is filled in the routine
+    read_species(directory,data)
+    #print("INFO: Calc total species masses")
+    #calc_spmassesTot(data)        
+    
+  
+  # calculate the columnd densitis
+  print("INFO: Calculate column densities")
+  calc_columnd(data)
+  print(" ")
+
+  return data
+
 
 def read_species(directory,pdata,filename="Species.out"):
   '''
@@ -833,212 +1054,6 @@ def read_dust(fileloc):
   dust.energy[:] = ((dust.lam[:] * u.micron).to(u.eV, equivalencies=u.spectral())).value
 
   return dust  
-
-def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", filenameLineFlux="line_flux.out",td_fileIdx=None):
-  '''
-  Reads the ProDiMo model.
-  Reads ProDiMo.out FlineEstimates.out and dust_opac.out
-  '''
-  # guess a name if not set
-  if name == None:
-    if directory==None or directory=="." or directory=="":
-      dirfields=os.getcwd().split("/")
-    else:  
-      dirfields = directory.split("/")
-    
-    name = dirfields[-1]  
-  
-  # if td_fileIdx is given alter the filenames so that the timedependent
-  # files can be read. However this would actually also workd with other kind
-  # of indices as td_fileIdx is a strong
-  if td_fileIdx != None:    
-    rpstr="_"+td_fileIdx+".out"
-    filename=filename.replace(".out",rpstr)
-    filenameLineEstimates=filenameLineEstimates.replace(".out",rpstr)
-    filenameLineFlux=filenameLineFlux.replace(".out",rpstr)  
-    
-  pfilename = directory + "/" + filename
-  f = open(pfilename, 'r')
-  print("READ: Reading File: ", pfilename, " ...")
-  # read all date into the memory
-  # easier to handle afterwards
-  lines = f.readlines()  
-  f.close()
-  idata = 24
-   
-  data = Data_ProDiMo(name)
-  
-  data.dust2gas = float(lines[9].split()[1])
-  
-  strs = lines[21].split()  
-  data.nx = int(strs[1])
-  data.nz = int(strs[2])
-  data.nspec = int(strs[3]) + 1  # +1 for the electron
-  data.nheat = int(strs[4])
-  data.ncool = int(strs[5])
-  data.nlam = int(strs[6])
-  
-  # TODO: move this to the constructure which takes nx,nz
-  data.x = numpy.zeros(shape=(data.nx, data.nz))
-  data.z = numpy.zeros(shape=(data.nx, data.nz))
-  data.lams=numpy.zeros(shape=(data.nlam))
-  data.AV = numpy.zeros(shape=(data.nx, data.nz))
-  data.AVrad = numpy.zeros(shape=(data.nx, data.nz))
-  data.AVver = numpy.zeros(shape=(data.nx, data.nz))  
-  data.NHver = numpy.zeros(shape=(data.nx, data.nz))
-  data.NHrad = numpy.zeros(shape=(data.nx, data.nz))
-  data.d2g = numpy.zeros(shape=(data.nx, data.nz))
-  data.tg = numpy.zeros(shape=(data.nx, data.nz))
-  data.td = numpy.zeros(shape=(data.nx, data.nz))
-  data.nd = numpy.zeros(shape=(data.nx, data.nz))
-  data.rho = numpy.zeros(shape=(data.nx, data.nz))
-  data.taudiff = numpy.zeros(shape=(data.nx, data.nz))
-  data.nHtot = numpy.zeros(shape=(data.nx, data.nz))
-  data.damean = numpy.zeros(shape=(data.nx, data.nz))
-  data.Hx=numpy.zeros(shape=(data.nx, data.nz))
-  data.tauX1 = numpy.zeros(shape=(data.nx, data.nz))
-  data.tauX5 = numpy.zeros(shape=(data.nx, data.nz))
-  data.tauX10 = numpy.zeros(shape=(data.nx, data.nz))  
-  data.zetaX = numpy.zeros(shape=(data.nx, data.nz))
-  data.dummyH2 = numpy.zeros(shape=(data.nx, data.nz))
-  data.chi = numpy.zeros(shape=(data.nx, data.nz))
-  data.chiRT = numpy.zeros(shape=(data.nx, data.nz))
-  data.kappaRoss = numpy.zeros(shape=(data.nx, data.nz))  
-  data.radFields=numpy.zeros(shape=(data.nx,data.nz,data.nlam))
-  data.zetaCR = numpy.zeros(shape=(data.nx, data.nz))
-  data.zetaSTCR = numpy.zeros(shape=(data.nx, data.nz))
-  data.nmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec))
-  data.cdnmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec)) 
-  
-  
-  # FIXME: that is not very nice
-  #        make at least some checks if the output format has changed or something
-  # number of fixed fields in ProDiMo.out (before heating and cooling rates)
-  nfixFields = 21  
-  # index after the J data/fields in ProDiMo 
-  iAJJ = nfixFields + data.nheat + data.ncool + 1 + data.nspec + data.nlam
-  iACool = nfixFields + data.nheat + data.ncool  
-  iASpec= nfixFields + data.nheat + data.ncool + 1 + data.nspec
-    
-  # read the species names, these are taken from the column titles
-  colnames = lines[idata - 1]
-  specStart = 233 + data.nheat * 13 + data.ncool * 13 + 13  
-  spnames = colnames[specStart:specStart + (data.nspec) * 13]
-  spnames = spnames.split()
-  if (len(spnames) != data.nspec): 
-    print("ERROR: something is wrong with the number of Species!")
-    return None  
-  
-  # empty dictionary
-  data.spnames = OrderedDict()
-  # Make a dictionary for the spans
-  for i in range(data.nspec):    
-    data.spnames[spnames[i]] = i  
-  
-  i = 0            
-  for iz in range(data.nz):
-    for ix in range(data.nx): 
-      # stupid workaround for big disks envelops where x,y can be large than 10000 AU
-      # there is no space between the numbers for x and z so always add one if none is there
-      if lines[idata+i][20]!= " ":        
-        line=lines[idata + i][:20]+" "+lines[idata + i][20:]        
-      else:
-        line=lines[idata + i]
-            
-      fields = line.split()      
-            
-      zidx = data.nz - iz - 1            
-      data.x[ix, zidx] = float(fields[2])
-      data.z[ix, zidx] = float(fields[3])
-      data.NHrad[ix, zidx] = float(fields[4])
-      data.NHver[ix, zidx] = float(fields[5])
-      data.AVrad[ix, zidx] = float(fields[6])
-      data.AVver[ix, zidx] = float(fields[7])      
-      data.nd[ix, zidx] = float(fields[8])
-      data.tg[ix, zidx] = float(fields[9])
-      data.td[ix, zidx] = float(fields[10])
-      data.rho[ix, zidx] = float(fields[12])
-      data.chi[ix, zidx] = float(fields[15])
-      data.taudiff[ix,zidx]=float(fields[18])
-      data.chiRT[ix, zidx] = float(fields[iAJJ])
-      data.kappaRoss[ix, zidx] = float(fields[iAJJ+1])            
-      data.nHtot[ix, zidx] = float(fields[iACool])
-      data.damean[ix, zidx] = float(fields[iAJJ + 3])
-      data.d2g[ix, zidx] = float(fields[iAJJ + 4])
-      data.Hx[ix, zidx] = float(fields[iAJJ + 5])
-      data.tauX1[ix, zidx] = float(fields[iAJJ + 6])
-      data.tauX5[ix, zidx] = float(fields[iAJJ + 7])
-      data.tauX10[ix, zidx] = float(fields[iAJJ + 8])      
-      data.zetaX[ix, zidx] = float(fields[iAJJ + 9])
-      data.zetaCR[ix, zidx] = float(fields[iAJJ + 16])      
-      if len(fields) > (iAJJ + 17): data.zetaSTCR[ix, zidx] = float(fields[iAJJ + 17]) 
-      data.dummyH2[ix, zidx] = float(fields[iACool + 5])      
-      data.nmol[ix, zidx, :] = numpy.array(list(map(float, fields[iACool + 1:iACool + 1 + data.nspec])))
-      data.radFields[ix,zidx,:]=numpy.array(list(map(float, fields[iASpec :iASpec + data.nlam])))      
-      
-      i = i + 1
-
-
-  # derived quantitites
-  data.rhod = data.rho * data.d2g
-  
-  # AV like defined in the prodimo idl script  
-  for ix in range(data.nx):
-    for iz in range(data.nz):
-      data.AV[ix,iz] = numpy.min([data.AVver[ix,iz],data.AVrad[ix,iz],data.AVrad[data.nx-1,iz]-data.AVrad[ix,iz]])  
-  
-  # read additonal data (now only the band wavelenghts)
-  iwls=idata+data.nx*data.nz+2+data.ncool+2+data.nheat+2
-  i=0
-  for i in range(data.nlam):      
-    data.lams[i]=float((lines[iwls+i].split())[1])
-  
-  
-  # Read FlineEstimates.out
-  if readlineEstimates == True:
-    print(("READ: " + directory + "/" + filenameLineEstimates))
-    read_lineEstimates(directory, data, filename=filenameLineEstimates)
-  else:
-    data.lineEstimates = False  
-   
-  fileloc=directory + "/dust_opac.out"
-  print("READ: " +fileloc )
-  data.dust = read_dust(fileloc)
-
-  fileloc=directory + "/dust_opac_env.out"
-  if os.path.isfile(fileloc):
-    print("READ: " + fileloc)
-    data.env_dust = read_dust(fileloc)  
-
-  print("READ: " + directory + "/StarSpectrum.out")
-  data.starSpec = read_starSpec(directory)
-
-  if os.path.exists(directory + "/gas_cs.out"):
-    print("READ: " + directory + "/gas_cs.out")
-    data.gas = read_gas(directory)
-  
-  if os.path.exists(directory + "/"+filenameLineFlux):
-    print("READ: " + directory + "/"+filenameLineFlux)
-    data.lines = read_linefluxes(directory,filename=filenameLineFlux)  
-
-  if os.path.exists(directory + "/SED.out"):
-    print("READ: " + directory + "/SED.out")
-    data.sed = read_sed(directory)
-
-  if os.path.exists(directory + "/Species.out"):
-    print("READ: " + directory + "/Species.out")
-    # data is filled in the routine
-    read_species(directory,data)
-    #print("INFO: Calc total species masses")
-    #calc_spmassesTot(data)        
-    
-  
-  # calculate the columnd densitis
-  print("INFO: Calculate column densities")
-  calc_columnd(data)
-  print(" ")
-
-  return data
 
 def calc_NHrad_oi(data):
   '''
