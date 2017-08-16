@@ -17,6 +17,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+# That seems to be required by readthedocs
 import os
 import sys
 sys.path.insert(1, os.path.abspath('../'))
@@ -39,8 +40,6 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon']
-
-needs_extensions = {'sphinx.ext.autodoc': '1.0'}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
