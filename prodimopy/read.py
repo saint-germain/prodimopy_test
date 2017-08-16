@@ -114,68 +114,65 @@ class Data_ProDiMo(object):
     The dust temperature.
     `UNIT:` K, `DIMS:` (nx,nz)
     """ 
-    self.damean = None    # The mean dust radius TODO: units, dimension
+    self.damean = None    
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    The mean dust particle radius
+    `UNIT:` micron, `DIMS:` (nx,nz)
     """
-    self.Hx=None          # X-ray energy deposition rate
+    self.Hx=None          
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    The X-ray energy deposition rate per hydrogen nuclei
+    `UNIT:` erg <H>\ :sup:`-1`, `DIMS:` (nx,nz)
     """
-    self.zetaX = None     # X-ray ionisation rate per H at every point (unit: |s^-1|, dimension: [nx,nz]) TODO: check if this is correct
+    self.zetaX = None     
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    X-ray ionisation rate per hydrogen nuclei.
+    `UNIT:` |s^-1|, `DIMS:` (nx,nz)
     """
-    self.zetaCR = None    # Cosmic-ray ionisation rate per H2 (unit: |s^-1|, dimension: [nx,nz])
+    self.zetaCR = None    # 
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    Cosmic-ray ionisation rate per molecular hydrogen (H2) 
+    `UNIT:` |s^-1|, `DIMS:` (nx,nz)
     """
-    self.zetaSTCR = None  # Stellar energetic particle ionisation rate per H2 (unit: |s^-1|, dimension: [nx,nz])
+    self.zetaSTCR = None  
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    Stellar energetic particle ionisation rate per H2
+    `UNIT:` |s^-1|, `DIMS:` (nx,nz)
     """
     self.tauX1 = None
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    Radial optical depth at 1 keV (for X-rays). 
+    `UNIT:` , `DIMS:` (nx,nz)
     """
     self.tauX5 = None
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    Radial optical depth at 5 keV (for X-rays).
+    `UNIT:` , `DIMS:` (nx,nz)
     """
     self.tauX10 = None
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
-    """
-    self.taudiff = None   # Diffussion "timescale" in vertical direction
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    Radial optical depth at 10 keV (for X-rays).
+    `UNIT:` , `DIMS:` (nx,nz)
     """
     self.AVrad = None      
     """ array_like(float,ndim=2) :
-    Radial visual extinction 
+    Radial visual extinction (measerd from the star outwards). 
     `UNIT:` , `DIMS:` (nx,nz)
     """
-    self.AVver = None     #    
+    self.AVver = None
     """ array_like(float,ndim=2) :
-    Vertical visual extinction.    
+    Vertical visual extinction (measured from the disk surface to the midplane).    
     `UNIT:`, `DIMS:` (nx,nz)
-    """          
-    self.AV = None        # 
+    """
+    self.AV = None
     """ array_like(float,ndim=2) :
-    Combination of AVrad and AVver (like in the prodimo idl scripts) (see read routine)
+    Given by min([AVver[ix,iz],AVrad[ix,iz],AVrad[nx-1,iz]-AVrad[ix,iz]])
+    Gives the lowest visiual extinction at a certain point. Where it is assumed radiation 
+    can escape either vertically upwards, radially inwards or radially outwards. 
     `UNIT:` , `DIMS:` (nx,nz)
     """
     self.nlam = None      
-    """ int: 
+    """ int : 
     The number of wavelength bands used in the continuum radiative transfer.
     """
     self.lams = None       
@@ -185,7 +182,7 @@ class Data_ProDiMo(object):
     """                        
     self.radFields = None
     """ array_like(float,ndim=3) :
-    Radiation fields (mean intensity) for each wavelength band.
+    Radiation field (mean intensity) for each wavelength band.
     
     `UNIT:` erg |s^-1| |cm^-2| |sr^-1| |Hz^-1|, `DIMS:` (nx,nz,nlam)
     """
@@ -201,18 +198,19 @@ class Data_ProDiMo(object):
     """
     self.kappaRos=None
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    Rosseland mean opacity. In case of gas radiative transfer for the dust plus the gas.
+    `UNIT:` |cm^-1|, `DIMS:` (nx,nz)
     """            
-    self.dummyH2 = None
+    self.taudiff = None    
     """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    Vertical radiative diffussion timescale (using the Rosseland mean opacities).
+    `UNIT:` yr, `DIMS:` (nx,nz)
     """
-    self.spnames = None  # is a dictionary to access the indices for nmol (species indices, e.g. spnames["CO"])
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    self.spnames = None  # 
+    """ dictionary(float,ndim=2) :
+    Dictionary providing the index of a particular species (e.g. spnames["CO"]). This index
+    can than be used for arrays having an species dimension (like nmol). The electron is included.
+    `UNIT:` , `DIMS:` (nspec)
     """
     self.spmasses = None 
     #self.spmassesTot = None # integrated species masses (over the whole model space), is an array for easier handling
@@ -237,42 +235,50 @@ class Data_ProDiMo(object):
     Integrated from the star outwards along fixed radial rays given by the vertical grid.
     `UNIT:` |cm^-2|, `DIMS:` (nx,nz,nspec)
     """
-    self.lineEstimates = None  # all the line estimate results
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    self.lineEstimates = None  
+    """ list(:class:`prodimopy.read.DataLineEstimate`) :
+    All the line estimates from FlineEstimates.out. Each spectral line in FlineEstimates
+    corresponds to one :class:`prodimopy.read.DataLineEstimate` object.     
     """
-    self.lines = None          # all the lines from the proper line transfer
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    self.lines = None          
+    """ array_like(:class:`prodimopy.read.DataLine`) :
+    Alle the spectral lines from line_flux.out (proper Linetransfer). 
+    Each spectral line in line_flux.out corresponds to 
+    one :class:`prodimopy.read.DataLine` object    
     """
     self.sed = None            # the spectral energy distribution (from proper ray tracing)
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    """ :class:`prodimopy.read.DataSED` :
+    The Spectral Energy Distribution for the model (SED) as calculated in the 
+    radiative transfer with ray tracing. 
+    see :class:`prodimopy.read.DataSED` for details.
     """
     self.starSpec = None
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
-    """    
-    self.gas = None            # gas properties (mainly gas opacities) see :class:`prodimopy.read.DataGas`
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    """ :class:`prodimopy.read.DataStarSpec` :
+    The (unattenuated) stellar input spectrum.  
+    see :class:`prodimopy.read.DataStarSpec` for details.
     """
-    self.dust = None           # dust properites (mainly dust opacities) see :class:`prodimopy.read.DataDust`
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
-    """  
+    self.gas = None             
+    """ :class:`prodimopy.read.DataGas` :
+    Holds various properties of the gas component (e.g. opacities).
+    see :class:`prodimopy.read.DataGas`    
+    """
+    self.dust = None           
+    """ :class:`prodimopy.read.DataDust` :
+    Holds various properties of the dust component (e.g. opacities).
+    see :class:`prodimopy.read.DataDust`    
+    """
     self.env_dust = None       # dust properties for the envelope structure see :class:`prodimopy.read.DataDust`  
-    """ array_like(float,ndim=2) :
-    
-    `UNIT:` au, `DIMS:` (nx,nz)
+    """ :class:`prodimopy.read.DataDust` :
+    Holds various properties of the dust component (e.g. opacities) of the envelope.
+    Only relevant if |prodimo| is used in the envelope mode.
+    see :class:`prodimopy.read.DataDust`    
     """
-
+    self.dummyH2 = None
+    """ array_like(float,ndim=2) :
+    TODO remove this, was only used temporarely. 
+    `UNIT:` , `DIMS:` (nx,nz)
+    """
+   
   def __str__(self):
     output = "Info ProDiMo.out: \n"
     output += "NX: " + str(self.nx) + " NZ: " + str(self.nz) + " NSPEC: " + str(self.nspec)
@@ -536,14 +542,14 @@ class DataDust(object):
 
 class DataSED(object):
   '''
-  Holds the data for the SED  
+  Holds the data for the Spectral Energy Distribution (SED).  
   '''
   def __init__(self, nlam, distance, inclination):
     self.nlam = nlam
     self.distance = distance
     self.inclination = inclination
     
-    # the bolometric luminosity will be calculated by integrating over the whol
+    # the bolometric luminosity will be calculated by integrating over the whole
     # frequency range, considering also the distance) 
     # units are Solar luminosities    
     self.Lbol=None
@@ -728,7 +734,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       data.zetaX[ix, zidx] = float(fields[iAJJ + 9])
       data.zetaCR[ix, zidx] = float(fields[iAJJ + 16])      
       if len(fields) > (iAJJ + 17): data.zetaSTCR[ix, zidx] = float(fields[iAJJ + 17]) 
-      data.dummyH2[ix, zidx] = float(fields[iACool + 5])      
+      data.dummyH2[ix, zidx] = float(fields[iACool + 5])  # FIXME: I think that was a temporary thing, remove it    
       data.nmol[ix, zidx, :] = numpy.array(list(map(float, fields[iACool + 1:iACool + 1 + data.nspec])))
       data.radFields[ix,zidx,:]=numpy.array(list(map(float, fields[iASpec :iASpec + data.nlam])))      
       

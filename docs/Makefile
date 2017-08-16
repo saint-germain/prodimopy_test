@@ -13,7 +13,7 @@ help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	
 livehtml:    
-	/Users/users/rab/.local/bin/sphinx-autobuild -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) -z "../"	
+	/Users/users/rab/.local/bin/sphinx-autobuild -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) -z "../prodimopy/"	
 	
 .PHONY: help Makefile
 

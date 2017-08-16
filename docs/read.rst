@@ -16,6 +16,7 @@ possible to only read certain model data (e.g. only the SED of a model).
 .. |gcm^-3| replace:: g cm\ :sup:`-3`
 .. |cm^-3| replace:: cm\ :sup:`-3`
 .. |cm^-2| replace:: cm\ :sup:`-2`
+.. |cm^-1| replace:: cm\ :sup:`-1`
 .. |s^-1| replace:: s\ :sup:`-1`
 .. |sr^-1| replace:: sr\ :sup:`-1`
 .. |Hz^-1| replace:: Hz\ :sup:`-1`
