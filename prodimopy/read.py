@@ -19,132 +19,260 @@ from collections import OrderedDict
 import math
 
 class Data_ProDiMo(object):
-  """ Holds all the output data from a single ProDiMo model.
+  """ 
+  Data container for most of the output produced by |prodimo|. 
   
-  Parameters
-  ----------
-  name : string
-    The name of the model (can be empty).  
-
-
-  Attributes
-  ----------
-  name : see Parameters
-    
-  nx: int
-    The number of grind points in the x (radial) direction.
-    
-  nz: int
-    The number of grid points in the z (vertical) direction.
-    
-  nspec: int
-    The number of species.
-  
-  nheat: int
-    The number of heating processes
-  
-  ncool: int
-    The number of cooling processes
-  
-  nlam: int 
-    The number of wavelength bands in the continuum radiative transfer
-  
-  lams: array_like(float)
-    The wavelengths of the bands used in the radiative transfer. 
-    
-    unit: microns, dimension: [nlam]  
-        
-  radFields: array_like(float)    
-    Radiation fields (mean intensity) for each wavelength band.
-    
-    unit: erg |s^-1| |cm^-2| |sr^-1| |Hz^-1|, dimension: [nx,nz,nlam]
-  
-  nmol: array_like(float)
-    Number densities of all chemical species 
-    
-    unit: |cm^-2|, dimension: [nx,nz,nspec]
-        
-  cdnmol: array_like(float) 
-  
-    Vertical column number densities for each species at each point in the disk. 
-    Integrated from the surface to the midplane at each radial grid point.
-    
-    unit: |cm^-2|, dimension: [nx,nz,nspec]
-    
-  rcdnmol: array_like(float)     
-    Radial column number densities for each species at each point in the disk. 
-    Integrated from the star outwards along fixed radial rays given by the vertical grid.
-    
-    unit: |cm^-2|, dimension: [nx,nz,nspec]
-    
-    
-  Notes
-  -----
-  This is simply a data container for most of the output produced by |prodimo|. 
-  However, the glass also inclused some convenience functions and also derives/calculates 
+  The class also inclused some convenience functions and also derives/calculates 
   some addtionialy quantities not directly included in the |prodimo| output. 
-    
+
+  
   .. warning:: 
   
     Not all the data included in ProDiMo.out and not all .out files 
-    are considered yet.    
-
+    are considered yet.      
+         
   """  
-  
-  def __init__(self, name):  
-    self.name = name # The name of the model (can be empty)
+  def __init__(self, name):          
+    """
+    Parameters
+    ----------
+    name : string
+      The name of the model (can be empty).  
+
+    Attributes
+    ----------
+          
+    """
+    self.name = name 
+    """ string :
+    The name of the model (can be empty)
+    """
     self.__fpFlineEstimates = None  # The path to the FlineEstimates.out File
-    self.nx = None        # The number of grid points in the x (radial) direction
-    self.nz = None        # The number of grid points in the z (vertical) direction
-    self.nspec = None     # The number of species
-    self.nheat = None     # The number of heating processes
-    self.ncool = None     # The number of cooling processes
-    self.nlam = None      # The number of wavelength bands in the continuum radiative transfer
-    self.lams = None      # The wavelengths of the bands (unit: microns)
-    self.dust2gas = None  # The global dust to gass mass ratio (single value)     
-    self.x = None         # The x coordinates (unit: au, dimension: [nx,nz])  
-    self.z = None         # The z coordinates (unit: au, dimension: [nx,nz]) 
-    self.tg = None        # The gas temperature (unit: K, dimension: [nx,nz])
-    self.td = None        # The dust temperature (unit: K, dimension: [nx,nz]) 
-    self.nd = None        # The dust number density (unit: |cm^-3| , dimension: [nx,nz])
-    self.rho = None       # The gas density (unit: |gcm^-3| , dimension: [nx,nz])
-    self.rhod = None      # The dust density (unit: |gcm^-3| , dimension: [nx,nz])
-    self.nHtot = None     # The total hydrogen number density (unit: |cm^-3| , dimension: [nx,nz])
+    self.nx = None        
+    """ int : 
+    The number of grid points in the x (radial) direction
+    """
+    self.nz = None
+    self.nspec = None     #: int : The number of species
+    self.nheat = None     #: int : The number of heating processes
+    self.ncool = None     #: int : The number of cooling processes
+    self.dust2gas = None  #: float :  The global dust to gass mass ratio (single value)        
+    """ int : 
+    The number of grid points in the z (vertical) direction
+    """    
+    self.x = None         
+    """ array_like(float,ndim=2) :
+    The x coordinates (radial direction).
+    `UNIT:` au, `DIMS:` (nx,nz)    
+    """  
+    self.z = None         
+    """ array_like(float,ndim=2) :
+    The z coordinates (vertical direction).  
+    `UNIT:` au, `DIMS:` (nx,nz)    
+    """
+    self.rho = None
+    """ array_like(float,ndim=2) :
+    The gas density.
+    `UNIT:` |gcm^-3|, `DIMS:` (nx,nz)
+    """
+    self.rhod = None      
+    """ array_like(float,ndim=2) :
+    The dust density.
+    `UNIT:` |gcm^-3|, `DIMS:` (nx,nz)
+    """
+    self.nHtot = None 
+    """ array_like(float,ndim=2) :
+    The total hydrogen number density.
+    `UNIT:` |cm^-3|, `DIMS:` (nx,nz)
+    """    
+    self.NHver = None     # 
+    """ array_like(float,ndim=2) :
+    Vertical total hydrogen column density. `nHtot` is integrated from the disk 
+    surface to the midplane at each radial grid point. The intermediate results 
+    are stored at each grid point. For example NHver[:,0] gives the total column 
+    density as a function of radius.   
+    `UNIT:` |cm^-2|, `DIMS:` (nx,nz)
+    """
+    self.NHrad = None     #   
+    """ array_like(float,ndim=2) :
+    Radial total hydrogen column density. Integrated along radial rays, starting 
+    from the star. Otherwise same behaviour as `NHver`.
+    `UNIT:` |cm^-2|, `DIMS:` (nx,nz)
+    """    
+    self.nd = None
+    """ array_like(float,ndim=2) :
+    The dust number density. 
+    `UNIT:` |cm^-3|, `DIMS:` (nx,nz)
+    """         
+    self.tg = None        
+    """ array_like(float,ndim=2) :
+    The gas temperature. 
+    `UNIT:` K, `DIMS:` (nx,nz)
+    """     
+    self.td = None         
+    """ array_like(float,ndim=2) :
+    The dust temperature.
+    `UNIT:` K, `DIMS:` (nx,nz)
+    """ 
     self.damean = None    # The mean dust radius TODO: units, dimension
-    self.chi = None       # geometrial UV radiation field in units of the Drain field (dimension: [nx,nz])
-    self.chiRT= None      # UV radiation field, calculated in the radiative transfer, in units of the Drain field (dimension: [nx,nz]) 
-    self.kappaRos=None
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
     self.Hx=None          # X-ray energy deposition rate
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
     self.zetaX = None     # X-ray ionisation rate per H at every point (unit: |s^-1|, dimension: [nx,nz]) TODO: check if this is correct
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
     self.zetaCR = None    # Cosmic-ray ionisation rate per H2 (unit: |s^-1|, dimension: [nx,nz])
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
     self.zetaSTCR = None  # Stellar energetic particle ionisation rate per H2 (unit: |s^-1|, dimension: [nx,nz])
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
     self.tauX1 = None
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
     self.tauX5 = None
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
     self.tauX10 = None
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
     self.taudiff = None   # Diffussion "timescale" in vertical direction
-    self.NHver = None     # Vertical total hydrogen column density (unit: |cm^-2|, dimension: [nx,nz,nspec])
-    self.NHrad = None     # Radial total hydrogen column density  
-    self.AV = None        # combination of AVrad and AVver (like in the prodimo idl scripts) (see read routine)
-    self.AVrad = None     # radial visual extinction (dimension: [nx,nz])
-    self.AVver = None     # vertical visual extinction (dimension: [nx,nz])   
+    """ array_like(float,ndim=2) :
     
-    self.radFields = None 
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
+    self.AVrad = None      
+    """ array_like(float,ndim=2) :
+    Radial visual extinction 
+    `UNIT:` , `DIMS:` (nx,nz)
+    """
+    self.AVver = None     #    
+    """ array_like(float,ndim=2) :
+    Vertical visual extinction.    
+    `UNIT:`, `DIMS:` (nx,nz)
+    """          
+    self.AV = None        # 
+    """ array_like(float,ndim=2) :
+    Combination of AVrad and AVver (like in the prodimo idl scripts) (see read routine)
+    `UNIT:` , `DIMS:` (nx,nz)
+    """
+    self.nlam = None      
+    """ int: 
+    The number of wavelength bands used in the continuum radiative transfer.
+    """
+    self.lams = None       
+    """ array_like(float,ndim=1) :
+    The band wavelengths considered in the radiative transfer. 
+    \n`UNIT:` microns, `DIMS:` (nlam)
+    """                        
+    self.radFields = None
+    """ array_like(float,ndim=3) :
+    Radiation fields (mean intensity) for each wavelength band.
     
+    `UNIT:` erg |s^-1| |cm^-2| |sr^-1| |Hz^-1|, `DIMS:` (nx,nz,nlam)
+    """
+    self.chi = None        
+    """ array_like(float,ndim=2) :
+    Geometrial UV radiation field in units of the Drain field.
+    `UNIT:` Draine field, `DIMS:` (nx,nz)
+    """
+    self.chiRT= None       
+    """ array_like(float,ndim=2) :
+    UV radiation field as properly calculated in the radiative transfer, in units of the Drain field.
+    `UNIT:` Draine field, `DIMS:` (nx,nz)
+    """
+    self.kappaRos=None
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """            
     self.dummyH2 = None
-    self.spnames = None  # is a dictionary to access the indices for nmol (species indices, e.g. spnames["CO"])
-    self.spmasses = None # dictionary to access the species masses, same keys at spnames
-    #self.spmassesTot = None # integrated species masses (over the whole model space), is an array for easier handling
-    self.nmol = None # number densities of all chemical species (unit: |cm^-2|, dimension: [nx,nz,nspec])    
-    self.cdnmol = None             
-    self.lineEstimates = None  # all the line estimate results
-    self.lines = None          # all the lines from the proper line transfer
-    self.sed = None            # the spectral energy distribution (from proper ray tracing)
-    self.starSpec = None
+    """ array_like(float,ndim=2) :
     
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
+    self.spnames = None  # is a dictionary to access the indices for nmol (species indices, e.g. spnames["CO"])
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
+    self.spmasses = None 
+    #self.spmassesTot = None # integrated species masses (over the whole model space), is an array for easier handling
+    """ dictionary(float) :
+    Dictionary for the masses of the individual species (same keys as spnames).
+    `UNIT:` g, `DIMS:` (nspec)
+    """
+    self.nmol = None     
+    """ array_like(float,ndim=3) :
+    Number densities of all chemical species (mainly molecules)    
+    `UNIT:` |cm^-3|, `DIMS:` (nx,nz,nspec)
+    """
+    self.cdnmol = None             
+    """ array_like(float,ndim=3) :
+    Vertical column number densities for each chemical species at each point in the disk. 
+    Integrated from the surface to the midplane at each radial grid point.   
+    `UNIT:` |cm^-2|, `DIMS:` (nx,nz,nspec)
+    """
+    self.rcdnmol = None             
+    """ array_like(float,ndim=3) :
+    Radial column number densities for each species at each point in the disk. 
+    Integrated from the star outwards along fixed radial rays given by the vertical grid.
+    `UNIT:` |cm^-2|, `DIMS:` (nx,nz,nspec)
+    """
+    self.lineEstimates = None  # all the line estimate results
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
+    self.lines = None          # all the lines from the proper line transfer
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
+    self.sed = None            # the spectral energy distribution (from proper ray tracing)
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
+    self.starSpec = None
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """    
     self.gas = None            # gas properties (mainly gas opacities) see :class:`prodimopy.read.DataGas`
-    self.dust = None           # dust properites (mainly dust opacities) see :class:`prodimopy.read.DataDust`  
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
+    self.dust = None           # dust properites (mainly dust opacities) see :class:`prodimopy.read.DataDust`
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """  
     self.env_dust = None       # dust properties for the envelope structure see :class:`prodimopy.read.DataDust`  
-  
+    """ array_like(float,ndim=2) :
+    
+    `UNIT:` au, `DIMS:` (nx,nz)
+    """
+
   def __str__(self):
     output = "Info ProDiMo.out: \n"
     output += "NX: " + str(self.nx) + " NZ: " + str(self.nz) + " NSPEC: " + str(self.nspec)
@@ -158,15 +286,16 @@ class Data_ProDiMo(object):
     """Returns a list with all lineEstimates with given ident
     
     Parameters
-    ----------
+    ----------    
     ident : string
       The species identification as defined in |prodimo|.
       The ident is not necessarely equal to the chemial species 
-      name (e.g. isotopologues)    
+      name (e.g. isotopologues)
+          
       
     Returns
-    -------
-    array_like
+    -------    
+    list(:class:`prodimopy.read.DataLineEstimate`) :
       List of :class:`prodimopy.read.DataLineEstimate` objects, 
       or empty list if nothing was found.
          

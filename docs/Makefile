@@ -11,7 +11,10 @@ BUILDDIR      = _build
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-
+	
+livehtml:    
+	/Users/users/rab/.local/bin/sphinx-autobuild -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) -z "../"	
+	
 .PHONY: help Makefile
 
 # Catch-all target: route all unknown targets to Sphinx using the new
