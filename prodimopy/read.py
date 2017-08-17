@@ -29,7 +29,8 @@ class Data_ProDiMo(object):
   .. warning:: 
   
     Not all the data included in ProDiMo.out and not all .out files 
-    are considered yet.      
+    are considered yet. If you miss something please contact Ch. Rab, or 
+    alternatively you can try to implement it yourself.      
          
   """  
   def __init__(self, name):          
@@ -50,16 +51,28 @@ class Data_ProDiMo(object):
     self.__fpFlineEstimates = None  # The path to the FlineEstimates.out File
     self.nx = None        
     """ int : 
-    The number of grid points in the x (radial) direction
+    The number of spatial grid points in the x (radial) direction
     """
     self.nz = None
-    self.nspec = None     #: int : The number of species
-    self.nheat = None     #: int : The number of heating processes
-    self.ncool = None     #: int : The number of cooling processes
-    self.dust2gas = None  #: float :  The global dust to gass mass ratio (single value)        
     """ int : 
-    The number of grid points in the z (vertical) direction
-    """    
+    The number of spatial grid points in the z (vertical) direction
+    """
+    self.nspec = None     
+    """ int : 
+      The number of chemical species included in the model. 
+    """  
+    self.nheat = None     
+    """ int :
+      The number of heating processes included in the model.
+    """  
+    self.ncool = None     
+    """ int :
+      The number of cooling processes included in the model.
+    """  
+    self.dust2gas = None
+    """ float :
+      The global dust to gass mass ratio (single value, given Parameter)        
+    """ 
     self.x = None         
     """ array_like(float,ndim=2) :
     The x coordinates (radial direction).
@@ -287,46 +300,27 @@ class Data_ProDiMo(object):
     output += "dust2gas: " + str(self.dust2gas)
     return output   
   
-    
-  def selectLineEstimates(self, ident):
-    """Returns a list with all lineEstimates with given ident
-    
-    Parameters
-    ----------    
-    ident : string
-      The species identification as defined in |prodimo|.
-      The ident is not necessarely equal to the chemial species 
-      name (e.g. isotopologues)
-          
       
-    Returns
-    -------    
-    list(:class:`prodimopy.read.DataLineEstimate`) :
-      List of :class:`prodimopy.read.DataLineEstimate` objects, 
-      or empty list if nothing was found.
-         
-    """    
-    lines = list()     
-    for le in self.lineEstimates: 
-      if le.ident == ident:
-        lines.append(le)
-  
-    return lines
-  
-  
   def getLine(self,wl,ident=None):
     '''
-    Finds and returns the spectral line closest to the given wavelength.
+    Returns the spectral line closes to the given wavelentgh.
     
-    :param wl: the wavelenght of the disered spectral line (unit: micron)
-    :param ident: the identification string of the line (optional)
+    Parameters
+    ----------
+    wl : float 
+      the wavelength which is used for the search. `UNIT:` micron.
+    ident : string, optional 
+      A line identification string which should also be considere for the
+      search. (default: `None`)
     
-    :returns: a :class:`prodimopy.read.DataLine` object 
-          
+    Returns
+    -------
+    :class:`prodimopy.read.DataLine`   
+      Returns `None` if no lines are included in the model.
+                           
     '''
     if self.lines == None: return None
-        
-    
+            
     if ident != None:
       linestmp=[line for line in self.lines if line.ident==ident]      
       wls=numpy.array([line.wl for line in linestmp])
@@ -336,17 +330,38 @@ class Data_ProDiMo(object):
       wls=numpy.array([line.wl for line in self.lines])
       idx=numpy.argmin(abs(wls[:]-wl))
       return self.lines[idx]        
-    
   
+
   def getLineEstimate(self, ident, wl):
     '''
-    Finds and returns the line estimate closest to the given wavelength.
+    Finds and returns the line estimate for the given species closest
+    to the given wavelength.
     
-    :param ident: the identification string of the line as defined in |prodimo|
-    :param wl: the wavelenght of the disered spectral line (unit: micron)    
+    Parameters
+    ----------
+    ident : string 
+      The line identification string.
+    wl : float 
+      the wavelength which is used for the search. `UNIT:` micron.
     
-    :returns: a :class:`prodimopy.read.DataLineEstimate` object 
-          
+    Returns
+    -------
+    :class:`prodimopy.read.DataLineEstimate`   
+      Returns `None` if no lines are included in the model.
+    
+    Notes
+    -----
+      This parameters of this method are not consistent 
+      with :meth:`~prodimopy.read.Data_ProDiMo.getLine`. This might be confusing.
+      However, there is a reasong for this. The number of
+      included line estimates in a |prodimo| model can be huge and just searching
+      with the wavelenght might become slow. However, this probably can be improved. 
+      
+      To speed up the reading of `FlineEstimate.out` the extra radial info
+      (see :class:`~prodimopy.read.DataLineEstimateRInfo` of all the line estimates 
+      is not read. However, in this routine it is read for the single line estimate 
+      found. One should use this routine to access the radial infor for a 
+      single line estimate.
     '''
     found = -1
     i = 0 
@@ -367,21 +382,64 @@ class Data_ProDiMo(object):
   
     return self.lineEstimates[found]
   
+  def selectLineEstimates(self, ident):
+    """
+    Returns a list of all line estimates (i.e. all transitions) for the 
+    given line ident.
+    
+    Parameters
+    ----------    
+    ident : string
+      The line identification (species name) as defined in |prodimo|.
+      The ident is not necessarely equal to the underlying chemial species 
+      name (e.g. isotopologues, ortho-para, or cases like N2H+ and HN2+)
+                
+    Returns
+    -------    
+    list(:class:`prodimopy.read.DataLineEstimate`) :
+      List of :class:`prodimopy.read.DataLineEstimate` objects, 
+      or empty list if nothing was found.
+      
+    Notes
+    -----
+    In this routine the additional radial information of the line esitmate 
+    (see :class:`~prodimopy.read.DataLineEstimateRInfo`) is not read. 
+         
+    """    
+    lines = list()     
+    for le in self.lineEstimates: 
+      if le.ident == ident:
+        lines.append(le)
+  
+    return lines  
+  
+  
   def getAbun(self,spname):
-    '''
-    Returns the abundance for a given species, relative to 
-    the total hydrogen nuclei density.
+    '''    
+    Returns the abundance for a given species. 
+        
+    Parameters
+    ----------
+    spname : string
+      The name of the chemical species as define in |prodimo|.     
+                
     
-    Prints out a warning in case the species was not found.
+    Returns
+    -------
+    array_like(float,ndim=2) 
+      an array of dimension [nx,ny] array with species abundance or 
+      `None` if the species was not found.
     
-    :param spname: the name of the species as defined in |prodimo|
+    Notes
+    -----
+      The abundance is given relative to the total hydrogen nuclei density 
+      (i.e. ``nmol(spname)/nHtot``)
     
-    :returns: a 2D array (dimension [nx,nz]) with the species abundances or None if the species wasn't found
-    
+      A warning is printed in case the species was not found in spnames.
     '''        
     # check if it exists
     if not spname in self.spnames:
-      print("getAbun: Species "+spname+" not found.")
+      print("WARN: getAbun: Species "+spname+" not found.")
       return None 
     
     return self.nmol[:,:,self.spnames[spname]]/self.nHtot
@@ -389,12 +447,8 @@ class Data_ProDiMo(object):
 
 class DataLineProfile():
   
-  def __init__(self, nvelo):
-    '''
-    Constructor
-    '''
+  def __init__(self, nvelo):           
     self.nvelo = nvelo
-  
     self.velo = numpy.zeros(shape=(self.nvelo))  # *u.km/u.s
     self.flux = numpy.zeros(shape=(self.nvelo))  # *u.Jansky
     self.flux_conv = numpy.zeros(shape=(self.nvelo))  # *u.Jansky
@@ -404,14 +458,10 @@ class DataLineProfile():
         
 
 class DataLine(object):
-  '''
-  holds the data for one line
-  '''
-  # 
+  """
+  Data container for a single spectra line.
+  """   
   def __init__(self):
-    '''
-    Constructor
-    '''
     self.wl = 0.0
     self.frequency = 0.0 # is also taken from the line_flux.out
     self.prodimoInf = ""
@@ -458,11 +508,58 @@ class DataLineObs(DataLine):
     self.fwhm_err = fwhm_err
     self.flag = flag.lower()
     self.profile=None
+    
+
+class DataLineEstimate(object):
+  '''
+  Data container for a single line estimate.
+  '''
+  def __init__(self, ident, wl, jup, jlow, flux):
+    """
+    Parameters
+    ----------
+    ident : string
+    wl : float
+    jup : int
+    jlow : int
+    flux : float
+        
+    """""    
+    self.ident = ident 
+    """ string :
+      The line identifications (species)
+    """
+    self.wl = wl
+    """ float :
+      The wavelength of the line.
+      `UNIT: micron`
+    """    
+    self.frequency = (self.wl * u.micrometer).to(u.GHz, equivalencies=u.spectral()).value
+    """ float :
+      The frequency of the line.
+      `UNIT: GHz`
+    """    
+    self.jup = jup
+    self.jlow = jlow
+    self.flux = flux    
+    self.rInfo = None  
+    """ :class:`prodimopy.read.DataLineEstimateRinfo`
+      The extra radial information of the line.
+    """
+    self.__posrInfo = None  # stores the position of the radial information to access is later on     
+    
+  def __str__(self):
+    text = (self.ident + "/" + 
+          str(self.wl) + "/" + 
+          str(self.jup) + "/" + 
+          str(self.jlow) + "/" + 
+          str(self.flux))
+    return text 
 
 
 class DataLineEstimateRInfo(object):
   '''
-  Holds the data for the radial information for one line and on radial position
+  Data container for the extra radial info for a single line estimate.  
   '''
   def __init__(self, iz, Fcolumn, tauLine, tauDust, z15, z85):    
     self.iz = iz 
@@ -472,28 +569,6 @@ class DataLineEstimateRInfo(object):
     self.z15 = z15          
     self.z85 = z85     
 
-class DataLineEstimate(object):
-  '''
-  Holds the data for one line in FlineEstimates
-  wl in micrometer
-  '''
-  def __init__(self, ident, wl, jup, jlow, flux):
-    self.ident = ident 
-    self.wl = wl
-    self.frequency = (self.wl * u.micrometer).to(u.GHz, equivalencies=u.spectral()).value
-    self.jup = jup
-    self.jlow = jlow
-    self.flux = flux
-    self.__posrInfo = None  # stores the position of the radial information to access is later on
-    self.rInfo = None  # The radial information holds class DataLineEstimateRinfo 
-    
-  def __str__(self):
-    text = (self.ident + "/" + 
-          str(self.wl) + "/" + 
-          str(self.jup) + "/" + 
-          str(self.jlow) + "/" + 
-          str(self.flux))
-    return text 
   
   def flux_Jy(self):    
     '''
