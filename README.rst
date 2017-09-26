@@ -1,5 +1,5 @@
-ProDiMo Python
-===============
+prodimopy
+=========
 
 Python package for plotting ProDiMo results.
 
