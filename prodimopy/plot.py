@@ -11,15 +11,16 @@ import astropy.units as u
 import math
 
 
-def spnToLatex(spname):      
-  name = spname     
+def spnToLatex(spname):
+  # use string in case it is a binary format (python 3 comaptibility)      
+  name = str(spname)      
   # TODO: make this a bit smarter    
-  if spname == "HN2+": name = "N2H+" 
-  if spname == "C18O": return "C^{18}O"
-  if spname == "13CO": return "^{13}CO"
-  if spname == "H13CO+": return "H^{13}CO^+"
+  if str(spname) == "HN2+": name = "N2H+" 
+  if str(spname) == "C18O": return "C^{18}O"
+  if str(spname) == "13CO": return "^{13}CO"
+  if str(spname) == "H13CO+": return "H^{13}CO^+"
   
-  newname = ""
+  newname = ""  
   for c in name:    
     if c.isdigit():
       newname += "_" + c
