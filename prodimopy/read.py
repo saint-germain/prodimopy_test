@@ -22,7 +22,7 @@ class Data_ProDiMo(object):
   """ 
   Data container for most of the output produced by |prodimo|. 
   
-  The class also inclused some convenience functions and also derives/calculates 
+  The class also includes some convenience functions and also derives/calculates 
   some addtionialy quantities not directly included in the |prodimo| output. 
 
   
@@ -83,7 +83,7 @@ class Data_ProDiMo(object):
     The z coordinates (vertical direction).  
     `UNIT:` au, `DIMS:` (nx,nz)    
     """
-    self.rho = None
+    self.rhog = None
     """ array_like(float,ndim=2) :
     The gas density.
     `UNIT:` |gcm^-3|, `DIMS:` (nx,nz)
@@ -728,7 +728,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
   data.tg = numpy.zeros(shape=(data.nx, data.nz))
   data.td = numpy.zeros(shape=(data.nx, data.nz))
   data.nd = numpy.zeros(shape=(data.nx, data.nz))
-  data.rho = numpy.zeros(shape=(data.nx, data.nz))
+  data.rhog = numpy.zeros(shape=(data.nx, data.nz))
   data.taudiff = numpy.zeros(shape=(data.nx, data.nz))
   data.nHtot = numpy.zeros(shape=(data.nx, data.nz))
   data.damean = numpy.zeros(shape=(data.nx, data.nz))
@@ -794,7 +794,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
       data.nd[ix, zidx] = float(fields[8])
       data.tg[ix, zidx] = float(fields[9])
       data.td[ix, zidx] = float(fields[10])
-      data.rho[ix, zidx] = float(fields[12])
+      data.rhog[ix, zidx] = float(fields[12])
       data.chi[ix, zidx] = float(fields[15])
       data.taudiff[ix,zidx]=float(fields[18])
       data.chiRT[ix, zidx] = float(fields[iAJJ])
@@ -817,7 +817,7 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
 
 
   # derived quantitites
-  data.rhod = data.rho * data.d2g
+  data.rhod = data.rhog * data.d2g
   
   # AV like defined in the prodimo idl script  
   for ix in range(data.nx):
