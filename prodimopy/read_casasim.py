@@ -18,26 +18,46 @@ import astropy.io.fits as fits
 
 class CasaSim():
   """
-  
   Can deal with the following files
   .cube.fits,cont.fits, cube.integrated.fits,cube.specprof
+  
+  TODO: provide some general parameters which can than also used for plotting e.g.
+        - systemic velocity
+        - supposed centeral position of target
+        - velocity grid (absolute and relative) ... only radio velocity
+        - threesigma value ... 
+        - distance (can also be taken from fits files in case of simulations)
+        - beam sizes etc.
+  
   
   """
   def __init__(self,fn_prefix,directory=".",
                fn_cube=".cube.fits",
                fn_integrated=".cube.integrated.fits",
                fn_radprof=".cube.integrated.radial",
-               fn_specprof=".cube.specprof"):
+               fn_specprof=".cube.specprof",
+               fn_mom1=".cube.mom1.fits",
+               fn_pv=".cube.pv.fits",
+               fn_cont=".cont.fits",
+               fn_cont_radprof=".cont.radial"):
     
     self.fn_cube=directory+"/"+fn_prefix+fn_cube
     self.fn_integrated=directory+"/"+fn_prefix+fn_integrated
     self.fn_specprof=directory+"/"+fn_prefix+fn_specprof
     self.fn_radprof=directory+"/"+fn_prefix+fn_radprof
+    self.fn_mom1=directory+"/"+fn_prefix+fn_mom1
+    self.fn_pv=directory+"/"+fn_prefix+fn_pv
+    self.fn_cont=directory+"/"+fn_prefix+fn_cont
+    self.fn_cont_radprof=directory+"/"+fn_prefix+fn_cont_radprof
     
     self.cube=LineCube(self.fn_cube)
     self.integrated=LineIntegrated(self.fn_integrated)
     self.specprof=LineSpectralProfile(self.fn_specprof)
+    self.mom1=LineMom1(self.fn_mom1)
+    self.pv=LineMom1(self.fn_pv)
     self.radprof=RadialProfile(self.fn_radprof)
+    self.cont=Continuum(self.fn_cont)
+    self.cont_radprof=RadialProfile(self.fn_cont_radprof)
         
     self.bmaj=None
     self.bmin=None
@@ -72,15 +92,25 @@ class LineIntegrated():
       self.header=fitsdata[0].header
       self.data=fitsdata[0].data
     except FileNotFoundError:
-      return None     
+      return None
   
 class LineMom1():
-  def __init__(self):
-    return
+  def __init__(self,filename):
+    try:
+      fitsdata= fits.open(filename)
+      self.header=fitsdata[0].header
+      self.data=fitsdata[0].data
+    except FileNotFoundError:
+      return None
 
 class LinePV():
-  def __init__(self):
-    return    
+  def __init__(self,filename):
+    try:
+      fitsdata= fits.open(filename)
+      self.header=fitsdata[0].header
+      self.data=fitsdata[0].data
+    except FileNotFoundError:
+      return None    
 
 class LineSpectralProfile():
   def __init__(self,filename):
@@ -90,8 +120,13 @@ class LineSpectralProfile():
     return
   
 class Continuum():
-  def __init__(self):
-    return  
+  def __init__(self,filename):
+    try:
+      fitsdata= fits.open(filename)
+      self.header=fitsdata[0].header
+      self.data=fitsdata[0].data
+    except FileNotFoundError:
+      return None    
   
 class RadialProfile():
   def __init__(self,filename):
