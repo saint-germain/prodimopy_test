@@ -1,24 +1,51 @@
+"""
+.. module:: read 
+   :synopsis: Read routines and data structure for molecular cloud (0D chemistry) |prodimo| models.
+
+.. moduleauthor:: Ch. Rab
+
+
+"""
 from __future__ import division 
 from __future__ import print_function
 
-'''
-Holds all the output stuff from a ProDiMo Molecular Cloud model
-
-Currently only selected data is included
-
-@author: rab
-'''
 import numpy as np
 
 class Data_mc(object):
+  """
+  Data structure for molecular cloud (0D chemistry) |prodimo| models.
+
+  Can be used for time-dependent abundances or for steady-state (or final) abundances.
+  """
   def __init__(self, name):  
+    """
+    Parameters
+    ----------
+    
+    name : string
+      The name of the model.
+      
+    
+    Attributes
+    ----------
+    
+    """
     self.name = name
-    self.ages = None
+    """ string :
+    The name of the model (can be empty)
+    """
     self.species = None
+    """ array_like(string,ndim=1) :
+    an ordered list of species names.
+    """
+    self.ages = None
+    """ array_like(float,ndim=1) :
+    the output ages of the model.
+    """
     self.abundances = None
-    
-    
-    
+    """ array_like(float,ndim=2) :
+    the abundances for each species and each age `DIMS:` (number of ages,number of species).
+    """
     
 def _read_ages(filename):
   #f=open(filename,"r")
@@ -44,9 +71,26 @@ def _read_species(filename):
 
 
 def read_mc_final(directory,filename="Molecular_cloud.out",name=None):
-  '''
-  Reads the final Molecular Cloud abundances.
-  '''
+  """
+  Reads the final (last timestep) molecular cloud abundances.
+  
+  Parameters
+  ----------
+  
+  directory : string
+    The model directory.
+    
+  filename : string
+    The name of the file containing the abundances (default: `Molecular_cloud.out`). 
+    
+  name : string
+    The name of the model. Will be shown in the plots (default: `None`). 
+  
+  
+  FIXME: ist not consistent with read_mc, e.g. the species names such as N2H+ are not adapted here
+  FIXME: use numpy arrays for the abundances such as for time-dependent models.
+  
+  """
   if name == None:
     dirfields = directory.split("/")
     name = dirfields[len(dirfields) - 1]
@@ -54,11 +98,13 @@ def read_mc_final(directory,filename="Molecular_cloud.out",name=None):
   mc=Data_mc(name) 
   
   f=open(directory+"/"+filename)
+  lines = f.readlines()
+  f.close()
   
   species=list()
   abun=list()
   
-  for line in f:
+  for line in lines:
     fields=line.strip().split()
     species.append(fields[0])
     abun.append(float(fields[2]))
@@ -68,14 +114,26 @@ def read_mc_final(directory,filename="Molecular_cloud.out",name=None):
   
   return mc
   
-'''
-Reads the whol output of a molecular cloud runs
-Including the ages and the species list
-
-@author: rab
-'''    
 def read_mc(directory,filename,agesfile="mc_ages.txt",speciesfile="mc_species.txt",name=None):
+  """
+  Read routine for molecular cloud |prodimo| models including the ages and the species list. 
+
+  Parameters
+  ----------
   
+  directory : string
+    The model directory.
+    
+  filename: string
+    The name of the file containing the abundances for all ages. 
+    
+  agesfile: string
+    The file with the ages (default: `mc_ages.txt`)
+    
+  speciesfile: string
+    The file with the species names (default: `mc_species.txt`)
+        
+  """
   if name == None:
     dirfields = directory.split("/")
     name = dirfields[len(dirfields) - 1]
@@ -89,14 +147,12 @@ def read_mc(directory,filename,agesfile="mc_ages.txt",speciesfile="mc_species.tx
   return mc
 
 def read_umist(directory,filename="dc_molecules.dat",name=None):
-  '''
-  Reads the results of a UMIST rate13 code model
-  I only can deal with the output produced by dc.pl script
-  provided by the code distribution
+  """
+  Reads the results of a UMIST rate13 code model. 
+  Uses the output produced by dc.pl script provided by the UMIST code distribution. 
   
-  The date is provided as a Data_mc object
-  TODO: use the output of the code the dc.out file 
-  '''
+  The data is provided as a :class:`prodimopy.read_mc.Data_mc` object.   
+  """
   
   if name == None:
     dirfields = directory.split("/")
