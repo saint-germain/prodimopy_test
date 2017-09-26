@@ -1,3 +1,10 @@
+"""
+.. module:: plot_mc 
+   :synopsis: Plotting routines for molecular cloud |prodimo| models (0D chemistry).
+
+.. moduleauthor:: Ch. Rab
+"""
+
 from __future__ import division 
 from __future__ import print_function
 
@@ -7,14 +14,33 @@ import prodimopy.plot as pplt
 
 
 class PlotMcModels(object):
- 
+  """
+  Plot routines for a molecular cloud |prodimo| models (0D chemistry).
+  """
   def __init__(self, pdf,
                colors=None,
                styles=None,
                markers=None,
                fs_legend=6,   # TODO: init it with the system default legend fontsize
                ncol_legend=0):
-   
+    """
+    Parameters
+    ----------
+    name : pdf
+      a :class:`matplotlib.backends.backend_pdf.PdfPages` object used to save the plot.
+      
+    colors : list
+      a list of matplotlib colors used for different models. (default: None) 
+
+    styles : list
+      a list of matplotlib styles used for different models. (default: None) 
+
+    markers : list
+      a list of matplotlib markers used for different models. (default: None)
+      
+    Attributes
+    ----------
+    """       
     self.pdf = pdf    
     if colors == None: 
       self.colors = ["b", "g", "r", "c", "m", "y", "k", "sienna", "lime", "pink", "DarkOrange", "Olive"]
@@ -35,9 +61,9 @@ class PlotMcModels(object):
     self.ncol_legend = ncol_legend 
      
   def _dokwargs(self,ax,**kwargs):
-    '''
+    """    
     Handles the passed kwargs elements (assumes that defaults are already set)
-    '''
+    """
     if "ylim" in kwargs: 
       ax.set_ylim(kwargs["ylim"])
        
