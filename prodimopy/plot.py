@@ -11,53 +11,6 @@ import astropy.units as u
 import math
 
 
-def spnToLatex(spname):
-  # use string in case it is a binary format (python 3 comaptibility)      
-  name = str(spname)      
-  # TODO: make this a bit smarter    
-  if str(spname) == "HN2+": name = "N2H+" 
-  if str(spname) == "C18O": return "C^{18}O"
-  if str(spname) == "13CO": return "^{13}CO"
-  if str(spname) == "H13CO+": return "H^{13}CO^+"
-  
-  newname = ""  
-  for c in name:    
-    if c.isdigit():
-      newname += "_" + c
-    elif c == "-":
-      newname += "^-"
-    elif c == "+":
-      newname += "^+"
-    elif c == "#":
-      newname += "\#"       
-    else:
-      newname += c
-      
-  # repair the double ionized case
-  if "^+^+" in newname: newname=newname.replace("^+^+", "^{++}")
-      
-  return newname
-
-def nhver_to_zr(ir, nhver, model, log=True):
-  zrs = model.z[ir, :] / model.x[ir, :]
-    
-  if log == True:   
-    old_settings = np.seterr(divide='ignore')
-    ipol = interp1d(np.log10(model.NHver[ir, :]), zrs, bounds_error=False, fill_value=0.0, kind="linear")
-    np.seterr(**old_settings)  # reset to default
-  else:
-    ipol = interp1d(model.NHver[ir, :], zrs, bounds_error=False, fill_value=0.0, kind="linear")
-  
-  #return 0
-  return ipol(nhver)  
-
-def plog(array):      
-  # ignore divide by zero in log10
-  old_settings = np.seterr(divide='ignore') 
-  array = np.log10(array)
-  np.seterr(**old_settings)  # reset to default  
-  return array
-
 class Plot(object):
   '''
   Plot routines for a single ProDiMo model.
@@ -1199,3 +1152,55 @@ class Contour(object):
     self.label_fontsize=label_fontsize
     self.label_inline_spacing=label_inline_spacing
 
+
+def spnToLatex(spname):
+  """
+  Utilitiy function to convert species names to proper latex math strings.
+  
+  The returned string can directly be embedded in a latex $ $ statement. 
+  """
+  # use string in case it is a binary format (python 3 comaptibility)      
+  name = str(spname)      
+  # TODO: make this a bit smarter    
+  if str(spname) == "HN2+": name = "N2H+" 
+  if str(spname) == "C18O": return "C^{18}O"
+  if str(spname) == "13CO": return "^{13}CO"
+  if str(spname) == "H13CO+": return "H^{13}CO^+"
+  
+  newname = ""  
+  for c in name:    
+    if c.isdigit():
+      newname += "_" + c
+    elif c == "-":
+      newname += "^-"
+    elif c == "+":
+      newname += "^+"
+    elif c == "#":
+      newname += "\#"       
+    else:
+      newname += c
+      
+  # repair the double ionized case
+  if "^+^+" in newname: newname=newname.replace("^+^+", "^{++}")
+      
+  return newname
+
+def nhver_to_zr(ir, nhver, model, log=True):
+  zrs = model.z[ir, :] / model.x[ir, :]
+    
+  if log == True:   
+    old_settings = np.seterr(divide='ignore')
+    ipol = interp1d(np.log10(model.NHver[ir, :]), zrs, bounds_error=False, fill_value=0.0, kind="linear")
+    np.seterr(**old_settings)  # reset to default
+  else:
+    ipol = interp1d(model.NHver[ir, :], zrs, bounds_error=False, fill_value=0.0, kind="linear")
+  
+  #return 0
+  return ipol(nhver)  
+
+def plog(array):      
+  # ignore divide by zero in log10
+  old_settings = np.seterr(divide='ignore') 
+  array = np.log10(array)
+  np.seterr(**old_settings)  # reset to default  
+  return array

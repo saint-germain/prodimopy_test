@@ -1,5 +1,5 @@
 '''
-  Simple script to compare to ProDiMo models. 
+  Simple script to compare to ProDiMo (standard) models. 
   Uses the doAll() method of the compare module.
 
   This script only provides text output. 

@@ -663,19 +663,32 @@ class DataStarSpec(object):
 
 
 def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", filenameLineFlux="line_flux.out",td_fileIdx=None):
-  '''
-  Reads in all (not all yet) the output of a ProDiMo model in the given directory.
+  """
+  Reads in all (not all yet) the output of a ProDiMo model from the given model directory.
   
-  :param directory: the directory of the model (if None the current working directory is used)
-  :param name: an optional name for the model (e.g. can be used in the plotting routines) 
-  :param readlineEstimates: read the line estimates file (can be slow, so it is possible to deactivate it)
-  :param filename: the filename of the main prodimo output 
-  :param filenameLineEstimates: the filename of the line estimates output 
-  :param filenameLineFlux: the filename of the line flux output
-  :param td_fileIdx: in case of time-dependent model the index of a particular timestep can be provided (e.g. "03")
+  Parameters
+  ----------
+  directory : str 
+    the directory of the model (if `None` the current working directory is used).
+  name : str 
+    an optional name for the model (e.g. can be used in the plotting routines) 
+  readlineEstimates : boolean 
+    read the line estimates file (can be slow, so it is possible to deactivate it)
+  filename : str 
+    the filename of the main prodimo output 
+  filenameLineEstimates : str 
+    the filename of the line estimates output 
+  filenameLineFlux : str 
+    the filename of the line flux output
+  td_fileIdx : str 
+    in case of time-dependent model the index of a particular output age can be provided (e.g. "03")
   
-  :returns: a :class:`prodimopy.read.Data_ProDiMo` object
-  '''
+  
+  Returns
+  -------
+  :class:`prodimopy.read.Data_ProDiMo`
+    the |prodimo| model data or `None` in case of errors.
+  """
   # guess a name if not set
   if name == None:
     if directory==None or directory=="." or directory=="":
@@ -884,9 +897,16 @@ def read_species(directory,pdata,filename="Species.out"):
   Stores the species masses (unit g) in pdata.spmasses
   Also adds the electron "e-"
   
-  :param directory: the directory of the model
-  :param pdata: the ProDiMo Model data structure
-  :param filename: alternative Filename 
+  Parameters
+  ----------
+  directory : str 
+    the directory of the model
+    
+  pdata : :class:`prodimopy.read.Data_ProDiMo` 
+    the ProDiMo Model data structure, where the data is stored
+    
+  filename: str 
+    an alternative Filename
   '''
   try:
     f = open(directory + "/" + filename, 'r')
@@ -907,9 +927,22 @@ def read_species(directory,pdata,filename="Species.out"):
 
   pdata.spmasses["e-"]=const.m_e.cgs.value
 
+
 def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
   '''
-  Read FlineEstimates.out Can only be done after ProDiMo.out is read
+  Read FlineEstimates.out Can only be done after ProDiMo.out is read.
+  
+  Parameters
+  ----------
+  directory : str 
+    the directory of the model
+    
+  pdata : :class:`prodimopy.read.Data_ProDiMo` 
+    the ProDiMo Model data structure, where the data is stored
+    
+  filename: str 
+    an alternative Filename
+
   '''
   # do not read the whole file as it is huge
   try: 
@@ -1279,14 +1312,16 @@ def read_starSpec(directory,filename="StarSpectrum.out"):
     
   return starSpec 
 
-def read_bgSpec(directory,filename=None):
+def read_bgSpec(directory,filename="BgSpectrum.out"):
   ''' 
-  Reads BgSpectrum.out
+  Reads the BgSpectrum.out file. 
+  
+  Returns
+  -------  
+    :class:`prodimopy.read.DataBgSpec`
+    the background spectra or `None` if not found.
   '''
-  if filename is None:
-    rfile = directory + "/BgSpectrum.out"
-  else:
-    rfile = directory + "/"+filename   
+  rfile = directory + "/"+filename
   try:
     f = open(rfile, 'r')
   except:
