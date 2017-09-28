@@ -5,12 +5,92 @@ from __future__ import unicode_literals
 import numpy as np
 
 from inspect import ismethod
+import os
 
-class Compare(object):
+
+class CompareAbs(object):
   """
-  Class for comparing to ProDiMo models.
-  Initialization requires two ProDiMo_Data models, where the second one
-  is the "reference" model
+  An "abstract" class for comparing some kind of |prodimo| model.
+  
+  A subclass of this class needs to implement the necessary compare routine(s).
+  (example see :class:`Compare`)
+  
+  """
+  def diffArray(self,a,aref,diff):
+    """
+    Checks the relative difference between two arrays. 
+    
+    If the arrays do not have the same shape they are considered
+    as inequal (return `False`).
+    
+    Parameters
+    ----------
+    a : array_like(float,ndim=whatever)
+      an array.
+      
+    aref: array_like(float,ndim=same as a)
+      the reference array for comparison.
+      
+    diff : float
+      if the values of the arrays differe only by <diff the are considered
+      as equal.
+    """
+    if a.shape != aref.shape:
+      return False,None
+    
+    da=np.absolute(a/aref-1.0)
+    if da.max() >= diff:
+      return False,da
+    
+    return True,da
+
+  def diff(self,val,valref,diff):
+    """
+    Checks the relative difference between to values.
+    
+    Parameters
+    ----------
+    a : float
+      a value.
+      
+    aref: float
+      the reference value
+      
+    diff : float
+      if the values of the arrays differe only by <diff the are considered
+      as equal.
+    """
+    d=abs(val/valref-1.0)
+    if d >= diff: return False,d
+     
+    return True,d 
+
+  def doAll(self):
+    """
+    Utility function to call all `compare*` functions.
+    
+    Prints out what function failed and the errors.
+    """
+    for name in dir(self):
+      if name.startswith("compare"):
+        cfun = getattr(self, name)
+        if ismethod(cfun):
+          print("{:25s}".format(name+": "),end="")
+          ok,val=cfun()
+          
+          if ok:
+            print("{:8s}".format("OK"))
+          else:
+            print("{:8s}".format("FAILED"),end="")
+            if val is not None:
+              print("  Max/Avg rel. Error: ","{:10.2%}".format(np.max(val)),"{:10.2%}".format(np.average(val)))
+            else:
+              print("  Max rel. Error: ",str(val))
+
+
+class Compare(CompareAbs):
+  """
+  Class for comparing to ProDiMo models of type :class:`prodimopy.read.ProDiMo_Data`       
   
   Every compare Function returns true or false, and the relative differences
   (in case of arrays these are arrays). 
@@ -36,26 +116,8 @@ class Compare(object):
     self.lZetaX=1.e-25
     self.specCompare=("e-","H2","CO","H2O","N2","N2#","CO#","H2O#","H3","H3+","HCO+","HN2+","SO2","SiO",
                       "Ne+","Ne++","H+","OH","C+","S+","Si+","CN","HCN","NH3")
-    
-  def diffArray(self,a,aref,diff):
-    '''
-    Checks the relative difference between two arrays
-    '''    
-    da=np.absolute(a/aref-1.0)
-    if da.max() >= diff:
-      return False,da
-    
-    return True,da
 
-  def diff(self,val,valref,diff):
-    '''
-    Checks the relative difference between to values
-    '''    
-    d=abs(val/valref-1.0)
-    if d >= diff: return False,d
-     
-    return True,d 
-
+      
   def compareLineFluxes(self): 
     '''
     Compares the line fluxes
@@ -74,11 +136,11 @@ class Compare(object):
           return False,d
   
     return True,None
-  
-  '''
-  Compares the SEDs 
-  '''
+    
   def compareSED(self):
+    """
+    Compares the SEDs 
+    """
     if self.m.sed is None and self.mref.sed is None: return True,None
     if self.m.sed is not None and self.mref.sed is None: return False,None
     if self.m.sed is None and self.mref.sed is not None: return False,None
@@ -115,8 +177,7 @@ class Compare(object):
   def compareDustOpac(self):
     '''
     Compares the dust opacities.
-    '''
-    
+    '''    
     f,d=self.diffArray(self.m.dust.kext, self.mref.dust.kext, self.d)
     
     if f is False:
@@ -162,7 +223,60 @@ class Compare(object):
     self.m.zetaX[self.m.zetaX < self.lZetaX]=self.lZetaX
     self.mref.zetaX[self.mref.zetaX < self.lZetaX]=self.lZetaX
     
-    return self.diffArray(self.m.zetaX,self.mref.zetaX,self.dZetaX) 
+    return self.diffArray(self.m.zetaX,self.mref.zetaX,self.dZetaX)
+  
+
+class CompareMc(CompareAbs): 
+  """
+  Class for comparing to ProDiMo models of type :class:`prodimopy.read_mc.DataMc`       
+  
+  Every compare Function returns true or false, and the relative differences
+  (in case of arrays these are arrays). 
+  
+  Can be used in e.g. automatic testing routines or in simple command line
+  tools to compare ProDiMo model results. 
+  """
+ 
+  def __init__(self,model,modelref):
+    self.m=model
+    self.mref=modelref
+    # the allowed difference between the line fluxes
+    self.d=1.e-4
+    
+  
+  def compareAbundances(self):
+    """
+    Compares the abundances of two molecular cloud (0D chemistry) models. 
+    
+    Assumes that both models used the same number of ages and species in the same order.
+    """    
+    return self.diffArray(self.m.abundances,self.mref.abundances,self.d)
+
+
+def eval_model_type(modelDir):
+  """
+  Try to guess the model type (e.g. mc, full prodimo etc.).
+  Default is always prodimo.
+  
+  Possible types: 
+    `prodimo` .... full prodimo model
+    `mc` ......... molecular cloud (0D model) 
+  
+  Returns
+  -------
+    str either prodmimo or mc  
+  
+  FIXME: this is maybe not the best place for this routine
+  FIXME: provide constants for the values (what's the best way to do this in pyhton?)
+  
+  """
+  mtype="prodimo"
+  if os.path.isfile(modelDir+"/Molecular_Cloud_Input.in"):
+    mtype="mc"
+  
+  return mtype
+
+
 
 #   def compareFlineEstimates(self):
 #     '''
@@ -200,26 +314,4 @@ class Compare(object):
 #     #print(specidxMref)    
 #   
 #     return self.diffArray(self.m.nmol[:,:,specidxM],self.mref.nmol[:,:,specidxMref],self.dAbundances)  
-  
-  def doAll(self):
-    '''
-    Utility function to call all compare* functions and print out if the 
-    test failed or not     
-    '''
-    
-    for name in dir(self):
-      if name.startswith("compare"):
-        cfun = getattr(self, name)
-        if ismethod(cfun):
-          print("{:25s}".format(name+": "),end="")
-          ok,val=cfun()
-          
-          if ok:
-            print("{:8s}".format("OK"))
-          else:
-            print("{:8s}".format("FAILED"),end="")
-            if val is not None:
-              print("  Max/Avg rel. Error: ","{:10.2%}".format(np.max(val)),"{:10.2%}".format(np.average(val)))
-            else:
-              print("  Max rel. Error: ",str(val))
           
