@@ -11,7 +11,7 @@ abundances for all ages (as a function of time). Also the accoring ages and spec
 .. automodule:: prodimopy.read_mc
 
 
-.. some usefull replacements for units
+.. some useful replacements for units
 
 .. |gcm^-3| replace:: g cm\ :sup:`-3`
 .. |cm^-3| replace:: cm\ :sup:`-3`
