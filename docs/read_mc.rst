@@ -8,6 +8,13 @@ Those kind of |prodimo| are 0D chemistry models which provide the abundances for
 The module provides routines to read only the final abundances (last age or steady-state model) or the
 abundances for all ages (as a function of time). Also the accoring ages and species names are read.
 
+Usage example
+-------------
+
+**TODO**
+
+Source documentation
+--------------------
 .. automodule:: prodimopy.read_mc
 
 

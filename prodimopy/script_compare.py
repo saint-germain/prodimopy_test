@@ -17,7 +17,9 @@ import argparse
 import prodimopy.read as pread
 import prodimopy.compare as pcomp
 
-def main(args=None): 
+# The main routine is require to have an entry point. 
+# It is not necessary if you want to write your own script.
+def main(args=None):
   parser = argparse.ArgumentParser(description='Compares to ProDiMo models')
   parser.add_argument('model1', help='The directory/path of the first model used for the comparison.')
   parser.add_argument('model2', help='The directory/path of the second/reference model used for comparison.')

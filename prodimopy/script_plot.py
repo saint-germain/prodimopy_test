@@ -1,10 +1,12 @@
-###############################################################################
-# Default script for the single module plotting routines. 
-# a script called "pplot" will be installed automatically during the 
-# installation process.  
-################################################################################
+"""
+Default script for the plotting the results of a single ProDiMo model. 
+
+A script called `pplot`, which can directly by called from the command line, 
+will be installed automatically during the installation process.  
+"""
 from __future__ import print_function
-from __future__ import division 
+from __future__ import division
+from __future__ import unicode_literals
 
 # the above two statement are for phyton2 pyhton3 compatibility.
 # With this statmens you can write python3 code and it should also work
@@ -22,8 +24,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 import prodimopy.read as pread
 import prodimopy.plot as pplot
 
-
-def main(args=None):  
+# The main routine is require to have an entry point. 
+# It is not necessary if you want to write your own script.
+def main(args=None):
   ###############################################################################
   # Command line parsing
   # this is optional you do not have to do it this way. 

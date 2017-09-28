@@ -137,12 +137,13 @@ class PlotModels(object):
         ax.set_title(kwargs["title"])      
                  
   def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,lineObs=None,**kwargs):
-    '''
-    Plots a selection of lines or lineEstimates
-    TODO: split lines and lineestimate plots
-    TODO: if not FlineEstimates than it would be also possible to plot all lines for which 
-          line transfer is done
-    '''
+    """
+    Plots a selection of lines or lineEstimates.
+    
+    TODO: split lines and lineEstimates plots
+    
+    TODO: if not FlineEstimates than it would be also possible to plot all lines for which line transfer is done           
+    """
     print("PLOT: plot_lines ...")
     
     if len(lineidents)>10:

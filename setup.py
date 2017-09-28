@@ -102,6 +102,7 @@ setup(
     entry_points={
       'console_scripts': [
         'pplot=prodimopy.script_plot:main',
+        'pplot_models=prodimopy.script_plot_models:main',
         'pcompare=prodimopy.script_compare:main'
          ],
     },

@@ -27,6 +27,7 @@ Source Documentation
    read
    read_mc
    plot
+   plot_models
    compare
 
 
@@ -38,14 +39,23 @@ writing any python code.
 
 pplot
 -----
+Produces plots for a single prodimo model. 
+Useful to check the prodimopy installation or to take a quick look on a |prodimo| model 
 
-produces plots for a single prodimo model. 
-Usefull to check the prodimopy installation or to take a quick look on a |prodimo| model (see :ref:`sec_plot`). 
+For details see :ref:`sec_plot`. 
+
+pplot_models
+------------
+Produces plots for a given set of prodimo models. 
+Useful to quickly compare visualy different |prodimo| models. 
+
+For details see :ref:`sec_plot_models`. 
 
 pcompare
 --------
+Compares the results of two |prodimo| models.
 
-Compares two |prodimo| models (see :ref:`sec_compare`). 
+For details see :ref:`sec_compare`. 
 
 
 
