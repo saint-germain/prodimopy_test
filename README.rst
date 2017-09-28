@@ -25,7 +25,7 @@ Installation
 ************
 Currently the easiest way to use it is to clone this repository and install the package directly from the source:
 
-* click on the Clone link in the menu and copy the git command
+* copy the git clone command at the top of this page
 * change into a directory of your choice and execute the command
 * change into the prodimopy directory and type:
 
