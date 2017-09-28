@@ -51,6 +51,7 @@ def _read_ages(filename):
   #f=open(filename,"r")
   
   #print(f.readlines())
+  print("READ: Reading File: ", filename, " ...")
   ages=np.loadtxt(filename)
   # insert age zero initial abundance
   ages=np.insert(ages,0, 0.0)
@@ -61,6 +62,7 @@ def _read_ages(filename):
   return ages
 
 def _read_species(filename):
+  print("READ: Reading File: ", filename, " ...")
   f=open(filename,"r")
   
   species=[str.strip() for str in f.readlines()]
@@ -88,6 +90,7 @@ def read_mc_final(directory,filename="Molecular_cloud.out",name=None):
   
   
   FIXME: ist not consistent with read_mc, e.g. the species names such as N2H+ are not adapted here
+  
   FIXME: use numpy arrays for the abundances such as for time-dependent models.
   
   """
@@ -142,6 +145,7 @@ def read_mc(directory,filename,agesfile="mc_ages.txt",speciesfile="mc_species.tx
   mc.ages=_read_ages(directory+"/"+agesfile)
   mc.species=_read_species(directory+"/"+speciesfile)
   # make ages first index, species second 
+  print("READ: Reading File: ", directory+"/"+filename, " ...")
   mc.abundances=np.transpose(np.loadtxt(directory+"/"+filename))
   
   return mc
@@ -179,7 +183,7 @@ def read_umist(directory,filename="dc_molecules.dat",name=None):
   out=Data_mc(name)
   out.ages=np.array(ages,dtype='|S4').astype(np.float)
   out.species=species
-  out.abundances=np.array(abun)
+  out.abundances=np.array(abun).astype(np.float)
     
   return out
 
