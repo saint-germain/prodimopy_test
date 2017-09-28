@@ -1,9 +1,10 @@
 prodimopy
 =========
 
-Python package for plotting ProDiMo results.
+Python package for reading and plotting ProDiMo results.
 
-This is still under development, but you can use it already, if you want. 
+This is still under development, but it is usable.
+Any bug reports or feature requests are very welcome.
 
 Requirements
 ************
@@ -12,12 +13,13 @@ If you use anaconda_ all this packages should be available in your python distri
 The following packages are required
 
 * *matplotib* required for the plotting part only, version>=2 is recommended  
-* astropy     version >=1.3 is recommended
-* numpy       no known special requirements
-* scipy       no known special requirements
+* *astropy*     version >=1.3 is recommended
+* *numpy*       no known special requirements
+* *scipy*       no known special requirements
 
 If you use the setup script (see Installation) those packages will be installed automatically if 
-they are not included in your python distribution.
+they are not included in your python distribution. We recommend to use python3 but python2 should
+also still work.
 
 Installation
 ************
@@ -39,7 +41,6 @@ If you need root access to install python packages but you do not have it, you c
 ::
 
   python setup.py develop --user
-
 
 
 Code Update
