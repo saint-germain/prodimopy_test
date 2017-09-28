@@ -3,17 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-prodimopy documentation
-=======================
+*********
+prodimopy
+*********
 
 The python package provides routines for reading and plotting the output of one or more ProDiMo model.
+
 
 Installation
 ============
 
 The package can be installed from a bitbucket repository. 
 For details see https://bitbucket.org/cheesyog/prodimopy
-
 
 
 Source Documentation
@@ -26,6 +27,26 @@ Source Documentation
    read
    read_mc
    plot
+   compare
+
+
+Command-line utilities
+======================
+
+prodimopy also installs a few command line utils which can be used without lauching a python interpreter or 
+writing any python code.
+
+pplot
+-----
+
+produces plots for a single prodimo model. 
+Usefull to check the prodimopy installation or to take a quick look on a |prodimo| model (see :ref:`sec_plot`). 
+
+pcompare
+--------
+
+Compares two |prodimo| models (see :ref:`sec_compare`). 
+
 
 
 Indices and tables
