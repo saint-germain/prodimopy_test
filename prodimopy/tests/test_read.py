@@ -122,7 +122,7 @@ class TestGetLine(unittest.TestCase):
     line=data.getLine(867.0)
     self.assertNotEqual(line, None)
     self.assertEqual(line.species, "CO")
-    self.assertEqual(line.wl, 866.96325)          
+    self.assertEqual(line.wl, 866.96325)
 
 class TestReadProdimo(unittest.TestCase):
   def test_read_prodimo(self):

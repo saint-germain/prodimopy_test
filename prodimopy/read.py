@@ -850,15 +850,14 @@ def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo
     read_lineEstimates(directory, data, filename=filenameLineEstimates)
   else:
     data.lineEstimates = False  
-   
-  fileloc=directory + "/dust_opac.out"
-  print("READ: " +fileloc )
-  data.dust = read_dust(fileloc)
+     
+  print("READ: " +directory + "/dust_opac.out" )
+  data.dust = read_dust(directory)
 
   fileloc=directory + "/dust_opac_env.out"
   if os.path.isfile(fileloc):
     print("READ: " + fileloc)
-    data.env_dust = read_dust(fileloc)  
+    data.env_dust = read_dust(directory,filename="dust_opac_env.out")  
 
   print("READ: " + directory + "/StarSpectrum.out")
   data.starSpec = read_starSpec(directory)
@@ -908,10 +907,12 @@ def read_species(directory,pdata,filename="Species.out"):
   filename: str 
     an alternative Filename
   '''
+  rfile = directory + "/" + filename
   try:
-    f = open(directory + "/" + filename, 'r')
+    
+    f = open(rfile, 'r')
   except: 
-    print(("WARN: Could not open " + directory + "/" + filename + "!")) 
+    print(("WARN: Could not open " + rfile + "!")) 
     pdata.spmasses=None    
     return None
   
@@ -945,12 +946,13 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
 
   '''
   # do not read the whole file as it is huge
+  rfile = directory + "/" + filename
   try: 
     # nedd binary read to be compatible to python 3
-    f = open(directory + "/" + filename, 'rb')
-    pdata.__fpFlineEstimates = directory + "/" + filename   
+    f = open(rfile, 'rb')
+    pdata.__fpFlineEstimates = rfile   
   except:
-    print(("WARN: Could not open " + directory + "/" + filename + "!"))
+    print(("WARN: Could not open " + rfile + "!"))
     pdata.lineEstimates = None
     return
   
@@ -1040,10 +1042,22 @@ def _read_lineEstimateRinfo(pdata, lineEstimate):
       
   f.close()
   
-def  read_linefluxes(directory, filename="line_flux.out"):      
-  '''
-  Reads the lines_fluxes.out and puts the data into Data_line
-  '''  
+def  read_linefluxes(directory, filename="line_flux.out"):
+  """ Reads the line fluxes output.
+  
+  Parameters
+  ----------
+  directory : str
+    the model directory.
+    
+  filename : str
+    the filename of the output file (optional).
+    
+  Returns
+  -------
+  list(:class:`prodimopy.read.DataLine`) 
+    List of lines.
+  """  
   try:
     f = open(directory + "/" + filename, 'r')
   except: 
@@ -1198,16 +1212,17 @@ def read_lineObsProfile(filename,directory="."):
     
   return profile
 
-def read_gas(directory):
+def read_gas(directory,filename="gas_cs.out"):
   '''
   Reads gas_cs.out
   Returns an object of Type DataDust  
   ''' 
+  rfile = directory + "/"+filename    
   try:
-    f = open(directory + "/gas_cs.out", 'r')
+    f = open(rfile, 'r')
   except:
-    print(("WARN: Could not open " + directory + "/gas_cs.out" + "!"))
-    return None
+    print("WARN: Could not read " + rfile + "!")
+    return None    
         
   nlam = int(f.readline().strip())  
   
@@ -1228,16 +1243,16 @@ def read_gas(directory):
 
   return gas  
 
-def read_sed(directory):
+def read_sed(directory,filename="SED.out"):
   ''' 
-  Reads SED.out
+  Reads an ProDiMo SED output.
   '''
-  rfile = directory + "/SED.out"    
+  rfile = directory + "/"+filename    
   try:
     f = open(rfile, 'r')
   except:
     print("WARN: Could not read " + rfile + "!")
-    return None    
+    return None
   
   elems = f.readline().split()
   distance = float(elems[len(elems) - 1])
@@ -1274,15 +1289,15 @@ def read_sed(directory):
   
   sed.Lbol=numpy.trapz(sed.fnuErg[mask],x=sed.nu[mask])*-1.0
   sed.Lbol=sed.Lbol*4.0*math.pi*(((distance*u.pc).to(u.cm)).value)**2    
-  sed.Lbol=sed.Lbol/(const.L_sun.cgs).value
-  print(sed.Lbol)  
+  sed.Lbol=sed.Lbol/(const.L_sun.cgs).value    
   
   #print(numpy.trapz((sed.nu*sed.fnuErg),x=sed.nu)) 
   #print(numpy.trapz(sed.fnuErg,x=sed.nu))
-  sed.Tbol=1.25e-11*numpy.trapz((sed.nu[mask]*sed.fnuErg[mask]),x=sed.nu[mask])/numpy.trapz(sed.fnuErg[mask],x=sed.nu[mask])
-  print(sed.Tbol)
+  sed.Tbol=1.25e-11*numpy.trapz((sed.nu[mask]*sed.fnuErg[mask]),x=sed.nu[mask])/numpy.trapz(sed.fnuErg[mask],x=sed.nu[mask])  
+  
+  f.close()
       
-  return sed      
+  return sed
 
 def read_starSpec(directory,filename="StarSpectrum.out"):
   ''' 
@@ -1310,6 +1325,7 @@ def read_starSpec(directory,filename="StarSpectrum.out"):
     starSpec.nu[i] = float(elems[1])
     starSpec.Inu[i] = float(elems[2])
     
+  f.close()  
   return starSpec 
 
 def read_bgSpec(directory,filename="BgSpectrum.out"):
@@ -1340,18 +1356,19 @@ def read_bgSpec(directory,filename="BgSpectrum.out"):
     
   return bgSpec 
 
-def read_dust(fileloc):
+def read_dust(directory,filename="dust_opac.out"):
   '''
   Reads dust_opac.out
   Returns an object of Type DataDust
   Dust not read the dust composition yet
   ''' 
+  rfile = directory + "/"+filename
   try:
-    f = open(fileloc, 'r')
+    f = open(rfile, 'r')
   except:
-    print(("WARN: Could not open " + fileloc+" !"))
-    return None
-        
+    print("WARN: Could not read " + rfile + "!")
+    return None  
+          
   fields = [int(field) for field in f.readline().split()]
   ndsp = fields[0]      
   nlam = fields[1]  
