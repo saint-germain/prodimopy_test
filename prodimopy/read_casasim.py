@@ -15,6 +15,7 @@ from astropy import units as u
 import astropy.wcs as wcs
 import astropy.io.fits as fits
 from astropy.wcs.utils import proj_plane_pixel_scales
+from astropy.wcs.wcs import WCS
 
 
 class CasaSim():
@@ -142,29 +143,68 @@ class CASAImage(object):
   Super class for an observable (CASA Simulation or real Observation) for image data including cubes.
   
   Should not be instantiated directly.
+  Opens the fits file and initializes some helper attributes.
   
   """
-  def __init__(self):
+  def __init__(self,filename=None):
     """
-    should be called from the Sub-class if required 
+    Needs to be called from a subclass.
     
+    Parameters
+    ----------
+    filename : str
+      The file name of the fits file.
+      
+    Attributes
+    ----------
+    header : 
+      the header of the fits file. It is just a reference to the fits header.
+      
+    data : array_like(float)
+      the fits data. Assumes that there is only one HDU.
+      
+    bmaj : float
+      the major axis of the beam (same units as in the fits file)
+
+    bmaj : float
+      the minor axis of the beam (same units as in the fits file)
+
+    bPA : float
+      the beam position angle
+      
+    centerpix : array_like(float,ndim=1)
+      the pixel coordinates of the center (x and y coordinate)
+    
+    wcsabs : :class:`astropy.wcs.WCS` 
+      an absulte astropy world coordinate system (for the spatial coordinates). 
+      Can be used for plotting transformation.
+
+    wcsrel : :class:`astropy.wcs.WCS` 
+      astropy world coordinate system (for the spatial coordinates) relative the 
+      the center of the image (`centerpix`) 
+      Can be used for plotting transformation.
+      (see :func:`~prodimopy.read_casasim.CASAImage._linear_offset_coords`)
+      
     """
+    if filename is not None:
+      try:
+        fitsdata= fits.open(filename)
+        self.header=fitsdata[0].header
+        self.data=fitsdata[0].data
+      except FileNotFoundError:
+          return None
+    
     self.bmaj=self.header["BMAJ"]
     self.bmin=self.header["BMIN"]
     self.bPA=self.header["BPA"]
     # this is all a bit strange but if it is even pixels now -1 is better
     self.centerpix=[self.header["CRPIX1"],self.header["CRPIX2"]]
-    #print(self.header["NAXIS1"]%2)
-    #if (self.header["NAXIS1"]%2) != 0:
-    #  print("Hallo")
     self.centerpix[0]-=1
-    #print(self.header["NAXIS2"]%2)
-    #if (self.header["NAXIS2"]%2) != 0:
-    #print("Hallo2")  
     self.centerpix[1]-=1
-        
+            
     self.wcsabs=wcs.WCS(self.header,naxis=(1,2))
     self.wcsrel=self._linear_offset_coords(self.wcsabs, self.centerpix)
+
 
   def _linear_offset_coords(self,wcsabs, center):
     """
@@ -209,20 +249,14 @@ class CASAImage(object):
     return("BEAM(maj,min,PA): "+str(self.bmaj)+","+str(self.bmin)+","+str(self.bPA)+"\n"
            "CENTERPIX: "+str(self.centerpix))
 
+
 class LineCube(CASAImage):
   """  
   The full line cube.
   """
   def __init__(self,filename,systemic_velocity=0.0):
-    try:
-      fitsdata= fits.open(filename)
-      self.header=fitsdata[0].header
-      self.data=fitsdata[0].data
-      self.systemic_velocity=systemic_velocity
-    except FileNotFoundError:
-      return None
-    
-    CASAImage.__init__(self)
+    self.systemic_velocity=systemic_velocity
+    CASAImage.__init__(self,filename)
     self.vel=self._init_vel()
     
   def _init_vel(self):
@@ -249,36 +283,25 @@ class LineCube(CASAImage):
     vel=(wz * u.Hz).to(u.km / u.s, equivalencies=freq_to_vel)
      
     return vel  
-    
-      
+
+
 class LineIntegrated(CASAImage):
   """
   Zeroth moment image (Integrated emission)
   """
   def __init__(self,filename):
-    try:
-      fitsdata= fits.open(filename)
-      self.header=fitsdata[0].header
-      self.data=fitsdata[0].data
-    except FileNotFoundError:
-      return None
-    
-    CASAImage.__init__(self)
+    CASAImage.__init__(self,filename)
   
 class LineMom1(CASAImage):
   """
   First Moment image.
   """
   def __init__(self,filename,systemic_velocity=0.0):
-    try:
-      fitsdata= fits.open(filename)
-      self.header=fitsdata[0].header
-      self.data=fitsdata[0].data
-      self.systemic_velocity=systemic_velocity
-    except FileNotFoundError:
-      return None
     
-    CASAImage.__init__(self)
+    CASAImage.__init__(self,filename)
+    
+    self.systemic_velocity=systemic_velocity
+    
 
 class LinePV(CASAImage):
   """
@@ -286,51 +309,24 @@ class LinePV(CASAImage):
   
   """
   def __init__(self,filename,systemic_velocity=0.0):
-    try:
-      fitsdata= fits.open(filename)
-      self.header=fitsdata[0].header
-      self.data=fitsdata[0].data
-      self.systemic_velocity=systemic_velocity
-    except FileNotFoundError:
-      return None
     
-    CASAImage.__init__(self)    
+    CASAImage.__init__(self,filename)
+    
+    self.systemic_velocity=systemic_velocity
     
     # FIXME: CASA sets the centrpix for the velocity coordinate to a strange value
     # so if it is negative calculate from the dimension
     if self.centerpix[1] < 0:
       # FIXME: work only with odd numbers
       self.centerpix[1]=int(self.header["NAXIS2"]/2)      
-        
-    
-#   def _init_vel(self):
-#     """
-#     Converts the spectral coordinate to (radio) velocities.
-#      
-#     Currently assumes that the spectral coordinate is in units of Hz.
-# 
-#     FIXME: read unit from fits file 
-# 
-#     FIXME: stolen from here ... https://github.com/astropy/astropy/issues/4529
-#     mabe not the best way to go
-#     
-#     FIXME: maybe could be generalized
-#          
-#     """
-#     wcsvel=wcs.WCS(self.header)
-#     xv = numpy.repeat(0, self.header['NAXIS3'])
-#     yv = numpy.repeat(0, self.header['NAXIS3'])
-#     zv = numpy.arange(self.header['NAXIS3']) 
-#      
-#     wx, wy, wz = wcsvel.wcs_pix2world(xv, yv, zv, 0)
-#     freq_to_vel = u.doppler_radio(self.header['RESTFRQ']*u.Hz)
-#     vel=(wz * u.Hz).to(u.km / u.s, equivalencies=freq_to_vel)
-#      
-#     return vel  
-  
-    
+
 
 class LineSpectralProfile():
+  """
+  The spectral line profile.
+  
+  Reads a spectral profile produced with CASA.
+  """
   def __init__(self,filename,systemic_velocity=0.0):
     data=numpy.loadtxt(filename)
     self.vel=data[:,3]
@@ -340,6 +336,13 @@ class LineSpectralProfile():
   
  
 class RadialProfile():
+  """
+  Azimuthally averaged radial intensity profile.
+  
+  Reads a file produced by the casa taks casairing.
+  see https://www.oso.nordic-alma.se/software-tools.php
+  
+  """
   def __init__(self,filename,bwidth=None):
     radprof=numpy.loadtxt(filename)
     self.arcsec=radprof[:,0]
@@ -348,14 +351,10 @@ class RadialProfile():
     self.bwidth=bwidth
     return
   
-
 class Continuum(CASAImage):
-  def __init__(self,filename):
-    try:
-      fitsdata= fits.open(filename)
-      self.header=fitsdata[0].header
-      self.data=fitsdata[0].data
-    except FileNotFoundError:
-      return None    
+  """
+  A continuum image.
   
-    CASAImage.__init__(self)
+  """  
+  def __init__(self,filename): 
+    CASAImage.__init__(self,filename)

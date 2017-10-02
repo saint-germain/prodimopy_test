@@ -26,9 +26,10 @@ Source Documentation
 
    read
    read_mc
-   read_casasim
    plot
    plot_models
+   read_casasim
+   plot_casasim
    compare
 
 
