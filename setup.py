@@ -69,10 +69,10 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     # FIXME: include proper version numbers
     install_requires=[
-                      'matplotlib>=2.0',
+                      'matplotlib',
                       'numpy',
                       'scipy',
-                      'astropy>=1.3'],
+                      'astropy'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
