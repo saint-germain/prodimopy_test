@@ -699,7 +699,9 @@ class Plot(object):
       else: 
         style=styles[iplot]
 
-      color=None          
+      # it seems the color always need to be a string
+      # FIXME: check thif for compatibility
+      color="None"
       if colors!=None:
         color=colors[iplot]
         
