@@ -3,26 +3,27 @@
 
 .. moduleauthor:: Ch. Rab
 
-
 """
 from __future__ import division 
 from __future__ import print_function
 from __future__ import unicode_literals
 
 from astropy import wcs
-import astropy.units as u
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
 from matplotlib import patches
-import numpy
 from matplotlib.offsetbox import AnchoredOffsetbox, AuxTransformBox
+from matplotlib.ticker import MaxNLocator
+import numpy
+
+import astropy.units as u
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 class PlotCasasim(object):
   '''
   Plot routines for casa simulation results. 
   
-  This class can be used together with :mod:`prodimoy.read_casasism`
+  This class can be used together with :mod:`prodimoy.read_casasim`
   '''
   def __init__(self, pdf):
     """
@@ -30,10 +31,50 @@ class PlotCasasim(object):
     Parameters
     ----------
     pdf : class:`matplotlib.backends.backend_pdf.PdfPages` 
-      this object is used to store the plots in a pdf file.
+      this object is used to save the plots in a pdf file.
     
     """    
     self.pdf = pdf
+    
+  def _dokwargs(self,ax,**kwargs):
+    '''
+    Handles the passed kwargs elements (assumes that defaults are already set)
+    TODO: make this a general function .... 
+    TODO: does not work with subplots
+    '''
+#     if "ylim" in kwargs: 
+#       ax.set_ylim(kwargs["ylim"])
+#       
+#     if "xlim" in kwargs: 
+#       ax.set_xlim(kwargs["xlim"])
+#               
+#     if "xlog" in kwargs:
+#       if kwargs["xlog"]: 
+#         ax.semilogx()
+#       else:
+#         ax.set_xscale("linear")
+#       
+#     if "ylog" in kwargs:
+#       if kwargs["ylog"]: 
+#         ax.semilogy()
+#       else:              
+#         ax.set_yscale("linear")
+#       
+#     if "xlabel" in kwargs:
+#       ax.set_xlabel(kwargs["xlabel"])  
+# 
+#     if "ylabel" in kwargs:
+#       ax.set_ylabel(kwargs["ylabel"])
+#     
+#     if self.title != None:
+#       if self.title.strip() != "":
+#         ax.set_title(self.title.strip())
+                
+    if "title" in kwargs:
+      if  kwargs["title"] != None and kwargs["title"].strip() != "":
+        ax.set_title(kwargs["title"].strip())
+      else:
+        ax.set_title("")
 
   def add_beam(self, ax, image):
     """
@@ -62,10 +103,13 @@ class PlotCasasim(object):
     ax.add_artist(ae)
   
   
-  def plot_cube(self, cube, nrow=3, ncol=3, cvel_idx=None, zlim=[None, None]):
+  def plot_cube(self, cube, nrow=3, ncol=3, cvel_idx=None, zlim=[None, None],**kwargs):
     """
     Plots a spectral line cube.
     """
+    
+    if cube is None: return
+    
     nimages = cube.data.shape[0]
     
     # wcvel=wcs.WCS(image[0].header)
@@ -146,11 +190,13 @@ class PlotCasasim(object):
     self._closefig(fig)
   
   
-  
-  def plot_integrated(self, image, zlim=[None, None]):
+  def plot_integrated(self, image, zlim=[None, None],**kwargs):
     """
     Plots a zeroth moment image (integrated intensity) image.
     """
+    
+    if image is None: return
+    
     vmin = zlim[0]
     vmax = zlim[1]
     if vmin is None: vmin = numpy.min(image.data)
@@ -175,25 +221,29 @@ class PlotCasasim(object):
     # mark the center
     ax.plot(image.centerpix[0], image.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=3)
   
-    # ax.axvline(image.centerpix[0],color="0.6",linewidth=0.8,linestyle=":")  
-    # ax.axhline(image.centerpix[1],color="0.6",linewidth=0.8,linestyle=":")
+    #ax.axvline(image.centerpix[0],color="0.6",linewidth=0.8,linestyle=":")  
+    #ax.axhline(image.centerpix[1],color="0.6",linewidth=0.8,linestyle=":")
   
       # FIXME: that would show the image like in the casaviewer
     # ax.invert_yaxis()  
+  
+    self._dokwargs(ax,**kwargs)
   
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
     CB = fig.colorbar(im, ax=ax, pad=0.02,
                     format="%5.2f", fraction=0.04)  
     CB.set_ticks(ticks)
     CB.set_label("[Jy/beam km/s]")
-      
+          
     self._closefig(fig)
-  
-  
-  def plot_mom1(self, image, zlim=[None, None]):
+
+
+  def plot_mom1(self, image, zlim=[None, None],**kwargs):
     """
     Plots a fits image.
     """
+  
+    if image is None: return
   
     vmin = zlim[0]
     vmax = zlim[1]
@@ -220,6 +270,8 @@ class PlotCasasim(object):
     # mark the center
     ax.plot(image.centerpix[0], image.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=3)
   
+    self._dokwargs(ax,**kwargs)
+  
     # FIXME: that would show the image like in the casaviewer
     # ax.invert_yaxis()  
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
@@ -227,14 +279,16 @@ class PlotCasasim(object):
                     format="%5.2f", fraction=0.04)  
     CB.set_ticks(ticks)
     CB.set_label("velocity [km/s]")
-      
+        
     self._closefig(fig)
-  
-  
-  def plot_pv(self, image, zlim=[None, None], ylim=[None, None]):
+
+
+  def plot_pv(self, image, zlim=[None, None], ylim=[None, None],**kwargs):
     """
     Plots a position-velocity diagram.
     """
+    
+    if image is None: return
   
     vmin = zlim[0]
     vmax = zlim[1]
@@ -272,11 +326,9 @@ class PlotCasasim(object):
     sysfrequ = (image.systemic_velocity * u.km / u.s).to(u.Hz, equivalencies=freq_to_vel)
     dummy, sysvelloc = wcsvel.wcs_world2pix(sysfrequ, sysfrequ, 0)  
     
-  
     fig, ax = plt.subplots(1, 1)
     ax.set_facecolor("black")
-  
-    
+
     # width in pixel
     # FIXME: use proper units from fits file, here it is assume to be arcsec
     bwidth = (image.bmin * 3600 / image.header["CDELT1"] + 
@@ -304,6 +356,8 @@ class PlotCasasim(object):
     # FIXME: why is this
     ax.invert_yaxis()
     
+    self._dokwargs(ax,**kwargs)
+    
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
     CB = fig.colorbar(im, ax=ax, pad=0.02,
                     format="%5.2f", fraction=0.04)  
@@ -311,15 +365,22 @@ class PlotCasasim(object):
     CB.set_label("[Jy/beam]")
       
     self._closefig(fig)
-  
-  
-  def plot_specprof(self, specprof, models=None, xlim=[None, None]):
+
+
+  def plot_specprof(self, specprof, models=None, xlim=[None, None],**kwargs):
     """
     Plots a spectral profile (histogram style).
     """
+    
+    if specprof is None: return
+    
     fig, ax = plt.subplots(1, 1)
     x, y = self.specprof_xy_hist(specprof)
     ax.plot(x, y, label="Observation")  
+    
+    #pGrayBox=0.3
+    #ax.fill_between(x, y *(1.0-pGrayBox), y * (1+pGrayBox), color='0.8')
+    
     if models is not None:
       for model in models:
         x, y = self.specprof_xy_hist(model)
@@ -332,21 +393,29 @@ class PlotCasasim(object):
     handles, labels = ax.get_legend_handles_labels()
     if len(labels) > 1:
       ax.legend(handles, labels, fancybox=False)
+      
+    self._dokwargs(ax,**kwargs)
   
     self._closefig(fig)
-    
-  
-  def plot_radprof(self, radprof, models=None):
+
+
+  def plot_radprof(self, radprof, models=None,**kwargs):
     """
     Plots a radial profile.
     """
+    if radprof is None: return
+    
     fig, ax = plt.subplots(1, 1)
     # ax.plot(radprof.arcsec,radprof.flux)
     ax.errorbar(radprof.arcsec, radprof.flux, yerr=radprof.flux_err, label="Observations")
     
+    #pGrayBox=0.3
+    #ax.fill_between(radprof.arcsec, radprof.flux *(1.0-pGrayBox), radprof.flux * (1+pGrayBox), color='0.8')
+    
+    
     if models is not None:
       for model in models:      
-        ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label="Model")      
+        ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label="Model")
     
     # indicate the beam 
     ax.set_xlabel("radius ['']")
@@ -361,6 +430,8 @@ class PlotCasasim(object):
     handles, labels = ax.get_legend_handles_labels()
     if len(labels) > 1:
       ax.legend(handles, labels, fancybox=False)
+      
+    self._dokwargs(ax,**kwargs)
   
     self._closefig(fig)
 
