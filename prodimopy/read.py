@@ -662,7 +662,7 @@ class DataStarSpec(object):
     self.Inu = numpy.zeros(shape=(nlam))    
 
 
-def read_prodimo(directory, name=None, readlineEstimates=True, filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", filenameLineFlux="line_flux.out",td_fileIdx=None):
+def read_prodimo(directory=None, name=None, readlineEstimates=True, filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", filenameLineFlux="line_flux.out",td_fileIdx=None):
   """
   Reads in all (not all yet) the output of a ProDiMo model from the given model directory.
   
