@@ -1,13 +1,12 @@
 Read routines for CASA simulations
 **********************************
 
-This module provides several routines to read in results from a CASA simulations.
+Routines to read in results from a CASA simulation.
 
 Usage example
 -------------
 
-TODO
-
+see :ref:`sec_plot_casasim`
 
 Source documentation
 --------------------
