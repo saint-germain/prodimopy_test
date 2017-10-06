@@ -5,26 +5,27 @@
 
 
 """
-from __future__ import print_function
 from __future__ import division 
+from __future__ import print_function
 from __future__ import unicode_literals
 
-import numpy
+import os
 
 from astropy import units as u
-import astropy.wcs as wcs
-import astropy.io.fits as fits
 from astropy.wcs.utils import proj_plane_pixel_scales
-from astropy.wcs.wcs import WCS
+import numpy
+
+import astropy.io.fits as fits
+import astropy.wcs as wcs
 
 
 class CasaSim():
   """
-  Kind of container class for a certain set of CASA simulations (observations).
+  Data container for a CASA line simulation (observations).
   
   The class can be used to quickly read in a CASA simulation for a single 
-  spectral line. The main purpose is to read int the various different kind 
-  of data which have been produced by CASA. 
+  spectral line. The main purpose is to read in the various different kind 
+  of observables which have been produced by CASA. 
     
   Can deal with the following files wiht a given PREFIX
     - `PREFIX.cube.fits` the spectral line cube
@@ -36,12 +37,12 @@ class CasaSim():
     - `PREFIX.cont.fits` the corrresponding continuum
     - `PREFIX.cont.radial` the azimuthally average radial continuum profile 
   
-  If the class is instantiated all this files are read. However, if they do not 
-  exist only a warning is printed and the according instance attributes are set 
-  to `None`.
+  During the init of this Class it is tried to read all this files. However, all of them are 
+  optional and the according attribute is set to `None` in case the file could not be read.  
        
   """
   def __init__(self,fn_prefix,directory=".",systemic_velocity=0.0,distance=None,
+               coordinates=None,
                fn_cube=".cube.fits",
                fn_integrated=".cube.integrated.fits",
                fn_radprof=".cube.integrated.radial",
@@ -66,6 +67,10 @@ class CasaSim():
     distance : float
       the distance of the target (optional).
       Try to fread it from the fits file in case of synthetic ProDiMo observations
+      
+    coordinates : :class:`astropy.coordinates.sky_coordinate.SkyCoordinate`
+      the coordinates of the target/object including the distance
+      FIXME: Note used yet!
 
     fn* : string
       The fn* parameters can be use to change the filenames for the different files. 
@@ -115,27 +120,62 @@ class CasaSim():
     self.fn_cont=self._build_fn(directory, fn_prefix, fn_cont)
     self.fn_cont_radprof=self._build_fn(directory, fn_prefix, fn_cont_radprof)
     
-    self.cube=LineCube(self.fn_cube,systemic_velocity=systemic_velocity)
-    self.integrated=LineIntegrated(self.fn_integrated)
+    # all files are optional ... so if they are not there set the attribute to zero
+    found=False    
+    self.cube=None
+    if os.path.isfile(self.fn_cube):
+      self.cube=LineCube(self.fn_cube,systemic_velocity=systemic_velocity)
+      found=True
     
-    self.radprof=RadialProfile(self.fn_radprof,bwidth=self._beam_width_arcsec(self.integrated))
-    self.specprof=LineSpectralProfile(self.fn_specprof,systemic_velocity=systemic_velocity)
-    self.mom1=LineMom1(self.fn_mom1,systemic_velocity=systemic_velocity)
-    self.pv=LinePV(self.fn_pv,systemic_velocity=systemic_velocity)    
-    self.cont=Continuum(self.fn_cont)
-    self.cont_radprof=RadialProfile(self.fn_cont_radprof,bwidth=self._beam_width_arcsec(self.cont))
+    self.integrated=None
+    if os.path.isfile(self.fn_integrated):
+      self.integrated=LineIntegrated(self.fn_integrated)
+      found=True
+    
+    self.radprof=None
+    if os.path.isfile(self.fn_radprof):
+      self.radprof=RadialProfile(self.fn_radprof,bwidth=self._beam_width_arcsec(self.integrated))
+      found=True
+    
+    self.specprof=None
+    if os.path.isfile(self.fn_specprof):  
+      self.specprof=LineSpectralProfile(self.fn_specprof,systemic_velocity=systemic_velocity)
+      found=True
+    
+    self.mom1=None
+    if os.path.isfile(self.fn_mom1):
+      self.mom1=LineMom1(self.fn_mom1,systemic_velocity=systemic_velocity)
+      found=True
+    
+    self.pv=None
+    if os.path.isfile(self.fn_pv):  
+      self.pv=LinePV(self.fn_pv,systemic_velocity=systemic_velocity)
+      found=True
+      
+    self.cont=None
+    if os.path.isfile(self.fn_cont):
+      self.cont=Continuum(self.fn_cont)
+      found=True
+      
+    self.cont_radprof=None
+    if os.path.isfile(self.fn_cont_radprof):
+      self.cont_radprof=RadialProfile(self.fn_cont_radprof,bwidth=self._beam_width_arcsec(self.cont))
+      found=True
 
+    if not found: raise RuntimeError("No data found at all. Check the passed prefix!")
     return
-
+  
   def _build_fn(self, directory, prefix, filename):
     return directory + "/" + prefix + filename
   
+  
   def _beam_width_arcsec(self,image):
-    if image is not None: 
-        bwidth=(image.header["BMIN"]+image.header["BMAJ"])/2.0
+    if image.header is not None: 
+      bwidth=(image.header["BMIN"]+image.header["BMAJ"])/2.0
         #FIXME: assume that it is deg to arcsec
-        return bwidth*3600.0
-    return None
+      return bwidth*3600.0
+    else:
+      return None
 
 
 class CASAImage(object):
@@ -154,6 +194,9 @@ class CASAImage(object):
     ----------
     filename : str
       The file name of the fits file.
+      
+    centercoords : :class:`astropy.coordinates.sky_coordinate.SkyCoordinate`
+      the desired center coordinates
       
     Attributes
     ----------
@@ -186,23 +229,25 @@ class CASAImage(object):
       (see :func:`~prodimopy.read_casasim.CASAImage._linear_offset_coords`)
       
     """
-    if filename is not None:
-      try:
-        fitsdata= fits.open(filename)
-        self.header=fitsdata[0].header
-        self.data=fitsdata[0].data
-      except FileNotFoundError:
-          return None
+    if filename is not None: # otherwise assume the file was read already
+      fitsdata= fits.open(filename)
+      self.header=fitsdata[0].header
+      self.data=fitsdata[0].data
     
     self.bmaj=self.header["BMAJ"]
     self.bmin=self.header["BMIN"]
     self.bPA=self.header["BPA"]
+        
     # this is all a bit strange but if it is even pixels now -1 is better
     self.centerpix=[self.header["CRPIX1"],self.header["CRPIX2"]]
     self.centerpix[0]-=1
     self.centerpix[1]-=1
             
-    self.wcsabs=wcs.WCS(self.header,naxis=(1,2))
+    self.wcsabs=wcs.WCS(self.header,naxis=2)
+    
+#    if centercoords is not None:
+#      self.centerpix=centercoords.to_pixel(self.wcsabs.celestial,mode="wcs",origin=1)
+    
     self.wcsrel=self._linear_offset_coords(self.wcsabs, self.centerpix)
 
 
@@ -245,9 +290,9 @@ class CASAImage(object):
 
     return new_wcs
         
-  def __str__(self, *args, **kwargs):
-    return("BEAM(maj,min,PA): "+str(self.bmaj)+","+str(self.bmin)+","+str(self.bPA)+"\n"
-           "CENTERPIX: "+str(self.centerpix))
+#  def __str__(self, *args, **kwargs):
+#    return("BEAM(maj,min,PA): "+str(self.bmaj)+","+str(self.bmin)+","+str(self.bPA)+"\n"
+#           "CENTERPIX: "+str(self.centerpix))
 
 
 class LineCube(CASAImage):
@@ -255,9 +300,13 @@ class LineCube(CASAImage):
   The full line cube.
   """
   def __init__(self,filename,systemic_velocity=0.0):
-    self.systemic_velocity=systemic_velocity
     CASAImage.__init__(self,filename)
-    self.vel=self._init_vel()
+    
+    self.systemic_velocity=systemic_velocity
+    if self.header is not None:
+      self.vel=self._init_vel()
+    else:
+      return None
     
   def _init_vel(self):
     """
@@ -289,7 +338,7 @@ class LineIntegrated(CASAImage):
   """
   Zeroth moment image (Integrated emission)
   """
-  def __init__(self,filename):
+  def __init__(self,filename,centercoords=None):
     CASAImage.__init__(self,filename)
   
 class LineMom1(CASAImage):
@@ -318,7 +367,7 @@ class LinePV(CASAImage):
     # so if it is negative calculate from the dimension
     if self.centerpix[1] < 0:
       # FIXME: work only with odd numbers
-      self.centerpix[1]=int(self.header["NAXIS2"]/2)      
+      self.centerpix[1]=int(self.header["NAXIS2"]/2)
 
 
 class LineSpectralProfile():
