@@ -46,7 +46,16 @@ class Data_mc(object):
     """ array_like(float,ndim=2) :
     the abundances for each species and each age `DIMS:` (number of ages,number of species).
     """
-    
+  
+  def __str__(self):
+    output = "Info MC: \n"
+    output += "\n Species: \n"
+    output += str(self.species)
+    output += "\n"
+    output += "\n Ages: \n"
+    output += str(self.ages) 
+    return output
+  
 def _read_ages(filename):
   #f=open(filename,"r")
   
@@ -72,21 +81,21 @@ def _read_species(filename):
   return species
 
 
-def read_mc_final(directory,filename="Molecular_cloud.out",name=None):
+def read_mc_final(filename="Molecular_cloud.out",directory=".",name=None):
   """
   Reads the final (last timestep) molecular cloud abundances.
   
   Parameters
   ----------
-  
-  directory : string
-    The model directory.
-    
+      
   filename : string
-    The name of the file containing the abundances (default: `Molecular_cloud.out`). 
+    The name of the file containing the abundances (optional).
     
+  directory : string
+    The model directory (optional).
+     
   name : string
-    The name of the model. Will be shown in the plots (default: `None`). 
+    The name of the model. Will be shown in the plots (optional). 
   
   
   FIXME: ist not consistent with read_mc, e.g. the species names such as N2H+ are not adapted here
@@ -94,9 +103,9 @@ def read_mc_final(directory,filename="Molecular_cloud.out",name=None):
   FIXME: use numpy arrays for the abundances such as for time-dependent models.
   
   """
-  if name == None:
-    dirfields = directory.split("/")
-    name = dirfields[len(dirfields) - 1]
+  #if name == None:
+  #  dirfields = directory.split("/")
+  #  name = dirfields[len(dirfields) - 1]
 
   mc=Data_mc(name) 
   
@@ -117,29 +126,31 @@ def read_mc_final(directory,filename="Molecular_cloud.out",name=None):
   
   return mc
   
-def read_mc(directory,filename,agesfile="mc_ages.txt",speciesfile="mc_species.txt",name=None):
+def read_mc(filename,directory=".",agesfile="mc_ages.txt",speciesfile="mc_species.txt",name=None):
   """
   Read routine for molecular cloud |prodimo| models including the ages and the species list. 
 
   Parameters
   ----------
-  
+      
+  filename: string
+    The name of the file containing the abundances for all ages.
+    
   directory : string
     The model directory.
-    
-  filename: string
-    The name of the file containing the abundances for all ages. 
     
   agesfile: string
     The file with the ages (default: `mc_ages.txt`)
     
   speciesfile: string
     The file with the species names (default: `mc_species.txt`)
+    
+  FIXME: Maybe make the filename an optional parameter.          
         
   """
-  if name == None:
-    dirfields = directory.split("/")
-    name = dirfields[len(dirfields) - 1]
+  #if name == None: name=
+  #  dirfields = directory.split("/")
+  #  name = dirfields[len(dirfields) - 1]
 
   mc=Data_mc(name)  
   mc.ages=_read_ages(directory+"/"+agesfile)
