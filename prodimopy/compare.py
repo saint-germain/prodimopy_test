@@ -184,6 +184,18 @@ class Compare(CompareAbs):
       return False,d
   
     return True,d
+
+  def compareDustCS(self):
+    '''
+    Compares the dust cross-sections (from dust_opac.out).
+    '''    
+    f,d=self.diffArray(self.m.dust.kextcs, self.mref.dust.kextcs, self.d)
+    
+    if f is False:
+      return False,d
+  
+    return True,d
+
   
   def compareStarSpec(self):
     '''
