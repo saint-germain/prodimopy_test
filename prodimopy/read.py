@@ -220,7 +220,7 @@ class Data_ProDiMo(object):
     `UNIT:` yr, `DIMS:` (nx,nz)
     """
     self.spnames = None  # 
-    """ dictionary(float,ndim=2) :
+    """ dictionary :
     Dictionary providing the index of a particular species (e.g. spnames["CO"]). This index
     can than be used for arrays having an species dimension (like nmol). The electron is included.
     `UNIT:` , `DIMS:` (nspec)
@@ -347,11 +347,11 @@ class Data_ProDiMo(object):
     Returns
     -------
     :class:`prodimopy.read.DataLineEstimate`   
-      Returns `None` if no lines are included in the model.
+      Returns `None` if the line is not found.
     
     Notes
     -----
-      This parameters of this method are not consistent 
+      The parameters of this method are not consistent 
       with :meth:`~prodimopy.read.Data_ProDiMo.getLine`. This might be confusing.
       However, there is a reasong for this. The number of
       included line estimates in a |prodimo| model can be huge and just searching
@@ -365,7 +365,11 @@ class Data_ProDiMo(object):
     '''
     found = -1
     i = 0 
-    mindiff = 1.e20     
+    mindiff = 1.e20
+    
+    if self.lineEstimates is None:
+      print("WARN: No lineEstimates are inluced (or not read) for this model.")
+      return None
     
     # print ident, wl
     for le in self.lineEstimates: 
@@ -615,6 +619,38 @@ class DataDust(object):
     self.kscacs = numpy.zeros(shape=(nlam))  # cross setion cm^2
     self.kscacs_an = numpy.zeros(shape=(nlam))  # tweaked anisotropic scattering cs   
 
+class DataElements(object):
+  '''
+  Data for the Element abundances (the input). 
+  
+  Holds the data from `Elements.out`.
+  
+  Attributes
+  ----------  
+  '''
+  def __init__(self):
+    self.abun=OrderedDict()
+    """    
+    OrderedDict :
+      Ordered Dictionary holding the element abundaces realtive to hydrogen
+    """
+    self.abun12=OrderedDict()
+    """
+    OrderedDict :
+      abundances in the +12 unit 
+    """
+    self.massRatio=OrderedDict()
+    """
+    OrderedDict :
+      mass ratios 
+    """
+    self.amu=OrderedDict()
+    """
+    OrderedDict :
+      atomic mass unit
+    """
+
+
 class DataSED(object):
   '''
   Holds the data for the Spectral Energy Distribution (SED).  
@@ -849,7 +885,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True, filename="Pro
     print(("READ: " + directory + "/" + filenameLineEstimates))
     read_lineEstimates(directory, data, filename=filenameLineEstimates)
   else:
-    data.lineEstimates = False  
+    data.lineEstimates = None
      
   print("READ: " +directory + "/dust_opac.out" )
   data.dust = read_dust(directory)
@@ -888,6 +924,49 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True, filename="Pro
   print(" ")
 
   return data
+
+def read_elements(directory,filename="Elements.out"):
+  '''
+  Reads the Elements.out file. Currently only the species masses are read.
+  Stores the species masses (unit g) in pdata.spmasses
+  Also adds the electron "e-"
+  
+  Parameters
+  ----------
+  directory : str 
+    the directory of the model
+        
+  filename: str 
+    an alternative Filename
+    
+  Returns
+  -------
+  :class:`~prodimopy.read.Data_Elements`
+    the Elemsnts model data or `None` in case of errors.
+
+  '''
+  rfile = directory + "/" + filename
+  try:
+    f = open(rfile, 'r')
+  except: 
+    print(("WARN: Could not open " + rfile + "!"))        
+    return None
+  
+  # skip the first line
+  nelements=int(f.readline())
+  
+  elements=DataElements()  
+  f.readline()
+    
+  for i in range(nelements):
+    line=f.readline()
+    fields=line.strip().split()    
+    elements.abun12[fields[0].strip()]=float(fields[1])
+    elements.abun[fields[0].strip()]=10.0**(float(fields[1])-12.0)
+    elements.amu[fields[0].strip()]=float(fields[2])
+    elements.massRatio[fields[0].strip()]=float(fields[3])
+    
+  return elements
 
 
 def read_species(directory,pdata,filename="Species.out"):
