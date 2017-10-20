@@ -368,10 +368,21 @@ class PlotModels(object):
     plt.close(fig)  
     
   def plot_tauline(self, models, lineIdent, xlog=True, **kwargs):
-    '''
-    Plots the line optical depth as a function of radius for a given line
-    for all the models
-    '''
+    """
+    Plots the line optical depths as a function of radius for a given line. 
+    
+    Parameters
+    ----------
+    models : list(:class:`~prodimopy.read.Data_ProDiMo`)
+      the models to plot
+      
+    lineIdent : array
+      two elment array. First item lineIdent (e.g. CO) second item wavelenght (mu m)
+      see also :meth:`~prodimopy.read.Data_ProDiMo.getLineEstimate`
+  
+    
+    FIXME: better treatment if no line are found (should not crash).
+    """
     print("PLOT: plot_tauline ...")
     fig, ax = plt.subplots(1, 1)  
     
@@ -381,7 +392,10 @@ class PlotModels(object):
     iplot = 0    
     for model in models:
       x = model.x[:, 0]
-      lineEstimate = model.getLineEstimate(lineIdent[0], lineIdent[1])      
+      lineEstimate = model.getLineEstimate(lineIdent[0], lineIdent[1])     
+      
+      if lineEstimate is None: continue
+       
       y = list()
       ytauDust = list()
       for rInfo in lineEstimate.rInfo:
@@ -397,7 +411,12 @@ class PlotModels(object):
       
       if min(x) < xmin: xmin = min(x)
       if max(x) > xmax: xmax = max(x)
-       
+      
+    
+    # nothing to plot 
+    if iplot == 0:
+      print("WARN: no lineEstimates to plot ")
+      return
   
     ax.set_xlim(xmin, xmax)
     
@@ -411,7 +430,8 @@ class PlotModels(object):
     
     ax.set_xlabel(r"r [au]")    
     ax.set_ylabel(r"$\mathrm{\tau_{line}}$")
-    ax.set_title(lineEstimate.ident + " " + "{:.2f}".format(lineEstimate.wl) + " $\mathrm{\mu m}$")
+    if lineEstimate is not None:
+      ax.set_title(lineEstimate.ident + " " + "{:.2f}".format(lineEstimate.wl) + " $\mathrm{\mu m}$")
   
     self._legend(ax)  
   
