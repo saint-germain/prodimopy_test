@@ -918,7 +918,7 @@ class Plot(object):
     self._closefig(fig) 
   
   
-  def plot_vertical(self, model, r, field, ylabel, ylog=True,zr=True,
+  def plot_vertical(self, model, r, field, ylabel, zr=True,
                     xfield="zr",**kwargs):
     '''
     Plots a quantity (field) as a function of height at a certain radius
@@ -928,7 +928,6 @@ class Plot(object):
     rstr = r"r$\approx${:.1f} au".format(r) 
     
     fig, ax = plt.subplots(1, 1)      
-    
     
     ix = (np.abs(model.x[:, 0] - r)).argmin()
      
@@ -944,8 +943,8 @@ class Plot(object):
       x = model.z[ix, :]
       
     y = field[ix, :]
-                                    
-    ax.plot(x, y)                    
+                 
+    ax.plot(x, y)
     
     if zr:
       ax.invert_xaxis()
@@ -956,7 +955,7 @@ class Plot(object):
       ax.set_xlabel(r"$\mathrm{\log\,T_{gas}\,[K]}$ @" + rstr)
       ax.invert_xaxis()  
     else:
-      ax.set_xlabel(r"z [au] @ " + rstr)                   
+      ax.set_xlabel(r"z [au] @ " + rstr)
       ax.invert_xaxis()
                         
     ax.set_ylabel(ylabel)    
