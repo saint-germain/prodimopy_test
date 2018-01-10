@@ -291,6 +291,10 @@ class Data_ProDiMo(object):
     TODO remove this, was only used temporarely. 
     `UNIT:` , `DIMS:` (nx,nz)
     """
+    self.elements = None
+    """ :class:`prodimopy.read.DataElements` :
+    Holds the initial gas phase element abundances
+    """
    
   def __str__(self):
     output = "Info ProDiMo.out: \n"
@@ -310,7 +314,7 @@ class Data_ProDiMo(object):
     wl : float 
       the wavelength which is used for the search. `UNIT:` micron.
     ident : string, optional 
-      A line identification string which should also be considere for the
+      A line identification string which should also be considered for the
       search. (default: `None`)
     
     Returns
@@ -324,12 +328,17 @@ class Data_ProDiMo(object):
     if ident != None:
       linestmp=[line for line in self.lines if line.ident==ident]      
       wls=numpy.array([line.wl for line in linestmp])
-      idx=numpy.argmin(abs(wls[:]-wl))
+      idx=numpy.argmin(abs(wls[:]-wl))      
       return linestmp[idx]    
     else:
       wls=numpy.array([line.wl for line in self.lines])
       idx=numpy.argmin(abs(wls[:]-wl))
-      return self.lines[idx]        
+      
+      if (abs(wls[idx]-wl)/wl) >0.01:
+        print("WARN: No line found within 1% of the given wavelengeth:", wl)
+        return None
+      
+      return self.lines[idx]
   
 
   def getLineEstimate(self, ident, wl):
@@ -625,10 +634,12 @@ class DataElements(object):
   
   Holds the data from `Elements.out`.
   
+  The data is stored as OrderedDict with the element names as keys.
+  
   Attributes
   ----------  
   '''
-  def __init__(self):
+  def __init__(self):    
     self.abun=OrderedDict()
     """    
     OrderedDict :
@@ -886,6 +897,9 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True, filename="Pro
     read_lineEstimates(directory, data, filename=filenameLineEstimates)
   else:
     data.lineEstimates = None
+    
+  print("READ: " +directory + "/Elements.out" )
+  data.elements=read_elements(directory)
      
   print("READ: " +directory + "/dust_opac.out" )
   data.dust = read_dust(directory)
@@ -941,7 +955,7 @@ def read_elements(directory,filename="Elements.out"):
     
   Returns
   -------
-  :class:`~prodimopy.read.Data_Elements`
+  :class:`~prodimopy.read.DataElements`
     the Elemsnts model data or `None` in case of errors.
 
   '''
@@ -960,11 +974,12 @@ def read_elements(directory,filename="Elements.out"):
     
   for i in range(nelements):
     line=f.readline()
-    fields=line.strip().split()    
-    elements.abun12[fields[0].strip()]=float(fields[1])
-    elements.abun[fields[0].strip()]=10.0**(float(fields[1])-12.0)
-    elements.amu[fields[0].strip()]=float(fields[2])
-    elements.massRatio[fields[0].strip()]=float(fields[3])
+    fields=line.strip().split()
+    name=fields[0].strip()
+    elements.abun12[name]=float(fields[1])
+    elements.abun[name]=10.0**(float(fields[1])-12.0)
+    elements.amu[name]=float(fields[2])
+    elements.massRatio[name]=float(fields[3])
     
   return elements
 
