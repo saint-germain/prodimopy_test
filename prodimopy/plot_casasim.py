@@ -188,6 +188,92 @@ class PlotCasasim(object):
     # plt.tight_layout(pad=0.1)
     
     self._closefig(fig)
+
+  def plot_cube_cont(self, cube, nrow=3, ncol=3, zlim=[None, None],**kwargs):
+    """
+    Plots a spectral line cube.
+    """
+    
+    if cube is None: return
+    
+    nimages = cube.data.shape[0]
+    
+    # wcvel=wcs.WCS(image[0].header)
+    # print(wcs.find_all_wcs(image[0].header))  
+    
+    
+    icenter = int(nimages / 2)
+    naxesh = int(nrow * ncol / 2)
+    
+    vmin = zlim[0]
+    vmax = zlim[1]
+    if vmin is None: vmin = numpy.min(cube.data)
+    if vmax is None: vmax = numpy.max(cube.data)  
+  
+  
+    # cube.header['CRVAL1'] = 0.0
+    # cube.header['CRVAL2'] = 0.0
+    # wcsim=wcs.WCS(cube.header,naxis=(1,2))  
+    # cpix=[cube.header["CRPIX1"],cube.header["CRPIX2"]]
+    # wcsrel=linear_offset_coords(wcsim, cube.centerpix)
+  
+    fig, axis = plt.subplots(nrow, ncol, sharex=False, sharey=False, subplot_kw=dict(projection=cube.wcsrel))
+    fig.subplots_adjust(hspace=-0.1, wspace=0.0)
+    # fig,axis= plt.subplots(nrow, ncol,sharex=False,sharey=False)
+    # fig=plt.figure()
+    # assume the widht of the image is given, scale it with the number of axis
+    figsize = fig.get_size_inches()
+    figsize[0] = figsize[0] * 2.0  # assumes that default size is one column in a Paper
+    figsize[1] = figsize[0] / (ncol) * nrow
+    fig.set_size_inches(figsize)
+   
+    for ir in range(nrow):
+      for ic in range(ncol):
+        ax = axis[ir, ic]
+        iax = ir * ncol + ic
+        idata = iax - naxesh
+        wlidx = icenter + idata           
+        im = ax.imshow(cube.data[wlidx, :, :], cmap="inferno", vmin=vmin, vmax=vmax)      
+              
+        # set the border of the coordinate frames to white
+        ax.coords[0].frame.set_color("white")
+        ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
+        ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
+        if not (ir == nrow - 1 and ic == 0):
+          ax.coords[0].set_ticklabel_visible(False)
+        else:
+            ax.set_xlabel("rel. RA ['']")
+            
+        if ic > 0 or (not ir == nrow - 1):
+          ax.coords[1].set_ticklabel_visible(False)
+        else:
+          ax.set_ylabel("rel. Dec. ['']")  
+        
+        # print the wavelenth 
+        props = dict(boxstyle='round', facecolor='white', edgecolor="none")
+        
+#        ax.text(0.95, 0.95, "{:5.2f}".format(cube.wl[wlidx]* (u.micron)), transform=ax.transAxes, fontsize=6,
+#          verticalalignment='top', horizontalalignment="right", bbox=props)
+        
+        # mark the center
+        ax.plot(cube.centerpix[0], cube.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=3)
+        
+        # ax.axis('equal')
+        self.add_beam(ax, cube)  
+        
+        # FIXME: that would show the image like in the casaviewer
+        # ax.invert_yaxis()  
+  
+                                        
+    ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
+    CB = fig.colorbar(im, ax=axis.ravel().tolist(), pad=0.02,
+                    format="%5.2f", fraction=0.015)  
+    CB.set_ticks(ticks)
+    CB.set_label("[Jy/beam]")
+      
+    # plt.tight_layout(pad=0.1)
+    
+    self._closefig(fig)
   
   
   def plot_integrated(self, image, zlim=[None, None],**kwargs):

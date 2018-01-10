@@ -81,8 +81,8 @@ class CasaSim():
     systemic_velocity : float
       the systemic velocity of the target, will be passed to the other objects
       
-    systemic_velocity : float
-      the distance of the target, will be passed to the other objects      
+    distance : float
+      the distance of the target, will be passed to the other objects
     
     cube :class:`.LineCube` :
       the line cube.
@@ -90,12 +90,12 @@ class CasaSim():
     integrated : :class:`.LineIntegrated`
       the zeroth moment of the cube (integrated emission)
 
-    radprof : :class:`.LineSpectralProfile`
+    specprof : :class:`.LineSpectralProfile`
+      the spectral profile
+
+    radprof : :class:`.RadialProfile`
       the spectra profile
-      
-    specprof : :class:`.RadialProfile`
-      the spectra profile
-      
+            
     mom1 : :class:`.LineMom1`
       the first moment of the cube
       
@@ -176,6 +176,81 @@ class CasaSim():
       return bwidth*3600.0
     else:
       return None
+
+class CasaSimContinuum(CasaSim):
+  """
+  Data container for a CASA continuum simulation (observations).
+  
+  The class can be used to quickly read in a CASA simulation for a single 
+  spectral line. The main purpose is to read in the various different kind 
+  of observables which have been produced by CASA. 
+    
+  Can deal with the following files wiht a given PREFIX
+    - `PREFIX.contcube.fits` the spectral line cube
+    - `PREFIX.cont.radial` the azimuthally average radial continuum profile 
+  
+  During the init of this Class it is tried to read all this files. However, all of them are 
+  optional and the according attribute is set to `None` in case the file could not be read.  
+       
+  """
+  def __init__(self,fn_prefix,directory=".",distance=None,
+               coordinates=None,
+               fn_cube=".cube.fits",
+               fn_radprof=".cube.radial"):
+    """
+    Parameters
+    ----------
+    
+    fn_prefix : str
+      the prefix used for all files the routine try to read
+      
+    directory : 
+      the directory with the files (optional)
+          
+    distance : float
+      the distance of the target (optional).
+      Try to fread it from the fits file in case of synthetic ProDiMo observations
+      
+    coordinates : :class:`astropy.coordinates.sky_coordinate.SkyCoordinate`
+      the coordinates of the target/object including the distance
+      FIXME: Note used yet!
+
+    fn* : string
+      The fn* parameters can be use to change the filenames for the different files. 
+    
+    
+    Attributes
+    ----------
+      
+    distance : float
+      the distance of the target, will be passed to the other objects      
+    
+    cube :class:`.ContinuumCube` :
+      the continuum cube.
+    
+    radprof : :class:`..RadialProfile`
+      the spectra profile
+    
+    """
+    self.distance=distance
+    self.fn_cube=self._build_fn(directory, fn_prefix, fn_cube)
+    self.fn_radprof=self._build_fn(directory, fn_prefix, fn_radprof)
+    
+    # all files are optional ... so if they are not there set the attribute to zero
+    found=False    
+    self.cube=None
+    print(self.fn_cube)
+    if os.path.isfile(self.fn_cube):
+      self.cube=ContinuumCube(self.fn_cube)
+      found=True
+       
+    self.radprof=None
+    if os.path.isfile(self.fn_radprof):
+      self.radprof=RadialProfile(self.fn_radprof,bwidth=self._beam_width_arcsec(self.integrated))
+      found=True
+          
+    if not found: raise RuntimeError("No data found at all. Check the passed prefix!")
+    return
 
 
 class CASAImage(object):
@@ -407,3 +482,23 @@ class Continuum(CASAImage):
   """  
   def __init__(self,filename): 
     CASAImage.__init__(self,filename)
+
+
+class ContinuumCube(CASAImage):
+  """
+  A series of continuum images
+  
+  Uses the output images from the ProDiMo continuum radiative transfer.
+  Need to check if this also works with the CASA simulator.  
+  """  
+  def __init__(self,filename): 
+    if filename is not None: # otherwise assume the file was read already
+      fitsdata= fits.open(filename)
+      self.header=fitsdata[0].header
+      self.data=fitsdata[0].data
+      #self.wl=fitsdata[1].data
+    
+    #print(self.wl)
+    
+    CASAImage.__init__(self,None)
+
