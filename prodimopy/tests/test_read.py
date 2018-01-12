@@ -134,7 +134,10 @@ class TestReadProdimo(unittest.TestCase):
     self.assertNotEqual(data.starSpec, None)
     self.assertEqual(data.x[0, data.nz - 1], 0.07)
             
-      
+class TestReadSEDobs(unittest.TestCase):
+  def test_read_sedObs(self):
+    sedObs = pread.read_sedObs(".")
+    self.assertAlmostEqual(2.5493e-26,sedObs.fnuErg[0])
 
 # class TestCalcColumnd(unittest.TestCase):
 #     def test_calc_columnd(self):

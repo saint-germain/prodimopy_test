@@ -1044,12 +1044,12 @@ class Plot(object):
 
 
 
-  def plot_sed(self, model,plot_starSpec=True,**kwargs): 
+  def plot_sed(self, model,plot_starSpec=True,sedObs=None,**kwargs): 
     '''
     Plots the seds and the StarSpectrum
     '''  
     print("PLOT: plot_sed ...")
-    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))
         
     xmin = 0.1
     ymin = 1.e-13
@@ -1057,7 +1057,7 @@ class Plot(object):
     # only use every 5 element to speed up plotting
     x = model.sed.lam
     y = model.sed.nu*model.sed.fnuErg      
-    dist = ((model.sed.distance*u.pc).to(u.cm)).value                          
+    dist = ((model.sed.distance*u.pc).to(u.cm)).value
     
     if plot_starSpec:
       # scale input Stellar Spectrum to the distance for comparison to the SED
@@ -1065,11 +1065,21 @@ class Plot(object):
       
       xStar = model.starSpec.lam[0::1]
       ystar= (model.starSpec.nu*model.starSpec.Inu)[0::1]
-      yStar = ystar*(r**2.0*math.pi*dist**(-2.0))                                
+      yStar = ystar*(r**2.0*math.pi*dist**(-2.0))
       ax.plot(xStar, yStar, color="black")
 
     # plot the SED  
     ax.plot(x, y, marker=None, label=model.name)
+
+    if sedObs is not None:
+      ax.plot(sedObs.lam,sedObs.nu*sedObs.fnuErg,linestyle="",marker="+")
+      
+      if sedObs.specs is not None:
+        for spec in sedObs.specs:
+          nu=(spec[:,0]* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
+          Fnuerg=(spec[:,1]* u.Jy).cgs.value
+          ax.plot(spec[:,0],nu*Fnuerg,linestyle="-",linewidth=0.5)
+      
 
                           
     # set defaults, can be overwritten by the kwargs
@@ -1078,7 +1088,9 @@ class Plot(object):
     ax.semilogx()
     ax.semilogy()
     ax.set_xlabel(r"wavelength [$\mathrm{\mu}$m]")    
-    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
+    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")
+#    ax.yaxis.tick_right()
+#    ax.yaxis.set_label_position("right")
       
     self._dokwargs(ax, **kwargs)                        
     

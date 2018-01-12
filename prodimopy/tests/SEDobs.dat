@@ -1,0 +1,60 @@
+      58
+   lam[mic]    flux[Jy]   sigma[Jy] rem  filter        typ pointing       mag   err_mag              bibcode  comments
+     0.1535  2.5493E-03  5.1137E-05  ok  GALEX.FUV     CCD    1.816                                     None  -
+     0.2301  6.5699E-03  6.5699E-05  ok  GALEX.NUV     CCD    1.816                                     None  -
+     0.3637  4.9750E-02  4.9750E-03  ??  JOHNSON.U     CCD    0.010   11.4240       NaN  2006yCat.2168....0M  -
+     0.4196  5.9815E-02  6.6661E-03  ok  TYCHO2.BT     CCD    0.600   12.0910    0.1210  2000A&A...355L..27H  -
+     0.4196  6.8235E-02  8.2330E-03  ok  TYCHO2.BT     CCD    0.593   11.9480    0.1310  1997HIP...C......0E  -
+     0.4434  6.7327E-02  2.0198E-02  ??  USNOB1.B1     CCD    0.330   11.9700       NaN  2003AJ....125..984M  unreliable_zeropoint_and_transmission_profile
+     0.4434  7.4163E-02  8.4018E-03  ok  JOHNSON.B     CCD    0.593   11.8690    0.1230  2001KFNT...17e.409K  -
+     0.4434  8.2450E-02  8.2450E-03  ??  JOHNSON.B     CCD    0.010   11.7540       NaN  2006yCat.2168....0M  -
+     0.5189  1.3993E-01  4.5882E-03  ok  HIPPARCOS.HP  CCD    0.593   11.0661    0.0356  1997HIP...C......0E  -
+     0.5307  1.1000E-01  8.9156E-03  ok  TYCHO2.VT     CCD    0.600   11.3420    0.0880  2000A&A...355L..27H  -
+     0.5307  1.3092E-01  1.3746E-02  ok  TYCHO2.VT     CCD    0.593   11.1530    0.1140  1997HIP...C......0E  -
+     0.5493  1.4570E-01  1.3822E-02  ok  JOHNSON.V     CCD    0.593   11.0100    0.1030  2001KFNT...17e.409K  -
+     0.5493  1.6590E-01  1.6590E-02  ??  JOHNSON.V     CCD    0.010   10.8690       NaN  2006yCat.2168....0M  -
+     0.6899  1.3674E-01  4.1023E-02  ??  USNOB1.R1     CCD    0.330   10.8800       NaN  2003AJ....125..984M  unreliable_zeropoint_and_transmission_profile
+     0.7919  4.6230E-01  1.2774E-02  ok  DENIS.I       CCD    0.303    9.3770    0.0300  2005yCat.2263....0T  source_is_saturated
+     1.2337  8.3298E-01  4.6032E-02  ok  DENIS.J       CCD    0.303    8.2470    0.0600  2005yCat.2263....0T  -
+     1.2393  8.0755E-01  1.7851E-02  ok  2MASS.J       CCD    0.114    8.2170    0.0240  2003yCat.2246....0C  high_quality_(A)
+     1.2431  8.4331E-01  1.5534E-02  ok  JOHNSON.J     CCD    0.320    8.2200    0.0200  2008PASP..120.1128O  -
+     1.6442  9.9981E-01  3.6834E-02  ok  JOHNSON.H     CCD    0.320    7.5600    0.0400  2008PASP..120.1128O  -
+     1.6495  9.8494E-01  3.8101E-02  ok  2MASS.H       CCD    0.114    7.5580    0.0420  2003yCat.2246....0C  high_quality_(A)
+     2.1605  4.7094E-01  5.2051E-02  ??  DENIS.KS      CCD    0.303    7.9330    0.1200  2005yCat.2263....0T  -
+     2.1639  8.0566E-01  1.7809E-02  ok  2MASS.KS      CCD    0.114    7.2970    0.0240  2003yCat.2246....0C  high_quality_(A)
+     2.1879  8.1461E-01  1.5006E-02  ok  JOHNSON.K     CCD    0.320    7.3000    0.0200  2008PASP..120.1128O  -
+     3.3682  4.4695E-01  1.3585E-02  ok  WISE.W1       BOL    0.633    7.1010    0.0330  2012yCat.2311....0C  point_source
+     4.6179  2.8588E-01  5.2661E-03  ok  WISE.W2       BOL    0.633    6.9470    0.0200  2012yCat.2311....0C  point_source
+     9.0995  4.5060E-01  9.1500E-03  ok  AKARI.S9W     BOL    0.520                      2010A&A...514A...1I  high_quality
+    11.4099  7.0200E-01  5.6160E-02  ok  IRAS.F12      BOL    1.200                      1988IRASP.C......0J  high_quality
+    12.0730  4.8655E-01  6.2738E-03  ok  WISE.W3       BOL    0.633    4.5340    0.0140  2012yCat.2311....0C  point_source
+    19.5050  1.4530E+00  3.7300E-02  ??  AKARI.L18W    BOL    0.520                      2010A&A...514A...1I  high_quality
+    22.1943  2.0701E+00  3.0506E-02  ??  WISE.W4       BOL    0.633    1.5160    0.0160  2012yCat.2311....0C  most_likely_not_variable_(3,_0=certainly_not-5=probably_not);_point_source
+    23.6108  2.4400E+00  1.7080E-01  ??  IRAS.F25      BOL    1.200                      1988IRASP.C......0J  high_quality
+    60.4093  3.9200E+00  4.3120E-01  ok  IRAS.F60      BOL    1.200                      1988IRASP.C......0J  high_quality
+    66.2934  2.9700E+00  2.1000E-01  ??  AKARI.N60     BOL    4.600                      2007PASJ...59S.369M  high_quality
+    87.8971  3.5060E+00  2.2700E-01  ??  AKARI.WIDES   BOL    4.600                      2007PASJ...59S.369M  high_quality
+   101.1190  5.0400E+00  5.0400E-01  ok  IRAS.F100     BOL    1.200                      1988IRASP.C......0J  high_quality
+   148.7610  6.4690E+00  6.1700E-01  ok  AKARI.WIDEL   BOL    4.600                      2007PASJ...59S.369M  high_quality
+   162.5940  4.0840E+00  4.0840E-01  ??  AKARI.N160    BOL    4.600                      2007PASJ...59S.369M  the_source_is_not_confirmed
+   457.1710  3.5800E+00  3.5800E-01  ??  SCUBA.450WB   BOL    3.400                      2008ApJS..175..277D  -
+   860.0110  1.1400E+00  1.1400E-01  ??  SCUBA.850WB   BOL    3.400                      2008ApJS..175..277D  -
+   870.0000  1.3400E+00  1.3000E-01  ok  generic       BOL    0.000                      Andrews+2012
+   1100.0    0.874       0.054       ok  generic       BOL    0.0			 Weintrab+1989
+   1300.0    0.543       0.045       ok  generic       BOL    0.0			 Andrews+2012
+   3400.0    0.041       0.004       ok  generic       BOL    0.0                        Wilner et al.2003
+   7000.0    0.008       0.001       ok  generic       BOL    0.0                        Wilner et al.2000
+    70.0     3.903       0.015       ok  PACS.70       BOL    0.0                        Herschel/GASPS
+   160.0     7.38        0.04        ok  PACS.160      BOL    0.0                        Herschel/GASPS
+    63.18    2.99        0.14	     ??	 mono          BOL    0.0			 Herschel/GASPS line
+   145.52    7.00        0.05	     ok	 mono          BOL    0.0			 Herschel/GASPS line
+   157.74    8.79	 0.08 	     ??	 mono          BOL    0.0			 Herschel/GASPS line
+   453.50    5.267       0.016       ok  generic       BOL    0.0                        ALMA
+   854.50    1.472	 0.003       ok  generic       BOL    0.0			 ALMA
+   201.827   8.37702     0.683398    ok	 mono          BOL    0.0			 SPIRE, van der Wiel
+   249.481   8.03534     0.646160    ok	 mono          BOL    0.0			 SPIRE, van der Wiel  
+   301.301   7.45361     0.638164    ok	 mono          BOL    0.0			 SPIRE, van der Wiel  
+   349.246   6.57203     0.515137    ok	 mono          BOL    0.0			 SPIRE, van der Wiel  
+   399.209   5.60851     0.429782    ok	 mono          BOL    0.0			 SPIRE, van der Wiel  
+   498.962   4.18048     0.445721    ok	 mono          BOL    0.0			 SPIRE, van der Wiel  
+   598.693   3.05561     0.437796    ok	 mono          BOL    0.0			 SPIRE, van der Wiel  

@@ -17,6 +17,7 @@ from astropy import constants as const
 import os
 from collections import OrderedDict
 import math
+import glob
 
 class Data_ProDiMo(object):
   """ 
@@ -661,6 +662,19 @@ class DataElements(object):
       atomic mass unit
     """
 
+
+class DataSEDObs(object):
+  '''
+  Holds the observational data for the Spectral Energy Distribution (SED).
+  currently only photometric points are considered (without any metadata).  
+  '''
+  def __init__(self, nlam):
+    self.nlam = nlam
+    self.lam = numpy.zeros(shape=(nlam))
+    self.nu = numpy.zeros(shape=(nlam))
+    self.fnuErg = numpy.zeros(shape=(nlam))
+    self.fnuJy = numpy.zeros(shape=(nlam))
+    self.specs = None  # holds a list of spectra if available (wl,flux,error) 
 
 class DataSED(object):
   '''
@@ -1336,6 +1350,44 @@ def read_gas(directory,filename="gas_cs.out"):
   f.close()
 
   return gas  
+
+def read_sedObs(directory,filename="SEDobs.dat"):
+  ''' 
+  Reads observational continuum data (SED). 
+  
+  Reads the file SEDobs.dat (phtotometric points) and all files ending 
+  with *spec.dat (e.g. the Spitzer spectrum) 
+  '''
+  rfile = directory + "/"+filename    
+  try:
+    f = open(rfile, 'r')
+  except:
+    print("WARN: Could not read " + rfile + "!")
+    return None
+
+  nlam = int(f.readline().strip())
+  f.readline() # header line
+  sedObs = DataSEDObs(nlam)
+  for i in range(nlam):
+    elems = f.readline().split()
+    sedObs.lam[i] = float(elems[0])
+    sedObs.fnuJy[i] = float(elems[1])
+    
+
+  sedObs.nu = (sedObs.lam* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
+  sedObs.fnuErg = (sedObs.fnuJy*u.Jy).cgs.value
+  
+    # check for the spectrum files
+  fnames=glob.glob(directory+"/*spec.dat")
+  if fnames is not None and len(fnames)>0:
+    sedObs.specs=list()
+    
+  for fname in fnames:
+    spec=numpy.loadtxt(fname, skiprows=3)
+    print(spec)
+    sedObs.specs.append(spec)
+    
+  return sedObs
 
 def read_sed(directory,filename="SED.out"):
   ''' 
