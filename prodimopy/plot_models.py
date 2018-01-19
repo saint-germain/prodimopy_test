@@ -326,7 +326,7 @@ class PlotModels(object):
         
         # FIXME: harcoded linewidths are not very nice
         linewidth=1.5
-        if self.styles[iplot]=="--": linewidth=2.5 
+        if self.styles[iplot]=="--": linewidth=2.0 
         if self.styles[iplot]==":": linewidth=2.0
                             
         line, = ax.plot(x, y, self.styles[iplot], marker=None,linewidth=linewidth, 
@@ -854,7 +854,7 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
     
-  def plot_sed(self, models,plot_starSpec=True,**kwargs): 
+  def plot_sed(self, models,plot_starSpec=True,sedObs=None,**kwargs): 
     '''
     Plots the seds and the StarSpectrum
     '''  
@@ -892,6 +892,15 @@ class PlotModels(object):
       if max(y) > ymax: ymax = max(y)
       
     if iplot == 0: return  
+    
+    if sedObs is not None:
+      ax.plot(sedObs.lam,sedObs.nu*sedObs.fnuErg,linestyle="",marker="+")
+      
+      if sedObs.specs is not None:
+        for spec in sedObs.specs:
+          nu=(spec[:,0]* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
+          Fnuerg=(spec[:,1]* u.Jy).cgs.value
+          ax.plot(spec[:,0],nu*Fnuerg,linestyle="-",linewidth=0.5)
       
     # set defaults, can be overwritten by the kwargs
     ax.set_xlim(xmin,xmax)
