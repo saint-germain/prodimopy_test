@@ -675,6 +675,9 @@ class DataSEDObs(object):
     self.fnuErg = numpy.zeros(shape=(nlam))
     self.fnuJy = numpy.zeros(shape=(nlam))
     self.specs = None  # holds a list of spectra if available (wl,flux,error) 
+    self.R_V = None
+    self.E_BV = None
+    self.A_V = None
 
 class DataSED(object):
   '''
@@ -695,7 +698,36 @@ class DataSED(object):
     self.nu = numpy.zeros(shape=(nlam))
     self.fnuErg = numpy.zeros(shape=(nlam))
     self.fnuJy = numpy.zeros(shape=(nlam))
-    self.nuFnu = numpy.zeros(shape=(nlam))
+    #self.nuFnu = numpy.zeros(shape=(nlam))
+
+  def setLbolTbol(self):
+    """
+    Calculates the bolometric temperature and lumionsity for the given 
+    values of the SED.
+    
+    quite approximate at the moment.
+    """
+    
+    # FIXME: correctness needs to be verified
+    # caluclate the bolometric luminosity
+    # *-1.0 because of the ordering of nu
+      #calculate Tbol see Dunham 2008 Equation 6
+    # check what is here the proper value
+    # in particular Tbol is very sensitive to this value
+    # Lbol does not seem to change much (e.g. if 0.1 is used instead)
+    # for the moment exclude the shortest wavelength as these is most likely scattering
+    mask=self.lam>0.2  
+    
+    self.Lbol=numpy.trapz(self.fnuErg[mask],x=self.nu[mask])*-1.0
+    self.Lbol=self.Lbol*4.0*math.pi*(((self.distance*u.pc).to(u.cm)).value)**2    
+    self.Lbol=self.Lbol/(const.L_sun.cgs).value    
+    
+    #print(numpy.trapz((sed.nu*sed.fnuErg),x=sed.nu)) 
+    #print(numpy.trapz(sed.fnuErg,x=sed.nu))
+    self.Tbol=1.25e-11*numpy.trapz((self.nu[mask]*self.fnuErg[mask]),x=self.nu[mask])/numpy.trapz(self.fnuErg[mask],x=self.nu[mask])  
+      
+      
+      
 
 
 class DataBgSpec(object):
@@ -1387,6 +1419,16 @@ def read_sedObs(directory,filename="SEDobs.dat"):
     print(spec)
     sedObs.specs.append(spec)
     
+  # check if there is some extinction data
+  fn_ext= directory+"/extinct.dat" 
+  if os.path.exists(fn_ext):
+    fext= open(fn_ext,"r")
+    fext.readline()
+    sedObs.E_BV=float(fext.readline())
+    fext.readline()
+    sedObs.R_V=float(fext.readline())
+    sedObs.A_V=sedObs.R_V*sedObs.E_BV
+  
   return sedObs
 
 def read_sed(directory,filename="SED.out"):
@@ -1420,26 +1462,10 @@ def read_sed(directory,filename="SED.out"):
     sed.lam[i] = float(elems[0])
     sed.nu[i] = float(elems[1])
     sed.fnuErg[i] = float(elems[2])
-    sed.nuFnu[i] = float(elems[3])
+    #sed.nuFnu[i] = float(elems[3])
     sed.fnuJy[i] = float(elems[4])
   
-  # FIXME: correctness needs to be verified
-  # caluclate the bolometric luminosity
-  # *-1.0 because of the ordering of nu
-    #calculate Tbol see Dunham 2008 Equation 6
-  # check what is here the proper value
-  # in particular Tbol is very sensitive to this value
-  # Lbol does not seem to change much (e.g. if 0.1 is used instead)
-  # for the moment exclude the shortest wavelength as these is most likely scattering
-  mask=sed.lam>0.2  
-  
-  sed.Lbol=numpy.trapz(sed.fnuErg[mask],x=sed.nu[mask])*-1.0
-  sed.Lbol=sed.Lbol*4.0*math.pi*(((distance*u.pc).to(u.cm)).value)**2    
-  sed.Lbol=sed.Lbol/(const.L_sun.cgs).value    
-  
-  #print(numpy.trapz((sed.nu*sed.fnuErg),x=sed.nu)) 
-  #print(numpy.trapz(sed.fnuErg,x=sed.nu))
-  sed.Tbol=1.25e-11*numpy.trapz((sed.nu[mask]*sed.fnuErg[mask]),x=sed.nu[mask])/numpy.trapz(sed.fnuErg[mask],x=sed.nu[mask])  
+  sed.setLbolTbol()
   
   f.close()
       
