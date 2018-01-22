@@ -95,7 +95,7 @@ def check_grid(gridname,modeldirs=None):
   modeldirs : list
     a list of all models in the grid (directory name of each model).
     
-    If modeldirs is `None` all directories with names starting with `model` are 
+    If `modeldirs` is `None` all directories with names starting with `model` are 
     considered as potential grid models. 
   """
   if not os.getcwd().endswith("/"+gridname):
