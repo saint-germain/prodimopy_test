@@ -31,6 +31,7 @@ Source Documentation
    read_casasim
    plot_casasim
    compare
+   grid
 
 
 Command-line utilities
