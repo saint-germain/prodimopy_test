@@ -67,14 +67,15 @@ def run_grid(gridname,modeldirs,runProDiMo):
 
   """
   os.chdir(gridname)
-  print("Grid: ",os.getcwd())
   for modeldir in modeldirs:
-    if isinstance(runProDiMo, collections.Callable):    
+    if isinstance(runProDiMo, collections.Callable):
+      print("run "+modeldir+", exec. function: "+runProDiMo.__name__)
       runProDiMo(modeldir)
     else:
-      runProDiMo=runProDiMo.replace("$MODELNAME$",modeldir)
+      runProDiMoCMD=runProDiMo.replace("$MODELNAME$",modeldir)
       os.chdir(modeldir)
-      os.system(runProDiMo)
+      print("run "+modeldir+", exec. command: "+runProDiMoCMD)
+      os.system(runProDiMoCMD)
       os.chdir("..")
 
 
