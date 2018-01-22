@@ -15,6 +15,7 @@ import math
 import os
 import shutil
 import collections
+import glob
 
 
 def genvalues(param):
@@ -67,15 +68,47 @@ def run_grid(gridname,modeldirs,runProDiMo):
 
   """
   os.chdir(gridname)
-  print("Grid: ",os.getcwd())
   for modeldir in modeldirs:
-    if isinstance(runProDiMo, collections.Callable):    
+    if isinstance(runProDiMo, collections.Callable):
+      print("run "+modeldir+", exec. function: "+runProDiMo.__name__)
       runProDiMo(modeldir)
     else:
-      runProDiMo=runProDiMo.replace("$MODELNAME$",modeldir)
+      runProDiMoCMD=runProDiMo.replace("$MODELNAME$",modeldir)
       os.chdir(modeldir)
-      os.system(runProDiMo)
+      print("run "+modeldir+", exec. command: "+runProDiMoCMD)
+      os.system(runProDiMoCMD)
       os.chdir("..")
+  # go back to the original working directory
+  os.chdir("..")
+
+def check_grid(gridname,modeldirs=None):
+  """
+  Checks if all models look okay.
+  
+  This routine checks if finished.out exists for all models of the grid.
+
+  Parameters
+  ----------
+  gridname : str
+    The name of the grid (the directory with the models).
+    
+  modeldirs : list
+    a list of all models in the grid (directory name of each model).
+    
+    If modeldirs is `None` all directories with names starting with `model` are 
+    considered as potential grid models. 
+  """
+  if not os.getcwd().endswith("/"+gridname):
+    os.chdir(gridname)
+  
+  # guess the model directories  
+  if modeldirs is None:
+    modeldirs=glob.glob("model*/")
+    
+  for modeldir in modeldirs:
+    if not os.path.isfile(modeldir+"/finished.out"):
+      print("Model "+modeldir+" failed:") 
+  
 
 
 def make_grid(gridname,params,indir=None):
