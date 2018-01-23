@@ -18,6 +18,22 @@ import collections
 import glob
 
 
+def chgriddir(gridname):
+  """
+  Changes the current working directory to the grid directory.
+  
+  Verifies if I am already in the grid directory.
+
+  Parameters
+  ----------
+  gridname : str
+    The name of the grid (the directory with the models).
+
+  """
+  if not os.getcwd().endswith("/"+gridname):
+    os.chdir(gridname)
+
+
 def genvalues(param):
   """
   Generates the values for the given parameter.
@@ -67,7 +83,7 @@ def run_grid(gridname,modeldirs,runProDiMo):
     the modeldir as a parameter.   
 
   """
-  os.chdir(gridname)
+  chgriddir(gridname)
   for modeldir in modeldirs:
     if isinstance(runProDiMo, collections.Callable):
       print("run "+modeldir+", exec. function: "+runProDiMo.__name__)
@@ -80,6 +96,27 @@ def run_grid(gridname,modeldirs,runProDiMo):
       os.chdir("..")
   # go back to the original working directory
   os.chdir("..")
+
+
+def get_modeldirs(modeldirs):
+  """
+  Returns all grid models of the current grid. 
+  If modeldirs is not `
+  Assumes that I am already in the grid directory.
+  
+  .. todo ::
+    also pass the gridname as optional parameter. 
+  
+  Returns
+  -------
+  list
+    If `modeldirs` is not `None` `modeldirs` is returned.
+    Otherwise all directory names staring with `model*/` are returned. 
+  
+  """
+  if modeldirs is None:
+    modeldirs=glob.glob("model*/")
+  return modeldirs
 
 def check_grid(gridname,modeldirs=None):
   """
@@ -98,17 +135,61 @@ def check_grid(gridname,modeldirs=None):
     If `modeldirs` is `None` all directories with names starting with `model` are 
     considered as potential grid models. 
   """
-  if not os.getcwd().endswith("/"+gridname):
-    os.chdir(gridname)
+
+  chgriddir(gridname)
   
   # guess the model directories  
-  if modeldirs is None:
-    modeldirs=glob.glob("model*/")
+  modeldirs = get_modeldirs(modeldirs)
     
   for modeldir in modeldirs:
     if not os.path.isfile(modeldir+"/finished.out"):
       print("Model "+modeldir+" failed:") 
   
+
+def sel_lowest_chisquare(gridname,modeldirs=None,tolerance=None):
+  """
+  Selects the model(s) with the lowest chi squared. If a tolerance is 
+  given all models within this tolerance, measured relative to the minimum 
+  chi square are selected.
+  
+  Parameters
+  ----------
+  gridname : str
+    The name of the grid (the directory with the models).
+    
+  modeldirs : list
+    a list of all models in the grid (directory name of each model).
+    
+    If `modeldirs` is `None` all directories with names starting with `model` are 
+    considered as potential grid models. 
+  """
+
+  chgriddir(gridname)
+  modeldirs=get_modeldirs(modeldirs)
+  nmodels=len(modeldirs)
+  
+  chisquares=numpy.ndarray(shape=(nmodels))
+  chisquares[:]=1.e100
+  # go through all models and read the chi square  
+  for i in range(nmodels):
+    modeldir=modeldirs[i]
+    if os.path.isfile(modeldir+"/finished.out"):
+      ffin=open(modeldir+"/finished.out")
+      for line in ffin:
+        if "total chi" in line:
+          val=float(line.split("=")[1])
+          chisquares[i]=val
+          
+  minchi=numpy.min(chisquares)  
+  if tolerance is not None:
+    tol=minchi*tolerance
+    idx=numpy.where(numpy.abs(chisquares-minchi)<tol)[0]
+  else:
+    idx=numpy.argmin(chisquares)
+  
+  # need to convert to numpy array, otherwise selection of multiple indices
+  # does not work
+  return numpy.array(modeldirs)[idx]
 
 
 def make_grid(gridname,params,indir=None):
