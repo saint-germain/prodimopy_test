@@ -873,7 +873,9 @@ class PlotModels(object):
       x = model.sed.lam
       y = model.sed.nu*model.sed.fnuErg      
       dist = ((model.sed.distance*u.pc).to(u.cm)).value                          
-      ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      pl=ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      colsed=pl[0].get_color()
+      lwsed=pl[0].get_linewidth()
       
       if plot_starSpec:
         # scale input Stellar Spectrum to the distance for comparison to the SED
@@ -882,7 +884,8 @@ class PlotModels(object):
         xStar = model.starSpec.lam[0::10]
         yStar= (model.starSpec.nu*model.starSpec.Inu)[0::10]
         yStar = yStar*(r**2.0*pi*dist**(-2.0))                                
-        ax.plot(xStar, yStar, self.styles[iplot], marker="*",ms=2,markeredgecolor=self.colors[iplot],color=self.colors[iplot])
+        ax.plot(xStar, yStar, self.styles[iplot], marker="*",ms=1.5,markeredgecolor=colsed,
+                color=colsed,linewidth=0.7*lwsed)
                       
       iplot = iplot + 1
       
@@ -894,13 +897,16 @@ class PlotModels(object):
     if iplot == 0: return  
     
     if sedObs is not None:
-      ax.plot(sedObs.lam,sedObs.nu*sedObs.fnuErg,linestyle="",marker="+")
+      okidx=np.where(sedObs.flag=="ok")      
+      ax.plot(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx],linestyle="",marker="x",color="0.5",ms=3)
+      nokidx=np.where(sedObs.flag!="ok")      
+      ax.plot(sedObs.lam[nokidx],sedObs.nu[nokidx]*sedObs.fnuErg[nokidx],linestyle="",marker=".",color="0.5")
       
       if sedObs.specs is not None:
         for spec in sedObs.specs:
           nu=(spec[:,0]* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
-          Fnuerg=(spec[:,1]* u.Jy).cgs.value
-          ax.plot(spec[:,0],nu*Fnuerg,linestyle="-",linewidth=0.5)
+          fnuerg=(spec[:,1]* u.Jy).cgs.value
+          ax.plot(spec[:,0],nu*fnuerg,linestyle="-",linewidth=0.5,color="0.5")
       
     # set defaults, can be overwritten by the kwargs
     ax.set_xlim(xmin,xmax)

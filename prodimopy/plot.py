@@ -1070,15 +1070,18 @@ class Plot(object):
 
     # plot the SED  
     ax.plot(x, y, marker=None, label=model.name)
-
+    
     if sedObs is not None:
-      ax.plot(sedObs.lam,sedObs.nu*sedObs.fnuErg,linestyle="",marker="+")
+      okidx=np.where(sedObs.flag=="ok")
+      ax.plot(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx],linestyle="",marker="x",color="0.5",ms=3)
+      nokidx=np.where(sedObs.flag!="ok")
+      ax.plot(sedObs.lam[nokidx],sedObs.nu[nokidx]*sedObs.fnuErg[nokidx],linestyle="",marker=".",color="0.5")
       
       if sedObs.specs is not None:
         for spec in sedObs.specs:
           nu=(spec[:,0]* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
-          Fnuerg=(spec[:,1]* u.Jy).cgs.value
-          ax.plot(spec[:,0],nu*Fnuerg,linestyle="-",linewidth=0.5)
+          fnuerg=(spec[:,1]* u.Jy).cgs.value
+          ax.plot(spec[:,0],nu*fnuerg,linestyle="-",linewidth=0.5,color="0.5")
       
 
                           

@@ -674,6 +674,7 @@ class DataSEDObs(object):
     self.nu = numpy.zeros(shape=(nlam))
     self.fnuErg = numpy.zeros(shape=(nlam))
     self.fnuJy = numpy.zeros(shape=(nlam))
+    self.flag=numpy.empty(nlam, dtype="U2")
     self.specs = None  # holds a list of spectra if available (wl,flux,error) 
     self.R_V = None
     self.E_BV = None
@@ -1404,8 +1405,10 @@ def read_sedObs(directory,filename="SEDobs.dat"):
     elems = f.readline().split()
     sedObs.lam[i] = float(elems[0])
     sedObs.fnuJy[i] = float(elems[1])
+    sedObs.flag[i] = str(elems[3])
     
 
+  print(sedObs.flag)
   sedObs.nu = (sedObs.lam* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
   sedObs.fnuErg = (sedObs.fnuJy*u.Jy).cgs.value
   
