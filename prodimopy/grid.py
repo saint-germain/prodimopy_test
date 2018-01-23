@@ -81,7 +81,7 @@ def run_grid(gridname,modeldirs,runProDiMo):
     
     if the parameter is a python function. This funcion is called with 
     the modeldir as a parameter.   
-
+    
   """
   chgriddir(gridname)
   for modeldir in modeldirs:
@@ -189,7 +189,7 @@ def sel_lowest_chisquare(gridname,modeldirs=None,tolerance=None):
   
   # need to convert to numpy array, otherwise selection of multiple indices
   # does not work
-  return numpy.array(modeldirs)[idx]
+  return numpy.array(modeldirs)[idx],chisquares[idx]
 
 
 def make_grid(gridname,params,indir=None):
