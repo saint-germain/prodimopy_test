@@ -60,7 +60,7 @@ def main(args=None):
     pp.plot_starspec(pd,ylim=[1.e-1,1.e11])  
     
     if pd.sed is not None: 
-      pp.plot_sed(pd)
+      pp.plot_sed(pd,sedObs=pd.sedObs)
       
     pp.plot_dust_opac(pd,ylim=[1.e-1,None])
       
