@@ -94,6 +94,17 @@ class Data_ProDiMo(object):
     The dust density.
     `UNIT:` |gcm^-3|, `DIMS:` (nx,nz)
     """
+    self.sdg = None
+    """ array_like(float,ndim=2) :
+    The gas vertical surface density.
+    `UNIT:` |gcm^-2|, `DIMS:` (nx,nz)
+    """
+    self.sdd = None      
+    """ array_like(float,ndim=2) :
+    The dust vertical surface density.
+    `UNIT:` |gcm^-2|, `DIMS:` (nx,nz)
+    """
+    
     self.nHtot = None 
     """ array_like(float,ndim=2) :
     The total hydrogen number density.
@@ -296,6 +307,11 @@ class Data_ProDiMo(object):
     """ :class:`prodimopy.read.DataElements` :
     Holds the initial gas phase element abundances
     """
+    self.sedObs = None
+    """ :class:`prodimopy.read.DataSEDobs` :
+    Holds the provided SED observations (photometry, spectra, extinction etc.)
+    TODO: maybe put all the observations into one object (e.g. also the lines)
+    """
    
   def __str__(self):
     output = "Info ProDiMo.out: \n"
@@ -305,6 +321,25 @@ class Data_ProDiMo(object):
     output += "dust2gas: " + str(self.dust2gas)
     return output   
   
+  
+  def _getLineIdx(self,wl,ident=None):
+    if self.lines == None: return None
+            
+    if ident != None:
+      linestmp=[line for line in self.lines if line.ident==ident]      
+      wls=numpy.array([line.wl for line in linestmp])
+      idx=numpy.argmin(abs(wls[:]-wl))      
+      return linestmp[idx]    
+    else:
+      wls=numpy.array([line.wl for line in self.lines])
+      idx=numpy.argmin(abs(wls[:]-wl))
+      
+      if (abs(wls[idx]-wl)/wl) >0.01:
+        print("WARN: No line found within 1% of the given wavelengeth:", wl)
+        return None
+     
+    return idx 
+    
       
   def getLine(self,wl,ident=None):
     '''
@@ -324,21 +359,12 @@ class Data_ProDiMo(object):
       Returns `None` if no lines are included in the model.
                            
     '''
-    if self.lines == None: return None
-            
-    if ident != None:
-      linestmp=[line for line in self.lines if line.ident==ident]      
-      wls=numpy.array([line.wl for line in linestmp])
-      idx=numpy.argmin(abs(wls[:]-wl))      
-      return linestmp[idx]    
+    
+    idx = self._getLineIdx(wl,ident=None)
+    
+    if idx is None: 
+      return None
     else:
-      wls=numpy.array([line.wl for line in self.lines])
-      idx=numpy.argmin(abs(wls[:]-wl))
-      
-      if (abs(wls[idx]-wl)/wl) >0.01:
-        print("WARN: No line found within 1% of the given wavelengeth:", wl)
-        return None
-      
       return self.lines[idx]
   
 
@@ -522,6 +548,7 @@ class DataLineObs(DataLine):
     self.fwhm_err = fwhm_err
     self.flag = flag.lower()
     self.profile=None
+    self.profileErr=None 
     
 
 class DataLineEstimate(object):
@@ -668,13 +695,26 @@ class DataSEDObs(object):
   Holds the observational data for the Spectral Energy Distribution (SED).
   currently only photometric points are considered (without any metadata).  
   '''
-  def __init__(self, nlam):
-    self.nlam = nlam
-    self.lam = numpy.zeros(shape=(nlam))
-    self.nu = numpy.zeros(shape=(nlam))
-    self.fnuErg = numpy.zeros(shape=(nlam))
-    self.fnuJy = numpy.zeros(shape=(nlam))
-    self.flag=numpy.empty(nlam, dtype="U2")
+  def __init__(self, nlam=None):
+    if nlam is not None:     
+      self.nlam = nlam      
+      self.lam = numpy.zeros(shape=(nlam))
+      self.nu = numpy.zeros(shape=(nlam))
+      self.fnuErg = numpy.zeros(shape=(nlam))
+      self.fnuJy = numpy.zeros(shape=(nlam))
+      self.fnuErgErr = numpy.zeros(shape=(nlam))
+      self.fnuJyErr = numpy.zeros(shape=(nlam))
+      self.flag=numpy.empty(nlam, dtype="U2")
+    else:
+      self.nlam = None      
+      self.lam = None
+      self.nu = None
+      self.fnuErg = None
+      self.fnuJy = None
+      self.fnuErgErr = None
+      self.fnuJyErr = None
+      self.flag=None
+            
     self.specs = None  # holds a list of spectra if available (wl,flux,error) 
     self.R_V = None
     self.E_BV = None
@@ -756,7 +796,10 @@ class DataStarSpec(object):
     self.Inu = numpy.zeros(shape=(nlam))    
 
 
-def read_prodimo(directory=".", name=None, readlineEstimates=True, filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", filenameLineFlux="line_flux.out",td_fileIdx=None):
+def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True, 
+                 filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", 
+                 filenameLineFlux="line_flux.out",
+                 td_fileIdx=None):
   """
   Reads in all (not all yet) the output of a ProDiMo model from the given model directory.
   
@@ -768,6 +811,8 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True, filename="Pro
     an optional name for the model (e.g. can be used in the plotting routines) 
   readlineEstimates : boolean 
     read the line estimates file (can be slow, so it is possible to deactivate it)
+  readObs : boolean
+    try to read observational data (e.g. SEDobs.dat ...)
   filename : str 
     the filename of the main prodimo output 
   filenameLineEstimates : str 
@@ -977,11 +1022,18 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True, filename="Pro
     read_species(directory,data)
     #print("INFO: Calc total species masses")
     #calc_spmassesTot(data)        
+  
+  if readObs:
+    data.sedObs=read_sedObs(directory)
+    
     
   
   # calculate the columnd densitis
   print("INFO: Calculate column densities")
   calc_columnd(data)
+  print("INFO: Calculate surface densities")
+  calc_surfd(data)
+
   print(" ")
 
   return data
@@ -1266,8 +1318,7 @@ def  read_linefluxes(directory, filename="line_flux.out"):
 
 def read_lineObs(directory, nlines, filename="LINEobs.dat"):
   '''
-  Reads the lineobs Data. the number of lines have to be known
-  this is for version 1 LINEObs.dat
+  Reads the lineobs Data. the number of lines have to be known.
   '''
   try:
     f = open(directory + "/" + filename, 'r')
@@ -1318,7 +1369,7 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat"):
       proffilename=records[offset+nlines+i+1].strip()
       if profile[i] == "T":       
         if "nodata"==proffilename: print("WARN: Something is wrong with line "+str(i))     
-        linesobs[i].profile=read_lineObsProfile(proffilename,directory=directory)
+        linesobs[i].profile,linesobs[i].profileErr=read_lineObsProfile(proffilename,directory=directory)
     
   return linesobs
   
@@ -1351,7 +1402,9 @@ def read_lineObsProfile(filename,directory="."):
     # for observations
     profile.flux_conv[i - 2] = profile.flux[i - 2]
     
-  return profile
+  err=float(records[-1].split()[0].strip())
+    
+  return profile,err
 
 def read_gas(directory,filename="gas_cs.out"):
   '''
@@ -1391,40 +1444,44 @@ def read_sedObs(directory,filename="SEDobs.dat"):
   Reads the file SEDobs.dat (phtotometric points) and all files ending 
   with *spec.dat (e.g. the Spitzer spectrum) 
   '''
-  rfile = directory + "/"+filename    
-  try:
-    f = open(rfile, 'r')
-  except:
-    print("WARN: Could not read " + rfile + "!")
-    return None
-
-  nlam = int(f.readline().strip())
-  f.readline() # header line
-  sedObs = DataSEDObs(nlam)
-  for i in range(nlam):
-    elems = f.readline().split()
-    sedObs.lam[i] = float(elems[0])
-    sedObs.fnuJy[i] = float(elems[1])
-    sedObs.flag[i] = str(elems[3])
-    
-
-  print(sedObs.flag)
-  sedObs.nu = (sedObs.lam* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
-  sedObs.fnuErg = (sedObs.fnuJy*u.Jy).cgs.value
   
-    # check for the spectrum files
+  sedObs=None
+  rfile = directory + "/"+filename
+  if os.path.exists(rfile):    
+    f = open(rfile, 'r')
+
+    nlam = int(f.readline().strip())
+    f.readline() # header line
+    sedObs = DataSEDObs(nlam=nlam)
+    for i in range(nlam):
+      elems = f.readline().split()
+      sedObs.lam[i] = float(elems[0])
+      sedObs.fnuJy[i] = float(elems[1])
+      sedObs.fnuJyErr[i] = float(elems[2])
+      sedObs.flag[i] = str(elems[3])
+      
+    sedObs.nu = (sedObs.lam* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
+    sedObs.fnuErg = (sedObs.fnuJy*u.Jy).cgs.value
+    sedObs.fnuErgErr = (sedObs.fnuJyErr*u.Jy).cgs.value
+  
+  # check for the spectrum files
   fnames=glob.glob(directory+"/*spec.dat")
-  if fnames is not None and len(fnames)>0:
+  if fnames is not None and len(fnames)>0:    
+    if sedObs is None:
+      sedObs=DataSEDObs()
+      
     sedObs.specs=list()
     
   for fname in fnames:
-    spec=numpy.loadtxt(fname, skiprows=3)
-    print(spec)
+    spec=numpy.loadtxt(fname, skiprows=3)    
     sedObs.specs.append(spec)
     
   # check if there is some extinction data
   fn_ext= directory+"/extinct.dat" 
   if os.path.exists(fn_ext):
+    if sedObs is None:
+      sedObs=DataSEDObs()
+      
     fext= open(fn_ext,"r")
     fext.readline()
     sedObs.E_BV=float(fext.readline())
@@ -1617,6 +1674,23 @@ def calc_NHrad_oi(data):
       
   return NHradoi
       
+
+def calc_surfd(data):
+  '''
+  Caluclates the gas and dust vertical surface densities
+  '''
+  
+  data.sdg = 0.0 * data.rhog
+  data.sdd = 0.0 * data.rhod
+  for ix in range(data.nx):          
+    for iz in range(data.nz - 2, -1, -1):  # from top to bottom        
+      dz = (data.z[ix, iz + 1] - data.z[ix, iz])
+      dz = dz * u.au.to(u.cm)
+      nn = 0.5 * (data.rhog[ix, iz + 1] + data.rhog[ix, iz])
+      data.sdg[ix, iz] = data.sdg[ix, iz + 1,] + nn * dz
+      nn = 0.5 * (data.rhod[ix, iz + 1] + data.rhod[ix, iz])
+      data.sdd[ix, iz] = data.sdd[ix, iz + 1,] + nn * dz
+
 
 def calc_columnd(data):
   '''
