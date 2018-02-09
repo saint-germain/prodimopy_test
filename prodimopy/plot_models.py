@@ -136,7 +136,7 @@ class PlotModels(object):
       if kwargs["title"].strip() != "":
         ax.set_title(kwargs["title"])      
                  
-  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,lineObs=None,**kwargs):
+  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,showBoxes=True,lineObs=None,**kwargs):
     """
     Plots a selection of lines or lineEstimates.
     
@@ -160,23 +160,24 @@ class PlotModels(object):
       x = list()
       y = list()
       for ident in lineidents:         
-        line=None             
+        line=None
+        
+        x.append(iline)
+        
         if useLineEstimate:
           line = model.getLineEstimate(ident[0], ident[1])          
         else:  # use the line fluxes, uses only the wavelength
           line = model.getLine(ident[1],ident=ident[0])
-        x.append(iline)    
+          # it can happen that one of the models does not contain a certain line
                             
         # Convert lineflux to Jansky
-        
-        if jansky:          
-          #linetst=DataLineEstimate("HCO+", 840.38, 5, 4, 7.55e-20)
-          #print(linetst)
-          #print(self.si_to_jansky(linetst))
-          #print(self.si_to_jansky(line))
-          y.append(line.flux_Jy())        
+        if line is not None:
+          if jansky:          
+            y.append(line.flux_Jy())        
+          else:
+            y.append(line.flux)
         else:
-          y.append(line.flux)
+            y.append(None)
         
         if imodel == 0:
           # lticks.append(r"$\mathrm{"+pplot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
@@ -186,12 +187,12 @@ class PlotModels(object):
         iline = iline + 1  
 
       mew=None
-      ms=4
+      ms=3
       if self.markers[imodel]=="+" or self.markers[imodel]=="x":        
         mew=1.5
-        ms=5     
+        ms=4     
       elif self.markers[imodel]=="*" or self.markers[imodel]=="p":
-        ms=5
+        ms=4
               
       ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=ms,mew=mew, 
               color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name,
@@ -200,16 +201,17 @@ class PlotModels(object):
       imodel = imodel + 1  
 
     # boxes for factor 3 and 10 relative to the last model
-    for i in range(len(x)):
-      xc=x[i]-0.3
-      yc=y[i]/3.0
-      height=y[i]*3.0 -y[i]/3.0     
-      width=0.6   
-      ax.add_patch(patches.Rectangle((xc,yc),width,height,color="0.8"))
-
-      height=y[i]*10.0 -y[i]/10.0
-      yc=y[i]/10.0        
-      ax.add_patch(patches.Rectangle((xc,yc),width,height,color="0.5",fill=False,linewidth=0.5))          
+    if showBoxes:
+      for i in range(len(x)):
+        xc=x[i]-0.3
+        yc=y[i]/3.0
+        height=y[i]*3.0 -y[i]/3.0     
+        width=0.6   
+        ax.add_patch(patches.Rectangle((xc,yc),width,height,color="0.8"))
+  
+        height=y[i]*10.0 -y[i]/10.0
+        yc=y[i]/10.0        
+        ax.add_patch(patches.Rectangle((xc,yc),width,height,color="0.5",fill=False,linewidth=0.5))          
     
     if lineObs != None:
       nlines=len(lineObs)        
@@ -233,8 +235,8 @@ class PlotModels(object):
     
       # the observations
       # takes the x frmo above
-      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr2,fmt=".",ms=0.0,color="lightgrey",linewidth=10,zorder=0)
-      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr,uplims=ylinesObsUl,fmt="o",ms=4.0,color="black",capsize=2,label="Obs.")           
+      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr2,fmt=".",ms=0.0,color="lightgrey",linewidth=10)
+      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr,uplims=ylinesObsUl,fmt="o",ms=4.0,color="black",capsize=2,label="Obs.",zorder=5)
    
     ax.set_xlim(0.5, iline - 0.5)
     
@@ -253,7 +255,7 @@ class PlotModels(object):
       
     xgrid=np.array(x)      
     ax.vlines(xgrid-0.5,ymin=ax.get_ylim()[0],ymax=ax.get_ylim()[1],linestyle="solid",linewidth=0.5,color="grey")  
-    ax.yaxis.grid(color="grey")  
+    ax.yaxis.grid(color="grey",zorder=0)
   
      
     ax.set_xticklabels(lticks, rotation='70', minor=False)
@@ -269,7 +271,7 @@ class PlotModels(object):
   
   def plot_NH(self, models, **kwargs):
     '''
-    Plots the total vertical column density for the given species for all the models
+    Plots the total vertical hydrogen column density for all the models, 
     as a function of radius
     '''
     print("PLOT: plot_NH ...")
@@ -883,9 +885,13 @@ class PlotModels(object):
         
         xStar = model.starSpec.lam[0::10]
         yStar= (model.starSpec.nu*model.starSpec.Inu)[0::10]
-        yStar = yStar*(r**2.0*pi*dist**(-2.0))                                
-        ax.plot(xStar, yStar, self.styles[iplot], marker="*",ms=1.5,markeredgecolor=colsed,
-                color=colsed,linewidth=0.7*lwsed)
+        yStar = yStar*(r**2.0*pi*dist**(-2.0))
+        ax.plot(xStar, yStar, self.styles[iplot],color=colsed,linewidth=0.5*lwsed,zorder=-1)
+        
+        if max(yStar) > ymax: ymax = max(yStar)
+                                                
+#        ax.plot(xStar, yStar, self.styles[iplot], marker="*",ms=0.5,markeredgecolor=colsed,
+#                color=colsed,linewidth=0.5*lwsed)
                       
       iplot = iplot + 1
       
@@ -894,11 +900,13 @@ class PlotModels(object):
       if y[-1] < ymin: ymin = y[-1]
       if max(y) > ymax: ymax = max(y)
       
+      
     if iplot == 0: return  
     
     if sedObs is not None:
       okidx=np.where(sedObs.flag=="ok")      
-      ax.plot(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx],linestyle="",marker="x",color="0.5",ms=3)
+      ax.errorbar(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx],yerr=sedObs.nu[okidx]*sedObs.fnuErgErr[okidx],
+                  linestyle="",fmt="o",color="0.5",ms=2,linewidth=1.0,zorder=1000)
       nokidx=np.where(sedObs.flag!="ok")      
       ax.plot(sedObs.lam[nokidx],sedObs.nu[nokidx]*sedObs.fnuErg[nokidx],linestyle="",marker=".",color="0.5")
       
@@ -1042,7 +1050,7 @@ class PlotModels(object):
       x=x[::-1]
       y=y[::-1]     
 
-      ax.plot(x, y, color=self.colors[iplot],linestyle=self.styles[iplot],              
+      ax.plot(x, y, color=self.colors[iplot],linestyle=self.styles[iplot],
               label=model.name)
 
                                   
@@ -1127,7 +1135,7 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)  
    
-  def plot_line_profil(self,models,wl,ident=None,linetxt=None,**kwargs):
+  def plot_line_profil(self,models,wl,ident=None,linetxt=None,lineObs=None,**kwargs):
     '''
     Plots the line profile for the given line (id wavelength and line ident) 
     '''  
@@ -1140,7 +1148,7 @@ class PlotModels(object):
     ymin = 1.e100
     ymax = -1.e100 
     for model in models:      
-      line=model.getLine(wl,ident=ident)       
+      line=model.getLine(wl,ident=ident)
       if line==None: continue    
       
       # text for the title
@@ -1150,7 +1158,7 @@ class PlotModels(object):
       y = line.profile.flux-line.fcont  # remove the continuum
       
       ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
-                      
+      
       iplot = iplot + 1
       
       if min(x) < xmin: xmin = min(x)
@@ -1161,6 +1169,21 @@ class PlotModels(object):
     if iplot==0: 
       print("WARN: No lines found: ")
       return   
+
+    # plot the line profile if it exists
+    if lineObs is not None:
+      # FIXME: this is not very nice
+      # make a warning if lineObs and line Data are not consistent
+      # it could be that they are for one model       
+      lineIdx=models[0]._getLineIdx(wl,ident=ident)
+
+      line=lineObs[lineIdx]
+      if line.profile is not None:
+        x=line.profile.velo
+        y = line.profile.flux  # remove the continuum      
+        if line.profileErr is not None:
+          ax.fill_between(x, y-line.profileErr , y+line.profileErr, color='0.8',zorder=0)
+        ax.plot(x, y, marker=None, color="black", label="Obs.",zorder=0)
 
     # set defaults, can be overwritten by the kwargs
     ax.set_xlim(xmin,xmax)
