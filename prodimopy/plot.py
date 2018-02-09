@@ -125,7 +125,7 @@ class Plot(object):
   def plot_NH(self, model, muH=None, **kwargs):
     '''
     Plots the total vertical hydrogen column number density 
-    as a function of radius
+    as a function of radius.
     
     muH ... if muH is provided a second y scale is plotted (on the right)
     '''
@@ -160,8 +160,8 @@ class Plot(object):
       # this needs to be done to get the correct scale
       ylim=np.array(ax.get_ylim())*muH
       ax2.set_ylim(ylim)
-      ax2.semilogx()
-      ax2.semilogy()    
+      # FIXME: check if this is required!
+      ax2.semilogy()
     
     #ax.yaxis.tick_right()
     #ax.yaxis.set_label_position("right")
@@ -1073,7 +1073,9 @@ class Plot(object):
     
     if sedObs is not None:
       okidx=np.where(sedObs.flag=="ok")
-      ax.plot(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx],linestyle="",marker="x",color="0.5",ms=3)
+      #ax.plot(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx],linestyle="",marker="x",color="0.5",ms=3)
+      ax.errorbar(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx], yerr=sedObs.nu[okidx]*sedObs.fnuErgErr[okidx],
+                  fmt='o',color="0.5",ms=2,linewidth=1.0,zorder=0)
       nokidx=np.where(sedObs.flag!="ok")
       ax.plot(sedObs.lam[nokidx],sedObs.nu[nokidx]*sedObs.fnuErg[nokidx],linestyle="",marker=".",color="0.5")
       
