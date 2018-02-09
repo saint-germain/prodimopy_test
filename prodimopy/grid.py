@@ -191,6 +191,28 @@ def sel_lowest_chisquare(gridname,modeldirs=None,tolerance=None):
   # does not work
   return numpy.array(modeldirs)[idx],chisquares[idx]
 
+def sel_param_val(gridname,param,value,modeldirs=None):
+  """
+  Very primitiv and inefficient method to select models having a certain 
+  value of a parameter.
+  """
+  chgriddir(gridname)
+  modeldirs=get_modeldirs(modeldirs)
+  nmodels=len(modeldirs)
+  
+  selmodels=list()
+  for i in range(nmodels):
+    modeldir=modeldirs[i]
+    if os.path.isfile(modeldir+"/ParameterGrid.in"):
+      ffin=open(modeldir+"/ParameterGrid.in")
+      for line in ffin:
+        if param in line:
+          val=float(line.split("!")[0])
+          if val == value:
+            selmodels.append(modeldir)
+
+  return selmodels
+
 
 def make_grid(gridname,params,indir=None):
   """
