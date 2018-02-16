@@ -1185,6 +1185,11 @@ class PlotModels(object):
           ax.fill_between(x, y-line.profileErr , y+line.profileErr, color='0.8',zorder=0)
         ax.plot(x, y, marker=None, color="black", label="Obs.",zorder=0)
 
+      if min(x) < xmin: xmin = min(x)
+      if max(x) > xmax: xmax = max(x)
+      if min(y) < ymin: ymin = min(y)
+      if max(y) > ymax: ymax = max(y)
+
     # set defaults, can be overwritten by the kwargs
     ax.set_xlim(xmin,xmax)
     ax.set_ylim([ymin,ymax*1.1])
