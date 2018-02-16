@@ -98,15 +98,20 @@ class Plot(object):
         
   def _closefig(self,fig):
     '''
-    save and close the plot
+    Save and close the plot (Figure). 
     
-    set the transparent attribut (used rcParam savefig.transparent)
+    If self.pdf is None than nothing is done and the figure is returend
+    
+    #set the transparent attribut (used rcParam savefig.transparent)
     '''    
     
-    #trans=mpl.rcParams['savefig.transparent']
-    
-    self.pdf.savefig(figure=fig,transparent=False)
-    plt.close(fig)
+    #trans=mpl.rcParams['savefig.transparent']    
+    if self.pdf is not None:
+      self.pdf.savefig(figure=fig,transparent=False)
+      plt.close(fig)
+      return None
+    else:
+      return fig
     
   def _sfigs(self,**kwargs):
     '''
@@ -167,7 +172,7 @@ class Plot(object):
     #ax.yaxis.set_label_position("right")
     #ax.yaxis.set_ticks_position('both')
         
-    self._closefig(fig)
+    return self._closefig(fig)
      
  
   # FIXME: this is not really a general plot .... 
@@ -249,7 +254,7 @@ class Plot(object):
     # CB.set_ticks(ticks)
     CB.set_label("dominant ionization source",fontsize=self.fs_legend)  
 
-    self._closefig(fig)
+    return self._closefig(fig)
     
   
   def plot_cont(self, model, values, label="value", zlog=True, 
@@ -388,7 +393,7 @@ class Plot(object):
       for patch in patches:
         ax.add_patch(patch)    
     
-    self._closefig(fig)
+    return self._closefig(fig)
 
   def plot_ionrates_midplane(self, model, **kwargs):                       
     
@@ -421,8 +426,7 @@ class Plot(object):
     #handles, labels = ax.get_legend_handles_labels()
     #ax.legend(handles, labels, loc="best", fancybox=False)    
       
-    self.pdf.savefig(transparent=False)
-    plt.close(fig)  
+    return self._closefig(fig)
   
   
   #FIXME: this routine is also not very general (e.g. colors)  
@@ -474,9 +478,7 @@ class Plot(object):
        verticalalignment='bottom', horizontalalignment='left',
        transform=ax.transAxes, alpha=0.75)
     
-      
-    self.pdf.savefig()
-    plt.close(fig)  
+    return self._closefig(fig)
 
   def plot_avgabun(self,model,species,**kwargs):
     '''
@@ -515,8 +517,7 @@ class Plot(object):
     self._dokwargs(ax,**kwargs)    
     self._legend(ax)
     
-    self.pdf.savefig(transparent=False)
-    plt.close(fig)
+    return self._closefig(fig)
 
   def plot_radial(self, model, values, ylabel, zidx=0, **kwargs):
     '''
@@ -543,9 +544,7 @@ class Plot(object):
     self._dokwargs(ax, **kwargs) 
     #self._legend(ax)
     
-    self.pdf.savefig(transparent=False)
-    plt.close(fig)   
-
+    return self._closefig(fig)
 
 
   def plot_midplane(self, model, fieldname, ylabel, **kwargs):
@@ -573,8 +572,7 @@ class Plot(object):
     self._dokwargs(ax, **kwargs) 
     #self._legend(ax)
     
-    self.pdf.savefig(transparent=False)
-    plt.close(fig)   
+    return self._closefig(fig)
 
     
   def plot_abuncont(self, model, species='O', rel2H=True, label=None, zlog=True, 
@@ -636,13 +634,11 @@ class Plot(object):
         label=r"$\mathrm{n("+spnToLatex(species)+") [cm^{-3}]}$"
         if zlog: label="log "+label
              
-    self.plot_cont(model, values, label=label, zlog=zlog, 
+    return self.plot_cont(model, values, label=label, zlog=zlog, 
                 zlim=zlim,zr=zr,clevels=clevels,clabels=clabels,contour=contour,
                 extend=extend,oconts=oconts,acont=acont,acontl=acontl,nbins=nbins,
                 bgcolor=bgcolor,cb_format=cb_format,scalexy=scalexy,patches=patches,
                 rasterized=rasterized,**kwargs)
-
-    return
   
     
   def plot_abunvert(self, model, r, species, useNH=True,scaling_fac=None,
@@ -748,7 +744,7 @@ class Plot(object):
     
     self._dokwargs(ax,**kwargs)
     self._legend(ax,**kwargs)
-    self._closefig(fig)     
+    return self._closefig(fig)     
   
   def plot_abunrad(self, model, species, useNH=True,
                     norm=None,styles=None,colors=None,markers=None,linewidths=None,**kwargs):
@@ -829,7 +825,7 @@ class Plot(object):
     
     self._dokwargs(ax,**kwargs)
     self._legend(ax)
-    self._closefig(fig)       
+    return self._closefig(fig)       
     
   def plot_abun_midp(self, model,species, norm=None,styles=None,colors=None, **kwargs):
     '''
@@ -885,8 +881,7 @@ class Plot(object):
     self._dokwargs(ax, **kwargs)
     self._legend(ax) 
   
-    self.pdf.savefig()
-    plt.close(fig)
+    return self._closefig(fig)
   
   def plot_dust_opac(self,model,dust=None,**kwargs):
     '''
@@ -915,7 +910,7 @@ class Plot(object):
             
     self._dokwargs(ax,**kwargs)
     self._legend(ax)
-    self._closefig(fig) 
+    return self._closefig(fig) 
   
   
   def plot_vertical(self, model, r, field, ylabel, zr=True,
@@ -963,8 +958,7 @@ class Plot(object):
     self._dokwargs(ax,**kwargs)
     self._legend(ax)
     
-    self.pdf.savefig()
-    plt.close(fig)     
+    return self._closefig(fig)
     
   def plot_taus(self,model,r,**kwargs):
     '''
@@ -1011,7 +1005,7 @@ class Plot(object):
        verticalalignment='bottom', horizontalalignment='left',
        transform=ax.transAxes,alpha=0.75)
       
-    self._closefig(fig)     
+    return self._closefig(fig)     
 
   def plot_starspec(self, model,**kwargs): 
     '''
@@ -1037,11 +1031,9 @@ class Plot(object):
     ax.set_xlabel(r"wavelength [$\mathrm{\mu}$m]")    
     ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
       
-    self._dokwargs(ax, **kwargs)                        
+    self._dokwargs(ax, **kwargs)
     
-    self.pdf.savefig()
-    plt.close(fig)  
-
+    return self._closefig(fig)
 
 
   def plot_sed(self, model,plot_starSpec=True,sedObs=None,**kwargs): 
@@ -1099,9 +1091,9 @@ class Plot(object):
       
     self._dokwargs(ax, **kwargs)                        
     
-    self.pdf.savefig()
-    plt.close(fig)
-    
+    return self._closefig(fig)
+  
+
   def plot_taulines(self, model, lineIdents, **kwargs):
     '''
     Plots the line optical depth as a function of radius for the given lines.
@@ -1147,8 +1139,7 @@ class Plot(object):
     self._dokwargs(ax,**kwargs)
     self._legend(ax,**kwargs)  
   
-    self.pdf.savefig()
-    plt.close(fig)     
+    return self._closefig(fig)
           
 
 class Contour(object):
