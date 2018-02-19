@@ -61,6 +61,16 @@ Compares the results of two |prodimo| models.
 For details see :ref:`sec_compare`. 
 
 
+Using Jupyter
+=============
+
+Most prodimopy routines can also be used within a Jupyter notebook.
+In this :download:`example notebook <./jupyter_example.ipynb>` it is shown how to use 
+the reading a plotting routines for a single model. 
+
+This feature is not well tested yet. It worked with python 3.6 as part of the anaconda distribution using 
+the local Jupyter server.
+
 
 Indices and tables
 ==================
