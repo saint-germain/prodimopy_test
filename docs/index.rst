@@ -40,25 +40,19 @@ Command-line utilities
 prodimopy also installs a few command line utils which can be used without lauching a python interpreter or 
 writing any python code.
 
-pplot
------
+**pplot**
+
 Produces plots for a single prodimo model. 
-Useful to check the prodimopy installation or to take a quick look on a |prodimo| model 
+Useful to check the prodimopy installation or to take a quick look on a |prodimo| model. For details see :ref:`sec_plot`. 
 
-For details see :ref:`sec_plot`. 
+**pplot_models**
 
-pplot_models
-------------
 Produces plots for a given set of prodimo models. 
-Useful to quickly compare visualy different |prodimo| models. 
+Useful to quickly compare visualy different |prodimo| models. For details see :ref:`sec_plot_models`. 
 
-For details see :ref:`sec_plot_models`. 
+**pcompare**
 
-pcompare
---------
-Compares the results of two |prodimo| models.
-
-For details see :ref:`sec_compare`. 
+Compares the results of two |prodimo| models. For details see :ref:`sec_compare`. 
 
 
 Using Jupyter
