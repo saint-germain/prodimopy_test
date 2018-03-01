@@ -83,7 +83,9 @@ class CompareAbs(object):
           else:
             print("{:8s}".format("FAILED"),end="")
             if val is not None:
-              print("  Max/Avg rel. Error: ","{:10.2%}".format(np.max(val)),"{:10.2%}".format(np.average(val)))
+              print("  Max/Avg/Index Max rel. Error: ","{:10.2%}".format(np.max(val)),
+                    "{:10.2%}".format(np.average(val)),
+                    "{:3d}".format(np.argmax(val)))
             else:
               print("  Max rel. Error: ",str(val))
 
@@ -129,11 +131,11 @@ class Compare(CompareAbs):
     
     if self.m.lines is None and self.mref.lines is not None: return False,None       
 
-    # Compare fluxes    
-    for i in range(len(self.m.lines)):
-        f,d=self.diff(self.m.lines[i].flux, self.mref.lines[i].flux, self.dLineFluxes)
-        if f == False:
-          return False,d
+    mFluxes=np.array([x.flux for x in self.m.lines])
+    mrefFluxes=np.array([x.flux for x in self.mref.lines])
+    f,d=self.diffArray(mFluxes, mrefFluxes, self.dLineFluxes)
+    if f == False:
+      return False,d
   
     return True,None
     
@@ -144,7 +146,7 @@ class Compare(CompareAbs):
     if self.m.sed is None and self.mref.sed is None: return True,None
     if self.m.sed is not None and self.mref.sed is None: return False,None
     if self.m.sed is None and self.mref.sed is not None: return False,None
-    f,d=self.diffArray(self.m.sed.nuFnu, self.m.sed.nuFnu, self.d)
+    f,d=self.diffArray(self.m.sed.fnuErg, self.mref.sed.fnuErg, self.d)
     
     if f == False:
       return False,d
