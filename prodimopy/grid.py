@@ -33,12 +33,24 @@ def chgriddir(gridname):
   if not os.getcwd().endswith("/"+gridname):
     os.chdir(gridname)
 
+def genparamentry(name,value):
+  
+  if name == "fcarbon":
+    fsil=1.0-(0.25+value)
+    entry = "3           ! NDUST    \n"
+    entry = entry+"  "+str(fsil)+"       Mg0.7Fe0.3SiO3[s] \n"
+    entry = entry+"  "+str(value)+"      amC-Zubko[s] \n"
+    entry = entry+"  0.25      vacuum[s] \n"    
+  else:    
+    entry=str(value)+"  ! "+name +" \n"
+  return entry
+
 
 def genvalues(param):
   """
   Generates the values for the given parameter.
   
-  Currently only lineare ang logarithmic logscaping is possible. 
+  Currently only lineare and logarithmic spacing is possible. 
   
   .. todo::
     allow boolean type of parameters
@@ -265,7 +277,7 @@ def make_grid(gridname,params,indir=None):
   # create the directory for the grid
   os.mkdir(gridname)
   
-  # create an iterator the loops over all indixes of the firt grid array (all combinations)
+  # create an iterator that loops over all indices of the firt grid array (all combinations)
   it = numpy.nditer(grid[0], flags=['multi_index'])
   imodel=0
   modelnames=list()
@@ -279,7 +291,8 @@ def make_grid(gridname,params,indir=None):
       os.mkdir(modeldir)
     fparam=open(modeldir+"/ParameterGrid.in","a+")
     for iparam in range(len(params)):
-      fparam.write(str(grid[iparam][it.multi_index])+"  ! "+params[iparam][0] +" \n")
+      #fparam.write(str(grid[iparam][it.multi_index])+"  ! "+params[iparam][0] +" \n")
+      fparam.write(genparamentry(params[iparam][0], grid[iparam][it.multi_index]))
     fparam.close()
     imodel=imodel+1
     modelnames.append(modelname)  
