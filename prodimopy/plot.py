@@ -25,7 +25,7 @@ class Plot(object):
     self.title=title
     
     # special colors, forgot the source for it :( somewhere from the internet)
-    # FIXME: make an option to aktivate them
+    # FIXME: make an option to activate them
     self.pcolors={"blue"   : "#5DA5DA",
                   "orange" : "#FAA43A",
                   "green"  : "#60BD68",
@@ -34,7 +34,7 @@ class Plot(object):
                   "purple" : "#B276B2",
                   "yellow" : "#DECF3F",
                   "red"    : "#F15854",
-                  "gray"   : "#4D4D4D"}    
+                  "gray"   : "#4D4D4D"}
   
   def _legend(self, ax,**kwargs):
     '''
@@ -127,7 +127,7 @@ class Plot(object):
     else:
       return (figsize[0],figsize[1])
   
-  def plot_NH(self, model, muH=None, **kwargs):
+  def plot_NH(self, model, muH=None,marker=None, **kwargs):
     '''
     Plots the total vertical hydrogen column number density 
     as a function of radius.
@@ -139,7 +139,7 @@ class Plot(object):
     
     x = model.x[:, 0]
     y = model.NHver[:, 0]    
-    ax.plot(x, y, marker=None, color="black")
+    ax.plot(x, y, marker=marker,ms=3.0, color="black")
             
     ax.set_xlim(min(x), max(x))
     
@@ -261,7 +261,7 @@ class Plot(object):
                 zlim=[None,None],zr=True,clevels=None,clabels=None,contour=True,
                 extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
                 bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
-                rasterized=False,**kwargs):
+                rasterized=False,returnFig=False,**kwargs):
     '''
     plot routine for 2D contour plots.
     oconts needs to be an array of Countour objectes
@@ -393,7 +393,10 @@ class Plot(object):
       for patch in patches:
         ax.add_patch(patch)    
     
-    return self._closefig(fig)
+    if returnFig:
+      return fig
+    else:
+      return self._closefig(fig)
 
   def plot_ionrates_midplane(self, model, **kwargs):                       
     
@@ -535,7 +538,7 @@ class Plot(object):
     ax.plot(x, y,marker=None)
                  
     ax.set_xlim(np.min(x),np.max(x))
-    ax.set_ylim(np.min(y),np.max(y))                                 
+    ax.set_ylim(np.min(y),np.max(y))
     ax.semilogy()
             
     ax.set_xlabel(r"r [au]")    
@@ -1140,6 +1143,146 @@ class Plot(object):
     self._legend(ax,**kwargs)  
   
     return self._closefig(fig)
+
+
+
+  
+  
+  def plot_line_origin(self,model,ids,field, label="value", boxcolors=None, zlog=True, 
+                zlim=[None,None],zr=True,clevels=None,clabels=None,contour=False,
+                extend="neither",oconts=None,nbins=70,
+                bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
+                rasterized=False,**kwargs): 
+  
+  
+    if boxcolors is None:
+      boxcolors=["black","blue","green","orange"]
+  
+    lestimates=list()
+    for id in ids:
+      lestimates.append(model.getLineEstimate(id[0],id[1]))
+                        
+    if patches is None:
+      patches=list()
+    
+    ibox=0
+    for lesti in lestimates:
+      fcfluxes=np.array([x.Fcolumn for x in lesti.rInfo])
+      
+      Fcum=fcfluxes[:]
+      for i in range(1,model.nx):
+        Fcum[i]=Fcum[i-1]+fcfluxes[i]
+      
+      # create a patch
+      xi15=np.argmin(np.abs(Fcum/lesti.flux-0.15))
+      xi85=np.argmin(np.abs(Fcum/lesti.flux-0.85))
+      
+      z85s=[[model.x[rp.ix-1,0],rp.z85] for rp in lesti.rInfo[xi15:xi85]]
+      z15s=[[model.x[rp.ix-1,0],rp.z15] for rp in lesti.rInfo[xi85-1:xi15-1:-1]]
+      points=z85s+z15s
+      
+      for point in points:
+        point[1]=(point[1]*u.cm).to(u.au).value
+        if zr is True:
+          point[1]=point[1]/point[0]
+      
+      patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox])
+        
+      patches.append(patch)
+      ibox+=1
+  
+    fig =self.plot_cont(model, field, label=label, zlog=zlog, 
+                zlim=zlim,zr=zr,clevels=clevels,clabels=clabels,contour=False,
+                extend=extend,oconts=oconts,acont=None,acontl=None,nbins=nbins,
+                bgcolor=bgcolor,cb_format=cb_format,scalexy=scalexy,patches=patches,
+                rasterized=rasterized,returnFig=True,**kwargs)
+    
+
+    ax=fig.axes[0]
+    print(ax)
+    
+    ibox=0    
+    for id in ids:
+      ax.text(0.04, 0.9-ibox/20.0,id[0]+" "+str(id[1]),
+              horizontalalignment='left',
+              verticalalignment='bottom',fontsize=7,
+              transform = ax.transAxes,color=boxcolors[ibox],
+              bbox=dict(boxstyle='square,pad=0', fc='white', ec='none'))
+      ibox+=1
+      
+    return self._closefig(fig)
+  
+# def dominant_process(self,model, cd, process_dict):
+# 
+# 
+#   contrast_colors = np.array([(230, 25, 75), (60, 180, 75), (255, 225, 25), (0, 130, 200),
+#                           (245, 130, 48), (145, 30, 180), (70, 240, 240), (240, 50, 230),
+#                           (210, 245, 60), (250, 190, 190), (0, 128, 128), (230, 190, 255),
+#                           (170, 110, 40), (255, 250, 200), (128, 0, 0), (170, 255,95),
+#                           (128, 128, 0), (255, 215, 180), (0, 0, 128), (128, 128, 128)], dtype=float)
+# 
+#   contrast_colors /= 255
+# 
+#   strongest_process = np.zeros(*np.shape(model[:,2]), dtype=float)
+#   processes = np.chararray(len(model[:,2]), itemsize=7)
+#   colors = np.empty((len(model[:,2]), 3))
+#   keys_and_colors = {}
+# 
+#   for key in process_dict:
+#       strongest_indices = model[:, cd[key]] > strongest_process
+#       strongest_process[strongest_indices] = model[:, cd[key]][strongest_indices]
+#       processes[strongest_indices] = key
+# 
+#   for i, process in enumerate(np.unique(processes)):
+#       colors[processes == process] = contrast_colors[i]
+#       keys_and_colors[process] = contrast_colors[i]
+# 
+#   return colors, keys_and_colors, processes
+#   def plot_heating_cooling(self,model, cd, heat_dict, cool_dict):
+#       """
+#       Finds the most dominant heating (and cooling) processes at each 
+#       grid point
+#       """
+#   
+#       x = model.x
+#       z = model.z
+#   
+#       heat_colors, heat_keys_and_colors, heat_processes = self.dominant_process(model, cd, heat_dict)
+#       cool_colors, cool_keys_and_colors, cool_processes = self.dominant_process(model, cd, cool_dict)
+#       # for spam in cool_colors:
+#       #     print spam
+#       fig, axarr = plt.subplots(1, 2, figsize=self._sfigs(sfigs=[2.0,1.0])) #, sharex=True, sharey=True)
+#       plt.subplots_adjust(bottom=0.25)
+#   
+#       for key in heat_keys_and_colors:
+#         if key in heat_processes:  # check if the process is still relevant
+#             axarr[0].scatter(0, 0, marker="s", color=heat_keys_and_colors[key], label=heat_dict[key])
+#   
+#       for key in cool_keys_and_colors:
+#         if key in cool_processes:  # check if the process is still relevant
+#             axarr[1].scatter(0, 0, marker="s", color=cool_keys_and_colors[key], label=cool_dict[key])
+#   
+#       heat = axarr[0].pcolormesh(x.reshape(model.nx, model.nz), z.reshape(model.nx, model.nz), np.zeros((model.nx, model.nz)), color=heat_colors, linewidth=0)
+#       heat.set_array(None)  # Now delete the array that determines the colors using a color scale
+#       cool = axarr[1].pcolormesh(x.reshape(model.nx, model.nz), z.reshape(model.nx, model.nz), np.zeros((model.nx, model.nz)), color=cool_colors, linewidth=0)
+#       cool.set_array(None)
+#       for i in range(2):
+#         axarr[i].set_xlabel("x [AU]")
+#         axarr[i].set_ylabel("z [AU]")
+#         axarr[i].semilogx()
+#         axarr[i].semilogy()
+#         #axarr[i].set_xlim([Rin, Rout])
+#         #axarr[i].set_ylim([0.01, Rout])
+#         axarr[i].legend(loc='upper center', bbox_to_anchor=(0.5, -0.075), ncol=2, frameon=False)
+#   
+#       axarr[0].set_title("Most dominant heating processes")
+#       axarr[1].set_title("Most dominant cooling processes")
+#       # plt.tight_layout()
+#       
+#       #self._dokwargs(ax,**kwargs)
+#       #self._legend(ax,**kwargs)  
+#   
+#       return self._closefig(fig)
           
 
 class Contour(object):
