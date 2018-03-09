@@ -133,7 +133,7 @@ class PlotModels(object):
       ax.set_ylabel(kwargs["ylabel"])
       
     if "title" in kwargs:
-      if kwargs["title"].strip() != "":
+      if  kwargs["title"] != None and kwargs["title"].strip() != "":
         ax.set_title(kwargs["title"])      
                  
   def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,showBoxes=True,lineObs=None,**kwargs):
@@ -269,7 +269,7 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)
   
-  def plot_NH(self, models, **kwargs):
+  def plot_NH(self, models, marker=None,**kwargs):
     '''
     Plots the total vertical hydrogen column density for all the models, 
     as a function of radius
@@ -286,7 +286,7 @@ class PlotModels(object):
       y = model.NHver[:, 0]
       
       # print y.min() 
-      line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot],alpha=0.7, label=model.name)
+      line, = ax.plot(x, y, self.styles[iplot], marker=marker,ms=3.0, color=self.colors[iplot],alpha=0.7, label=model.name)
       if line.is_dashed(): self._set_dashes(line)
           
       iplot = iplot + 1
@@ -767,7 +767,9 @@ class PlotModels(object):
       if species==None:
         y = getattr(model, fieldname)[ix, :]
       else:
-        y = getattr(model, fieldname)[ix, :,model.spnames[species]]
+        y = getattr(model, fieldname)[ix, :,model.spnames[species]]        
+        y=y/model.nHtot[ix, :] # abundance"
+        
                                   
       ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
                       
@@ -856,9 +858,9 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
     
-  def plot_sed(self, models,plot_starSpec=True,sedObs=None,**kwargs): 
+  def plot_sed(self, models,plot_starSpec=True,sedObs=None,sedObsModels=False,**kwargs): 
     '''
-    Plots the seds and the StarSpectrum
+    Plots the Seds and the StarSpectrum (optionally).
     '''  
     print("PLOT: plot_sed ...")
     fig, ax = plt.subplots(1, 1)      
@@ -886,36 +888,57 @@ class PlotModels(object):
         xStar = model.starSpec.lam[0::10]
         yStar= (model.starSpec.nu*model.starSpec.Inu)[0::10]
         yStar = yStar*(r**2.0*pi*dist**(-2.0))
-        ax.plot(xStar, yStar, self.styles[iplot],color=colsed,linewidth=0.5*lwsed,zorder=-1)
+        ax.plot(xStar, yStar, self.styles[iplot],color=colsed,linewidth=0.5*lwsed,zorder=-1,linestyle="--")
         
         if max(yStar) > ymax: ymax = max(yStar)
                                                 
 #        ax.plot(xStar, yStar, self.styles[iplot], marker="*",ms=0.5,markeredgecolor=colsed,
 #                color=colsed,linewidth=0.5*lwsed)
-                      
-      iplot = iplot + 1
+                                  
+      
+      if sedObsModels is True or (sedObs is not None and iplot==0):
+        if sedObsModels is True:
+          plSedObs=model.sedObs
+          sedcolor=self.colors[iplot]
+          
+        else:
+          plSedObs=sedObs
+          sedcolor="0.5"
+
+        if plSedObs is not None:
+          okidx=np.where(plSedObs.flag=="ok")      
+          ax.errorbar(plSedObs.lam[okidx],plSedObs.nu[okidx]*plSedObs.fnuErg[okidx],
+                      yerr=plSedObs.nu[okidx]*plSedObs.fnuErgErr[okidx],markeredgecolor="0.3",
+                    linestyle="",fmt="o",color=sedcolor,ms=2,linewidth=1.0,
+                    markeredgewidth=0.5,zorder=1000,ecolor='0.3')
+          nokidx=np.where(plSedObs.flag!="ok")
+          ax.plot(plSedObs.lam[nokidx],plSedObs.nu[nokidx]*plSedObs.fnuErg[nokidx],linestyle="",
+                  marker=".",markeredgecolor="0.3",markeredgewidth=0.5,
+                  color=sedcolor)
+        
+          if plSedObs.specs is not None:
+            for spec in plSedObs.specs:
+              nu=(spec[:,0]* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
+              fnuerg=(spec[:,1]* u.Jy).cgs.value
+              fnuergErr=(spec[:,2]* u.Jy).cgs.value
+              print(nu*fnuergErr)
+              ax.errorbar(spec[:,0],nu*fnuerg,
+                          yerr=nu*fnuergErr,ms=2,linewidth=0.8,
+                          markeredgewidth=0.5,zorder=1000,ecolor="0.3",
+                          linestyle="-",color="0.3")
+              ax.plot(spec[:,0],nu*fnuerg,linestyle=":",linewidth=0.5,
+                      color=sedcolor,zorder=2000)
+      
       
       if min(x) < xmin: xmin = min(x)
       if max(x) > xmax: xmax = max(x)
       if y[-1] < ymin: ymin = y[-1]
       if max(y) > ymax: ymax = max(y)
+      iplot = iplot + 1
       
       
-    if iplot == 0: return  
+    if iplot == 0: return 
     
-    if sedObs is not None:
-      okidx=np.where(sedObs.flag=="ok")      
-      ax.errorbar(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx],yerr=sedObs.nu[okidx]*sedObs.fnuErgErr[okidx],
-                  linestyle="",fmt="o",color="0.5",ms=2,linewidth=1.0,zorder=1000)
-      nokidx=np.where(sedObs.flag!="ok")      
-      ax.plot(sedObs.lam[nokidx],sedObs.nu[nokidx]*sedObs.fnuErg[nokidx],linestyle="",marker=".",color="0.5")
-      
-      if sedObs.specs is not None:
-        for spec in sedObs.specs:
-          nu=(spec[:,0]* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
-          fnuerg=(spec[:,1]* u.Jy).cgs.value
-          ax.plot(spec[:,0],nu*fnuerg,linestyle="-",linewidth=0.5,color="0.5")
-      
     # set defaults, can be overwritten by the kwargs
     ax.set_xlim(xmin,xmax)
     ax.set_ylim([ymin,None])
@@ -1028,9 +1051,9 @@ class PlotModels(object):
     
   def plot_starspec_xray(self, models,nuInu=False,**kwargs): 
     '''
-    Plots the full Stellar Spectrum
+    Plots the X-ray spectrum.
     '''  
-    print("PLOT: plot_xraystarspec ...")
+    print("PLOT: plot_starspec_xray ...")
     fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
     
     iplot = 0    
@@ -1107,8 +1130,9 @@ class PlotModels(object):
       y= (model.starSpec.nu*model.starSpec.Inu)[0::10]         
                                   
       ax.plot(x, y, color=self.colors[iplot],linestyle=self.styles[iplot],
-              marker=self.markers[iplot],ms=2,markeredgecolor=self.colors[iplot],
+              ms=2,markeredgecolor=self.colors[iplot],
               label=model.name)
+      # marker=self.markers[iplot],
                       
       iplot = iplot + 1
       
