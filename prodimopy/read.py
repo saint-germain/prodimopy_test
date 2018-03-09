@@ -18,6 +18,7 @@ import os
 from collections import OrderedDict
 import math
 import glob
+import sys
 
 class Data_ProDiMo(object):
   """ 
@@ -226,11 +227,23 @@ class Data_ProDiMo(object):
     Rosseland mean opacity. In case of gas radiative transfer for the dust plus the gas.
     `UNIT:` |cm^-1|, `DIMS:` (nx,nz)
     """            
+    self.tauchem = None    
+    """ array_like(float,ndim=2) :
+    Chemical timescale (stead-state)
+    `UNIT:` yr, `DIMS:` (nx,nz)
+    """
+    self.taucool = None    
+    """ array_like(float,ndim=2) :
+    Cooling timescale.
+    `UNIT:` yr, `DIMS:` (nx,nz)
+    """
     self.taudiff = None    
     """ array_like(float,ndim=2) :
     Vertical radiative diffussion timescale (using the Rosseland mean opacities).
     `UNIT:` yr, `DIMS:` (nx,nz)
     """
+
+    
     self.spnames = None  # 
     """ dictionary :
     Dictionary providing the index of a particular species (e.g. spnames["CO"]). This index
@@ -259,6 +272,26 @@ class Data_ProDiMo(object):
     Radial column number densities for each species at each point in the disk. 
     Integrated from the star outwards along fixed radial rays given by the vertical grid.
     `UNIT:` |cm^-2|, `DIMS:` (nx,nz,nspec)
+    """
+    self.heat = None
+    """ array_like(float,ndim=3) :
+    Heating rates for the various heating processes.
+    `UNIT:` |???|, `DIMS:` (nx,nz,nheat)
+    """
+    self.cool = None
+    """ array_like(float,ndim=3) :
+    Cooling rates for the various coling
+    `UNIT:` |???|, `DIMS:` (nx,nz,cool)
+    """
+    self.heat_mainidx = None
+    """ array_like(float,ndim=3) :
+    Index of the main heating process at the given grid point.
+    `UNIT:` , `DIMS:` (nx,nz)
+    """
+    self.cool_mainidx = None
+    """ array_like(float,ndim=3) :
+    Index of the main cooling process at the given grid point.
+    `UNIT:` , `DIMS:` (nx,nz)
     """
     self.lineEstimates = None  
     """ list(:class:`prodimopy.read.DataLineEstimate`) :
@@ -324,21 +357,37 @@ class Data_ProDiMo(object):
   
   def _getLineIdx(self,wl,ident=None):
     if self.lines == None: return None
+
+    wls=numpy.array([line.wl for line in self.lines])
             
-    if ident != None:
-      linestmp=[line for line in self.lines if line.ident==ident]      
-      wls=numpy.array([line.wl for line in linestmp])
-      idx=numpy.argmin(abs(wls[:]-wl))      
-      return linestmp[idx]    
-    else:
-      wls=numpy.array([line.wl for line in self.lines])
+    if ident != None:      
+      linestmp=[line for line in self.lines if line.ident==ident]
+      if linestmp is not None and len(linestmp)>0:
+        wlstmp=numpy.array([line.wl for line in linestmp])
+        itmp=numpy.argmin(abs(wlstmp[:]-wl))
+        # get the index of the whole line array. That should no find 
+        # the exact one (e.g. used the exact same wavelength
+        idx=numpy.argmin(abs(wls[:]-linestmp[itmp].wl))
+        #print(self.lines[idx].ident)
+        # check again
+        # FIXME: causes problems with _lte lines (have the same wavelenghts)
+        if self.lines[idx].ident != ident:
+          print("ERROR: Something is wrong found: ident", self.lines[idx].ident," and wl ",self.lines[idx].wl,
+                "for ",ident,wl)
+          return None
+        else:
+          return idx
+      else:
+        print("WARN: No line found with ident", ident," and wl ",wl)
+        return None
+    else:      
       idx=numpy.argmin(abs(wls[:]-wl))
       
       if (abs(wls[idx]-wl)/wl) >0.01:
         print("WARN: No line found within 1% of the given wavelengeth:", wl)
         return None
-     
-    return idx 
+      else:
+        return idx 
     
       
   def getLine(self,wl,ident=None):
@@ -360,7 +409,7 @@ class Data_ProDiMo(object):
                            
     '''
     
-    idx = self._getLineIdx(wl,ident=None)
+    idx = self._getLineIdx(wl,ident=ident)
     
     if idx is None: 
       return None
@@ -451,7 +500,36 @@ class Data_ProDiMo(object):
       if le.ident == ident:
         lines.append(le)
   
-    return lines  
+    return lines
+
+
+  def selectLines(self, ident):
+    """
+    Returns a list of all line fluxes for the 
+    given line ident included in the line tranfer.
+    
+    Parameters
+    ----------    
+    ident : string
+      The line identification (species name) as defined in |prodimo|.
+      The ident is not necessarely equal to the underlying chemial species 
+      name (e.g. isotopologues, ortho-para, or cases like N2H+ and HN2+)
+                
+    Returns
+    -------    
+    list(:class:`prodimopy.read.DataLine`) :
+      List of :class:`prodimopy.read.DataLine` objects, 
+      or empty list if nothing was found.
+         
+    """    
+    if self.lines is None: return None
+    
+    lines = list()         
+    for le in self.lines: 
+      if le.ident == ident:
+        lines.append(le)
+  
+    return lines
   
   
   def getAbun(self,spname):
@@ -602,7 +680,8 @@ class DataLineEstimateRInfo(object):
   '''
   Data container for the extra radial info for a single line estimate.  
   '''
-  def __init__(self, iz, Fcolumn, tauLine, tauDust, z15, z85):    
+  def __init__(self, ix,iz, Fcolumn, tauLine, tauDust, z15, z85):   
+    self.ix = ix 
     self.iz = iz 
     self.Fcolumn = Fcolumn
     self.tauLine = tauLine
@@ -614,6 +693,8 @@ class DataLineEstimateRInfo(object):
   def flux_Jy(self):    
     '''
     Returns the flux value Jansky km s^-1
+    
+    FIXM: I think that is at the wrong location
     '''
     res=self.flux*u.Watt/(u.m**2.0)
     ckm=const.c.to('km/s')
@@ -690,10 +771,13 @@ class DataElements(object):
     """
 
 
-class DataSEDObs(object):
+class DataContinuumObs(object):
   '''
-  Holds the observational data for the Spectral Energy Distribution (SED).
-  currently only photometric points are considered (without any metadata).  
+  Holds the observational data for the continuum (the dust).
+  
+  Holds the photometric data, spectra (experimental) and radial profiles
+  (experimental).
+    
   '''
   def __init__(self, nlam=None):
     if nlam is not None:     
@@ -719,6 +803,9 @@ class DataSEDObs(object):
     self.R_V = None
     self.E_BV = None
     self.A_V = None
+    
+    self.radprofiles=None
+    
 
 class DataSED(object):
   '''
@@ -881,7 +968,11 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   data.td = numpy.zeros(shape=(data.nx, data.nz))
   data.nd = numpy.zeros(shape=(data.nx, data.nz))
   data.rhog = numpy.zeros(shape=(data.nx, data.nz))
-  data.taudiff = numpy.zeros(shape=(data.nx, data.nz))
+  data.tauchem = numpy.zeros(shape=(data.nx, data.nz))
+  data.taucool = numpy.zeros(shape=(data.nx, data.nz))
+  data.taudiff = numpy.zeros(shape=(data.nx, data.nz))  
+  data.heat_mainidx =numpy.zeros(shape=(data.nx, data.nz),dtype=numpy.int32)
+  data.cool_mainidx =numpy.zeros(shape=(data.nx, data.nz),dtype=numpy.int32)
   data.nHtot = numpy.zeros(shape=(data.nx, data.nz))
   data.damean = numpy.zeros(shape=(data.nx, data.nz))
   data.Hx=numpy.zeros(shape=(data.nx, data.nz))
@@ -898,7 +989,8 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   data.zetaSTCR = numpy.zeros(shape=(data.nx, data.nz))
   data.nmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec))
   data.cdnmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec)) 
-  
+  data.heat = numpy.zeros(shape=(data.nx, data.nz, data.nheat))
+  data.cool = numpy.zeros(shape=(data.nx, data.nz, data.ncool))
   
   # FIXME: that is not very nice
   #        make at least some checks if the output format has changed or something
@@ -942,13 +1034,19 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
       data.NHrad[ix, zidx] = float(fields[4])
       data.NHver[ix, zidx] = float(fields[5])
       data.AVrad[ix, zidx] = float(fields[6])
-      data.AVver[ix, zidx] = float(fields[7])      
+      data.AVver[ix, zidx] = float(fields[7])
       data.nd[ix, zidx] = float(fields[8])
       data.tg[ix, zidx] = float(fields[9])
       data.td[ix, zidx] = float(fields[10])
       data.rhog[ix, zidx] = float(fields[12])
       data.chi[ix, zidx] = float(fields[15])
+      data.tauchem[ix,zidx]=float(fields[16])
+      data.taucool[ix,zidx]=float(fields[17])
       data.taudiff[ix,zidx]=float(fields[18])
+      data.heat_mainidx[ix,zidx]=float(fields[19])
+      data.cool_mainidx[ix,zidx]=float(fields[20])
+      data.heat[ix, zidx, :] = numpy.array(list(map(float, fields[nfixFields:nfixFields+data.nheat])))
+      data.cool[ix, zidx, :] = numpy.array(list(map(float, fields[(nfixFields+data.nheat):(nfixFields+data.nheat+data.ncool)])))
       data.chiRT[ix, zidx] = float(fields[iAJJ])
       data.kappaRoss[ix, zidx] = float(fields[iAJJ+1])            
       data.nHtot[ix, zidx] = float(fields[iACool])
@@ -1024,7 +1122,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     #calc_spmassesTot(data)        
   
   if readObs:
-    data.sedObs=read_sedObs(directory)
+    data.sedObs=read_continuumObs(directory)
     
     
   
@@ -1219,7 +1317,8 @@ def _read_lineEstimateRinfo(pdata, lineEstimate):
   nxrange = list(range(pdata.nx))
   lineEstimate.rInfo = list()
   for j in nxrange:            
-    fieldsR = f.readline().decode().split()     
+    fieldsR = f.readline().decode().split()
+    ix= int(fieldsR[0].strip())    
     iz = int(fieldsR[1].strip())
     Fcolumn = float(fieldsR[2])
     try:
@@ -1230,7 +1329,7 @@ def _read_lineEstimateRinfo(pdata, lineEstimate):
     tauDust = float(fieldsR[4])
     z15 = float(fieldsR[5])
     z85 = float(fieldsR[6])               
-    rInfo = DataLineEstimateRInfo(iz, Fcolumn, tauLine, tauDust, z15, z85)
+    rInfo = DataLineEstimateRInfo(ix,iz, Fcolumn, tauLine, tauDust, z15, z85)
     lineEstimate.rInfo.append(rInfo)
       
   f.close()
@@ -1437,7 +1536,7 @@ def read_gas(directory,filename="gas_cs.out"):
 
   return gas  
 
-def read_sedObs(directory,filename="SEDobs.dat"):
+def read_continuumObs(directory,filename="SEDobs.dat"):
   ''' 
   Reads observational continuum data (SED). 
   
@@ -1445,51 +1544,69 @@ def read_sedObs(directory,filename="SEDobs.dat"):
   with *spec.dat (e.g. the Spitzer spectrum) 
   '''
   
-  sedObs=None
+  contObs=None
   rfile = directory + "/"+filename
   if os.path.exists(rfile):    
     f = open(rfile, 'r')
 
     nlam = int(f.readline().strip())
     f.readline() # header line
-    sedObs = DataSEDObs(nlam=nlam)
+    contObs = DataContinuumObs(nlam=nlam)
     for i in range(nlam):
       elems = f.readline().split()
-      sedObs.lam[i] = float(elems[0])
-      sedObs.fnuJy[i] = float(elems[1])
-      sedObs.fnuJyErr[i] = float(elems[2])
-      sedObs.flag[i] = str(elems[3])
+      contObs.lam[i] = float(elems[0])
+      contObs.fnuJy[i] = float(elems[1])
+      contObs.fnuJyErr[i] = float(elems[2])
+      contObs.flag[i] = str(elems[3])
       
-    sedObs.nu = (sedObs.lam* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
-    sedObs.fnuErg = (sedObs.fnuJy*u.Jy).cgs.value
-    sedObs.fnuErgErr = (sedObs.fnuJyErr*u.Jy).cgs.value
+    contObs.nu = (contObs.lam* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
+    contObs.fnuErg = (contObs.fnuJy*u.Jy).cgs.value
+    contObs.fnuErgErr = (contObs.fnuJyErr*u.Jy).cgs.value
   
   # check for the spectrum files
   fnames=glob.glob(directory+"/*spec.dat")
   if fnames is not None and len(fnames)>0:    
-    if sedObs is None:
-      sedObs=DataSEDObs()
+    if contObs is None:
+      contObs=DataContinuumObs()
       
-    sedObs.specs=list()
+    contObs.specs=list()
     
   for fname in fnames:
     spec=numpy.loadtxt(fname, skiprows=3)    
-    sedObs.specs.append(spec)
+    contObs.specs.append(spec)
     
   # check if there is some extinction data
   fn_ext= directory+"/extinct.dat" 
   if os.path.exists(fn_ext):
-    if sedObs is None:
-      sedObs=DataSEDObs()
+    if contObs is None:
+      contObs=DataContinuumObs()
       
     fext= open(fn_ext,"r")
     fext.readline()
-    sedObs.E_BV=float(fext.readline())
+    contObs.E_BV=float(fext.readline())
     fext.readline()
-    sedObs.R_V=float(fext.readline())
-    sedObs.A_V=sedObs.R_V*sedObs.E_BV
+    contObs.R_V=float(fext.readline())
+    contObs.A_V=contObs.R_V*contObs.E_BV
+    
+    
+#   # check if there is an image.in 
+#   fn_images= directory+"/image.in"
+#   if os.path.exists(fn_images):
+#     if contObs is None:
+#       contObs=DataContinuumObs()
+#     
+#     fext= open(fn_images,"r")
+#     fext.readline()
+#     fext.readline()
+#     nimages=int(fext.readline())
+#     positionAngle = float(fext.readline())
+#     
+#     for i in range(9):
+#       line = f.readline()
+    
+    
   
-  return sedObs
+  return contObs
 
 def read_sed(directory,filename="SED.out"):
   ''' 
