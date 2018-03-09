@@ -136,7 +136,7 @@ class TestReadProdimo(unittest.TestCase):
             
 class TestReadSEDobs(unittest.TestCase):
   def test_read_sedObs(self):
-    sedObs = pread.read_sedObs(".")
+    sedObs = pread.read_continuumObs(".")
     self.assertAlmostEqual(2.5493e-26,sedObs.fnuErg[0])
 
 # class TestCalcColumnd(unittest.TestCase):
