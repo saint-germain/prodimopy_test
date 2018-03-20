@@ -119,13 +119,11 @@ class Plot(object):
     array sfigs (in kwargs) the first element is for the width the second for
     the heigth
     '''            
-    figsize=mpl.rcParams['figure.figsize']
-    
     if "sfigs" in kwargs:
-      fac=kwargs["sfigs"]               
-      return (figsize[0]*fac[0],figsize[1]*fac[1])
+      fac=kwargs["sfigs"]
+      return scale_figs(fac)
     else:
-      return (figsize[0],figsize[1])
+      return scale_figs([1.0,1.0])
   
   def plot_NH(self, model, muH=None,marker=None, **kwargs):
     '''
@@ -1356,3 +1354,14 @@ def plog(array):
   array = np.log10(array)
   np.seterr(**old_settings)  # reset to default  
   return array
+
+
+def scale_figs(scale):
+  '''
+  Scale the figure size from matplotlibrc by the factors given in the 
+  array scale the first element is for the width the second for
+  the heigth.
+  '''            
+  figsize=mpl.rcParams['figure.figsize']
+  
+  return (figsize[0]*scale[0],figsize[1]*scale[1])
