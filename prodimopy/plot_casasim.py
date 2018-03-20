@@ -13,6 +13,7 @@ from matplotlib import patches
 from matplotlib.offsetbox import AnchoredOffsetbox, AuxTransformBox
 from matplotlib.ticker import MaxNLocator
 import numpy
+import prodimopy.plot as pplot
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -103,7 +104,8 @@ class PlotCasasim(object):
     ax.add_artist(ae)
   
   
-  def plot_cube(self, cube, nrow=3, ncol=3, cvel_idx=None, zlim=[None, None],**kwargs):
+  def plot_cube(self, cube, nrow=3, ncol=3, cvel_idx=None,step=1, 
+                zlim=[None, None],**kwargs):
     """
     Plots a spectral line cube.
     """
@@ -116,7 +118,9 @@ class PlotCasasim(object):
     # print(wcs.find_all_wcs(image[0].header))  
     
     
-    icenter = int(nimages / 2)
+    if cvel_idx is None:
+      cvel_idx = int(nimages / 2)
+    
     naxesh = int(nrow * ncol / 2)
     
     vmin = zlim[0]
@@ -144,9 +148,8 @@ class PlotCasasim(object):
     for ir in range(nrow):
       for ic in range(ncol):
         ax = axis[ir, ic]
-        iax = ir * ncol + ic
-        idata = iax - naxesh
-        velidx = icenter + idata           
+        iax = ir * ncol + ic         
+        velidx = cvel_idx + (iax - naxesh)*step
         im = ax.imshow(cube.data[velidx, :, :], cmap="inferno", vmin=vmin, vmax=vmax)      
               
         # set the border of the coordinate frames to white
@@ -274,6 +277,60 @@ class PlotCasasim(object):
     # plt.tight_layout(pad=0.1)
     
     self._closefig(fig)
+
+  def plot_integrated_diff(self, imageObs,imageModel,imageDiff, zlim=[None, None],**kwargs):
+    """
+    Plots an image and its diff Model-Obs
+    """
+    
+    if imageObs is None or imageModel is None: return
+    
+    vmin = zlim[0]
+    vmax = zlim[1]
+    if vmin is None: vmin = numpy.min(imageObs.data)
+    if vmax is None: vmax = numpy.max(imageObs.data) 
+  
+    # wcsim=wcs.WCS(image.header)    
+    # wcsrel=linear_offset_coords(wcsim, image.centerpix)
+    fig, axes = plt.subplots(1, 3, subplot_kw=dict(projection=imageObs.wcsrel),
+                           figsize=pplot.scale_figs([2.25,1.0]))
+    
+    
+    im = axes[0].imshow(imageObs.data, cmap="inferno", vmin=vmin, vmax=vmax)
+    im2 = axes[1].imshow(imageModel.data, cmap="inferno", vmin=vmin, vmax=vmax)
+    im3 = axes[2].imshow(imageDiff.data, cmap="inferno", vmin=vmin, vmax=vmax)
+    # axes.coords[0].set_major_formatter('hh:mm:ss')     
+
+    print(axes[0].axis())
+    
+    for ax in axes:
+      ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
+      ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
+      ax.coords[0].frame.set_color("white")
+      ax.set_xlabel("rel. RA ['']")
+      
+    # needs to be converted to pixels, that is the data unit
+    self.add_beam(axes[0], imageObs)
+    
+    axes[0].set_ylabel("rel. Dec. ['']")
+    # mark the center
+    #axes[0].plot(imageObs.centerpix[0], imageObs.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=3)
+  
+    #axes.axvline(image.centerpix[0],color="0.6",linewidth=0.8,linestyle=":")  
+    #axes.axhline(image.centerpix[1],color="0.6",linewidth=0.8,linestyle=":")
+  
+      # FIXME: that would show the image like in the casaviewer
+    # axes.invert_yaxis()  
+  
+    self._dokwargs(axes[0],**kwargs)
+  
+    ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
+    CB = fig.colorbar(im, ax=axes.ravel().tolist(), pad=0.02,
+                    format="%5.2f", fraction=0.04)  
+    CB.set_ticks(ticks)
+    CB.set_label("[Jy/beam km/s]")
+          
+    self._closefig(fig)
   
   
   def plot_integrated(self, image, zlim=[None, None],**kwargs):
@@ -324,6 +381,55 @@ class PlotCasasim(object):
     self._closefig(fig)
 
 
+  def plot_mom1_diff(self, imageObs,imageModel,imageDiff, zlim=[None, None],**kwargs):
+    """
+    Plots a fits image.
+    """
+  
+    if imageObs is None or imageModel is None: return
+  
+    vmin = zlim[0]
+    vmax = zlim[1]
+    
+    veldataObs = imageObs.data - imageObs.systemic_velocity
+    veldataModel = imageModel.data - imageModel.systemic_velocity    
+    if vmin is None: vmin = numpy.nanmin(veldataObs)
+    if vmax is None: vmax = numpy.nanmax(veldataObs)  
+  
+    # wcsim=wcs.WCS(image.header)    
+    # wcsrel=linear_offset_coords(wcsim, image.centerpix)
+    fig, axes = plt.subplots(1, 3, subplot_kw=dict(projection=imageObs.wcsrel),
+                           figsize=pplot.scale_figs([2.25,1.0]))
+    for ax in axes:
+      ax.set_facecolor("black")
+      
+    im = axes[0].imshow(veldataObs, cmap="seismic", vmin=vmin, vmax=vmax)  
+    im1 = axes[1].imshow(veldataModel, cmap="seismic", vmin=vmin, vmax=vmax)
+    im2 = axes[2].imshow(imageDiff.data, cmap="seismic", vmin=vmin, vmax=vmax)
+    
+    for ax in axes:
+      ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
+      ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
+      ax.coords[0].frame.set_color("white")
+      ax.set_xlabel("rel. RA ['']")
+    # needs to be converted to pixels, that is the data unit
+    self.add_beam(axes[0], imageObs)
+    
+    axes[0].set_ylabel("rel. Dec. ['']")
+    
+    self._dokwargs(ax,**kwargs)
+  
+    # FIXME: that would show the image like in the casaviewer
+    # ax.invert_yaxis()  
+    ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
+    CB = fig.colorbar(im, ax=axes.ravel().tolist(), pad=0.02,
+                    format="%5.2f", fraction=0.04)  
+    CB.set_ticks(ticks)
+    CB.set_label("velocity [km/s]")
+        
+    self._closefig(fig)
+
+
   def plot_mom1(self, image, zlim=[None, None],**kwargs):
     """
     Plots a fits image.
@@ -335,8 +441,10 @@ class PlotCasasim(object):
     vmax = zlim[1]
     
     veldata = image.data - image.systemic_velocity
+    print(veldata)
     if vmin is None: vmin = numpy.nanmin(veldata)
     if vmax is None: vmax = numpy.nanmax(veldata)
+    print(vmin,vmax)
   
     # wcsim=wcs.WCS(image.header)    
     # wcsrel=linear_offset_coords(wcsim, image.centerpix)
@@ -459,19 +567,23 @@ class PlotCasasim(object):
     """
     
     if specprof is None: return
+
+
     
     fig, ax = plt.subplots(1, 1)
-    x, y = self.specprof_xy_hist(specprof)
-    ax.plot(x, y, label="Observation")  
-    
-    #pGrayBox=0.3
-    #ax.fill_between(x, y *(1.0-pGrayBox), y * (1+pGrayBox), color='0.8')
-    
+
     if models is not None:
       for model in models:
         x, y = self.specprof_xy_hist(model)
         ax.plot(x, y, label="Model")
     
+    x, y = self.specprof_xy_hist(specprof)
+    ax.plot(x, y, label="Observation",color="black")  
+    
+    #pGrayBox=0.3
+    #ax.fill_between(x, y *(1.0-pGrayBox), y * (1+pGrayBox), color='0.8')
+    
+   
     ax.set_xlim(xlim)
     ax.set_xlabel("velocity [km/s]")
     ax.set_ylabel("flux [Jy]")
@@ -492,8 +604,6 @@ class PlotCasasim(object):
     if radprof is None: return
     
     fig, ax = plt.subplots(1, 1)
-    # ax.plot(radprof.arcsec,radprof.flux)
-    ax.errorbar(radprof.arcsec, radprof.flux, yerr=radprof.flux_err, label="Observations")
     
     #pGrayBox=0.3
     #ax.fill_between(radprof.arcsec, radprof.flux *(1.0-pGrayBox), radprof.flux * (1+pGrayBox), color='0.8')
@@ -502,11 +612,15 @@ class PlotCasasim(object):
     if models is not None:
       for model in models:      
         ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label="Model")
+
+    # ax.plot(radprof.arcsec,radprof.flux)
+    ax.errorbar(radprof.arcsec, radprof.flux, yerr=radprof.flux_err, label="Observations",
+                color="black")
     
     # indicate the beam 
     ax.set_xlabel("radius ['']")
     ax.set_ylabel("flux [$\mathrm{Jy/beam\,km\,s^{-1}}$]")
-    ax.set_xlim(0, None)
+    ax.set_xlim(0, 4.0)
     
     if radprof.bwidth is not None:
       ar = AnchoredRectangle(ax.transData, width=radprof.bwidth, height=0.0,

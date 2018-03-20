@@ -44,12 +44,17 @@ class CasaSim():
   def __init__(self,fn_prefix,directory=".",systemic_velocity=0.0,distance=None,
                coordinates=None,
                fn_cube=".cube.fits",
+               fn_cube_diff=".cube.diff.fits",
                fn_integrated=".cube.integrated.fits",
+               fn_integrated_diff=".cube.integrated.diff.fits",
                fn_radprof=".cube.integrated.radial",
                fn_specprof=".cube.specprof",
                fn_mom1=".cube.mom1.fits",
+               fn_mom1_diff=".cube.mom1.diff.fits",
                fn_pv=".cube.pv.fits",
+               fn_pv_diff=".cube.pv.diff.fits",
                fn_cont=".cont.fits",
+               fn_cont_diff=".cont.diff.fits",
                fn_cont_radprof=".cont.radial"):
     """
     Parameters
@@ -112,12 +117,17 @@ class CasaSim():
     self.systemic_velocity=systemic_velocity
     self.distance=distance
     self.fn_cube=self._build_fn(directory, fn_prefix, fn_cube)
+    self.fn_cube_diff=self._build_fn(directory, fn_prefix, fn_cube_diff)
     self.fn_integrated=self._build_fn(directory, fn_prefix, fn_integrated)
+    self.fn_integrated_diff=self._build_fn(directory, fn_prefix, fn_integrated_diff)
     self.fn_specprof=self._build_fn(directory, fn_prefix, fn_specprof)
     self.fn_radprof=self._build_fn(directory, fn_prefix, fn_radprof)
     self.fn_mom1=self._build_fn(directory, fn_prefix, fn_mom1)
+    self.fn_mom1_diff=self._build_fn(directory, fn_prefix, fn_mom1_diff)
     self.fn_pv=self._build_fn(directory, fn_prefix, fn_pv)
+    self.fn_pv_diff=self._build_fn(directory, fn_prefix, fn_pv_diff)
     self.fn_cont=self._build_fn(directory, fn_prefix, fn_cont)
+    self.fn_cont_diff=self._build_fn(directory, fn_prefix, fn_cont_diff)
     self.fn_cont_radprof=self._build_fn(directory, fn_prefix, fn_cont_radprof)
     
     # all files are optional ... so if they are not there set the attribute to zero
@@ -126,10 +136,20 @@ class CasaSim():
     if os.path.isfile(self.fn_cube):
       self.cube=LineCube(self.fn_cube,systemic_velocity=systemic_velocity)
       found=True
+
+    self.cube_diff=None
+    if os.path.isfile(self.fn_cube_diff):
+      self.cube_diff=LineCube(self.fn_cube_diff,systemic_velocity=systemic_velocity)
+      found=True
     
     self.integrated=None
     if os.path.isfile(self.fn_integrated):
       self.integrated=LineIntegrated(self.fn_integrated)
+      found=True
+
+    self.integrated_diff=None
+    if os.path.isfile(self.fn_integrated_diff):
+      self.integrated_diff=LineIntegrated(self.fn_integrated_diff)
       found=True
     
     self.radprof=None
@@ -146,15 +166,30 @@ class CasaSim():
     if os.path.isfile(self.fn_mom1):
       self.mom1=LineMom1(self.fn_mom1,systemic_velocity=systemic_velocity)
       found=True
+
+    self.mom1_diff=None
+    if os.path.isfile(self.fn_mom1_diff):
+      self.mom1_diff=LineMom1(self.fn_mom1_diff,systemic_velocity=systemic_velocity)
+      found=True
     
     self.pv=None
     if os.path.isfile(self.fn_pv):  
       self.pv=LinePV(self.fn_pv,systemic_velocity=systemic_velocity)
       found=True
-      
+
+    self.pv_diff=None
+    if os.path.isfile(self.fn_pv_diff):  
+      self.pv_diff=LinePV(self.fn_pv_diff,systemic_velocity=systemic_velocity)
+      found=True
+
     self.cont=None
     if os.path.isfile(self.fn_cont):
       self.cont=Continuum(self.fn_cont)
+      found=True
+
+    self.cont_diff=None
+    if os.path.isfile(self.fn_cont_diff):
+      self.cont_diff=Continuum(self.fn_cont_diff)
       found=True
       
     self.cont_radprof=None
@@ -314,6 +349,10 @@ class CASAImage(object):
     self.bPA=self.header["BPA"]
         
     # this is all a bit strange but if it is even pixels now -1 is better
+    # FIXME: this is not general
+    # CRPIX doe not necessarely has to be the center pixel, it could be 
+    # that it is the first one (e.g. in the pv diagramm)
+    # but this is not what I want, I think
     self.centerpix=[self.header["CRPIX1"],self.header["CRPIX2"]]
     self.centerpix[0]-=1
     self.centerpix[1]-=1
@@ -439,8 +478,8 @@ class LinePV(CASAImage):
     self.systemic_velocity=systemic_velocity
     
     # FIXME: CASA sets the centrpix for the velocity coordinate to a strange value
-    # so if it is negative calculate from the dimension
-    if self.centerpix[1] < 0:
+    # or to one, but I am here interested in the image center
+    if self.centerpix[1] <= 0:
       # FIXME: work only with odd numbers
       self.centerpix[1]=int(self.header["NAXIS2"]/2)
 
