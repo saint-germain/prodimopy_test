@@ -46,8 +46,9 @@ class PlotCasasim(object):
 #     if "ylim" in kwargs: 
 #       ax.set_ylim(kwargs["ylim"])
 #       
-#     if "xlim" in kwargs: 
-#       ax.set_xlim(kwargs["xlim"])
+    if "xlim" in kwargs: 
+      print(kwargs["xlim"])
+      ax.set_xlim(kwargs["xlim"])
 #               
 #     if "xlog" in kwargs:
 #       if kwargs["xlog"]: 
@@ -105,7 +106,7 @@ class PlotCasasim(object):
   
   
   def plot_cube(self, cube, nrow=3, ncol=3, cvel_idx=None,step=1, 
-                zlim=[None, None],**kwargs):
+                zlim=[None, None],rms=False,**kwargs):
     """
     Plots a spectral line cube.
     """
@@ -178,9 +179,14 @@ class PlotCasasim(object):
         # ax.axis('equal')
         self.add_beam(ax, cube)  
         
+        if rms:
+        # calculate the rms of the residual    
+          rms=numpy.nansum((cube.data[velidx, :, :]**2.0)/cube.data[velidx, :, :].size)**0.5
+          ax.text(0.05, 0.95, "rms="+"{:4.1e}".format(rms),
+                 transform=ax.transAxes, fontsize=5,
+                 verticalalignment='top', horizontalalignment="left", bbox=props)
         # FIXME: that would show the image like in the casaviewer
         # ax.invert_yaxis()  
-  
                                         
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
     CB = fig.colorbar(im, ax=axis.ravel().tolist(), pad=0.02,
@@ -283,26 +289,36 @@ class PlotCasasim(object):
     Plots an image and its diff Model-Obs
     """
     
-    if imageObs is None or imageModel is None: return
+    if imageObs is None or imageModel is None or imageDiff is None: return
     
     vmin = zlim[0]
     vmax = zlim[1]
-    if vmin is None: vmin = numpy.min(imageObs.data)
-    if vmax is None: vmax = numpy.max(imageObs.data) 
-  
+    if vmin is None: vmin = numpy.nanmin([imageObs.data,imageDiff.data])
+    if vmax is None: vmax = numpy.nanmax([imageObs.data,imageDiff.data]) 
     # wcsim=wcs.WCS(image.header)    
     # wcsrel=linear_offset_coords(wcsim, image.centerpix)
     fig, axes = plt.subplots(1, 3, subplot_kw=dict(projection=imageObs.wcsrel),
-                           figsize=pplot.scale_figs([2.25,1.0]))
+                           figsize=pplot.scale_figs([2.1,1.0]))
     
     
     im = axes[0].imshow(imageObs.data, cmap="inferno", vmin=vmin, vmax=vmax)
     im2 = axes[1].imshow(imageModel.data, cmap="inferno", vmin=vmin, vmax=vmax)
     im3 = axes[2].imshow(imageDiff.data, cmap="inferno", vmin=vmin, vmax=vmax)
+    
+    # calculate the rms of the residual    
+    rms=numpy.nansum((imageDiff.data**2.0)/imageDiff.data.size)**0.5
+    
+    # print the velocities relative to the systemic velocities
+    props = dict(boxstyle='round', facecolor='white', edgecolor="none")
+    axes[0].text(0.95, 0.95, "Observation", transform=axes[0].transAxes, 
+                 fontsize=6,verticalalignment='top', horizontalalignment="right", bbox=props)
+    axes[1].text(0.95, 0.95, "Model", transform=axes[1].transAxes, 
+                 fontsize=6,verticalalignment='top', horizontalalignment="right", bbox=props)
+    axes[2].text(0.95, 0.95, "Residual (rms="+"{:4.1e}".format(rms)+")",
+                 transform=axes[2].transAxes, fontsize=6,
+                 verticalalignment='top', horizontalalignment="right", bbox=props)
     # axes.coords[0].set_major_formatter('hh:mm:ss')     
 
-    print(axes[0].axis())
-    
     for ax in axes:
       ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
       ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
@@ -407,6 +423,21 @@ class PlotCasasim(object):
     im1 = axes[1].imshow(veldataModel, cmap="seismic", vmin=vmin, vmax=vmax)
     im2 = axes[2].imshow(imageDiff.data, cmap="seismic", vmin=vmin, vmax=vmax)
     
+    
+    rms=numpy.nansum((imageDiff.data**2.0)/imageDiff.data.size)**0.5
+    
+    # print the velocities relative to the systemic velocities
+    props = dict(boxstyle='round', facecolor='white', edgecolor="none")
+    axes[0].text(0.95, 0.95, "Observation", transform=axes[0].transAxes, 
+                 fontsize=6,verticalalignment='top', 
+                 horizontalalignment="right", bbox=props)
+    axes[1].text(0.95, 0.95, "Model", transform=axes[1].transAxes, 
+                 fontsize=6,verticalalignment='top', 
+                 horizontalalignment="right", bbox=props)
+    axes[2].text(0.95, 0.95, "Residual (rms="+"{:4.1e}".format(rms)+")", 
+                 transform=axes[2].transAxes, fontsize=6,
+                 verticalalignment='top', horizontalalignment="right", bbox=props)
+    
     for ax in axes:
       ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
       ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
@@ -441,10 +472,8 @@ class PlotCasasim(object):
     vmax = zlim[1]
     
     veldata = image.data - image.systemic_velocity
-    print(veldata)
     if vmin is None: vmin = numpy.nanmin(veldata)
     if vmax is None: vmax = numpy.nanmax(veldata)
-    print(vmin,vmax)
   
     # wcsim=wcs.WCS(image.header)    
     # wcsrel=linear_offset_coords(wcsim, image.centerpix)
@@ -561,7 +590,7 @@ class PlotCasasim(object):
     self._closefig(fig)
 
 
-  def plot_specprof(self, specprof, models=None, xlim=[None, None],**kwargs):
+  def plot_specprof(self, specprof, models=None, xlim=[None, None],modelNames=None,**kwargs):
     """
     Plots a spectral profile (histogram style).
     """
@@ -573,9 +602,12 @@ class PlotCasasim(object):
     fig, ax = plt.subplots(1, 1)
 
     if models is not None:
-      for model in models:
+      if modelNames is None:
+        modelNames=["model"+"{:0d}".format(i+1) for i in range(len(models))]        
+      
+      for model,label in zip(models,modelNames):
         x, y = self.specprof_xy_hist(model)
-        ax.plot(x, y, label="Model")
+        ax.plot(x, y, label=label)
     
     x, y = self.specprof_xy_hist(specprof)
     ax.plot(x, y, label="Observation",color="black")  
@@ -597,7 +629,7 @@ class PlotCasasim(object):
     self._closefig(fig)
 
 
-  def plot_radprof(self, radprof, models=None,**kwargs):
+  def plot_radprof(self, radprof, models=None,modelNames=None,pmGrayBox=0.25,**kwargs):
     """
     Plots a radial profile.
     """
@@ -608,19 +640,27 @@ class PlotCasasim(object):
     #pGrayBox=0.3
     #ax.fill_between(radprof.arcsec, radprof.flux *(1.0-pGrayBox), radprof.flux * (1+pGrayBox), color='0.8')
     
-    
     if models is not None:
-      for model in models:      
-        ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label="Model")
+      if modelNames is None:
+        modelNames=["model"+"{:0d}".format(i+1) for i in range(len(models))]        
+      
+      for model,label in zip(models,modelNames):
+        ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label=label)
 
+    if pmGrayBox is not None:
+      ax.fill_between(radprof.arcsec, 
+                      radprof.flux - radprof.flux*pmGrayBox, 
+                      radprof.flux + radprof.flux*pmGrayBox, color='0.8')
+      
     # ax.plot(radprof.arcsec,radprof.flux)
-    ax.errorbar(radprof.arcsec, radprof.flux, yerr=radprof.flux_err, label="Observations",
+    ax.errorbar(radprof.arcsec, radprof.flux, 
+                yerr=radprof.flux_err, label="observation",
                 color="black")
     
     # indicate the beam 
     ax.set_xlabel("radius ['']")
     ax.set_ylabel("flux [$\mathrm{Jy/beam\,km\,s^{-1}}$]")
-    ax.set_xlim(0, 4.0)
+    ax.set_xlim(0, None)
     
     if radprof.bwidth is not None:
       ar = AnchoredRectangle(ax.transData, width=radprof.bwidth, height=0.0,
