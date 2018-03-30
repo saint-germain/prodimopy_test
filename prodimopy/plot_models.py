@@ -13,6 +13,7 @@ import prodimopy.plot as pplot
 import astropy.units as u
 import astropy.constants as const
 from matplotlib import patches
+from matplotlib import lines
 
 
 class PlotModels(object):
@@ -134,7 +135,24 @@ class PlotModels(object):
       
     if "title" in kwargs:
       if  kwargs["title"] != None and kwargs["title"].strip() != "":
-        ax.set_title(kwargs["title"])      
+        ax.set_title(kwargs["title"])
+        
+  def _closefig(self,fig):
+    '''
+    Save and close the plot (Figure). 
+    
+    If self.pdf is None than nothing is done and the figure is returend
+    
+    #set the transparent attribut (used rcParam savefig.transparent)
+    '''    
+    
+    #trans=mpl.rcParams['savefig.transparent']    
+    if self.pdf is not None:
+      self.pdf.savefig(figure=fig,transparent=False)
+      plt.close(fig)
+      return None
+    else:
+      return fig              
                  
   def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,showBoxes=True,lineObs=None,**kwargs):
     """
@@ -299,13 +317,12 @@ class PlotModels(object):
          
     ax.semilogy()     
     ax.set_xlabel(r"r [au]")
-    ax.set_ylabel(r"N$_\mathrm{<H>}$ cm$^{-2}$")
+    ax.set_ylabel(r"N$_\mathrm{<H>}$ [cm$^{-2}]$")
   
     self._dokwargs(ax,**kwargs)
     self._legend(ax,**kwargs)
     
-    self.pdf.savefig(transparent=mpl.rcParams['savefig.transparent'])
-    plt.close(fig)
+    return self._closefig(fig)
     
   def plot_tcdspec(self, models, species, relToH=False,facGrayBox=3.0, **kwargs):
     '''
@@ -537,7 +554,7 @@ class PlotModels(object):
     of entries as models and must contain arrays with the dimension of nx   
     '''
     print("PLOT: radial ...")
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))
     
     iplot = 0
     xmin = 1.e100
@@ -629,7 +646,10 @@ class PlotModels(object):
     # in some of the pdf viewers
     if patches is not None:
       for patch in patches:
-        ax.add_patch(patch)
+        if type(patch) is lines.Line2D:
+          ax.add_line(patch)
+        else:
+          ax.add_patch(patch)
 
     ax.set_xlim(xmin,xmax)
     ax.set_ylim(ymin, ymax)              
@@ -877,7 +897,8 @@ class PlotModels(object):
       x = model.sed.lam
       y = model.sed.nu*model.sed.fnuErg      
       dist = ((model.sed.distance*u.pc).to(u.cm)).value                          
-      pl=ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      pl=ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name,
+                 linewidth=1.0)
       colsed=pl[0].get_color()
       lwsed=pl[0].get_linewidth()
       
@@ -921,11 +942,13 @@ class PlotModels(object):
               nu=(spec[:,0]* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
               fnuerg=(spec[:,1]* u.Jy).cgs.value
               fnuergErr=(spec[:,2]* u.Jy).cgs.value
-              print(nu*fnuergErr)
-              ax.errorbar(spec[:,0],nu*fnuerg,
-                          yerr=nu*fnuergErr,ms=2,linewidth=0.8,
-                          markeredgewidth=0.5,zorder=1000,ecolor="0.3",
-                          linestyle="-",color="0.3")
+              
+              ax.fill_between(spec[:,0], nu*(fnuerg-fnuergErr), nu*(fnuerg+fnuergErr), color='0.8')
+              
+              #ax.errorbar(,nu*fnuerg,
+              #            yerr=nu*fnuergErr,ms=2,linewidth=0.4,
+              #            markeredgewidth=0.5,zorder=1000,ecolor="0.5",
+              #            linestyle="-",color="0.3")
               ax.plot(spec[:,0],nu*fnuerg,linestyle=":",linewidth=0.5,
                       color=sedcolor,zorder=2000)
       
