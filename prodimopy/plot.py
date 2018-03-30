@@ -357,7 +357,8 @@ class Plot(object):
         ACS=ax.contour(x, y,cont.field,levels=cont.levels, 
                        colors=cont.colors,linestyles=cont.linestyles,linewidths=cont.linewidths)
         if cont.showlabels:          
-          ax.clabel(ACS, inline=True,inline_spacing=cont.label_inline_spacing,fmt=cont.label_fmt,manual=cont.label_locations,fontsize=cont.label_fontsize)                        
+          ax.clabel(ACS, inline=True,inline_spacing=cont.label_inline_spacing,
+                    fmt=cont.label_fmt,manual=cont.label_locations,fontsize=cont.label_fontsize)
     
     if acont is not None:      
       print("WARN: plot_cont: please use the oconts for additional contours ...")      
@@ -389,7 +390,7 @@ class Plot(object):
     
     if patches is not None:
       for patch in patches:
-        ax.add_patch(patch)    
+        ax.add_patch(patch)
     
     if returnFig:
       return fig
@@ -1154,12 +1155,12 @@ class Plot(object):
   
   
     if boxcolors is None:
-      boxcolors=["black","blue","green","orange"]
+      boxcolors=["black","blue","orange","green","red"]
   
     lestimates=list()
     for id in ids:
       lestimates.append(model.getLineEstimate(id[0],id[1]))
-                        
+
     if patches is None:
       patches=list()
     
@@ -1184,10 +1185,12 @@ class Plot(object):
         if zr is True:
           point[1]=point[1]/point[0]
       
-      patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox])
+      patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox],zorder=100)
         
       patches.append(patch)
       ibox+=1
+  
+    print(ibox)
   
     fig =self.plot_cont(model, field, label=label, zlog=zlog, 
                 zlim=zlim,zr=zr,clevels=clevels,clabels=clabels,contour=False,
@@ -1196,16 +1199,15 @@ class Plot(object):
                 rasterized=rasterized,returnFig=True,**kwargs)
     
 
-    ax=fig.axes[0]
-    print(ax)
+    ax=fig.axes[0]    
     
     ibox=0    
-    for id in ids:
-      ax.text(0.04, 0.9-ibox/20.0,id[0]+" "+str(id[1]),
+    for idline in ids:
+      ax.text(0.02, 0.92-ibox/18.0,"$"+spnToLatex(idline[0])+"$ "+str(idline[1]),
               horizontalalignment='left',
-              verticalalignment='bottom',fontsize=7,
+              verticalalignment='bottom',fontsize=6,
               transform = ax.transAxes,color=boxcolors[ibox],
-              bbox=dict(boxstyle='square,pad=0', fc='white', ec='none'))
+              bbox=dict(boxstyle='square,pad=0.1', fc='white', ec='none'))
       ibox+=1
       
     return self._closefig(fig)
@@ -1318,10 +1320,12 @@ def spnToLatex(spname):
   if str(spname) == "H13CO+": return "H^{13}CO^+"
   
   newname = ""  
+  previous_char=None
   for c in name:    
     if c.isdigit():
       newname += "_" + c
-    elif c == "-":
+    # deal with ortho and para (o-, p-) species   
+    elif c == "-" and not (previous_char=="o" or previous_char=="p"):
       newname += "^-"
     elif c == "+":
       newname += "^+"
@@ -1329,6 +1333,14 @@ def spnToLatex(spname):
       newname += "\#"       
     else:
       newname += c
+      
+    previous_char=c
+      
+  # for line names (species)    
+  if "_H" in newname:
+    newname=newname.replace("_H","\_H")
+      
+  print(name,newname)
       
   # repair the double ionized case
   if "^+^+" in newname: newname=newname.replace("^+^+", "^{++}")
