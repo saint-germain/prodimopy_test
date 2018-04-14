@@ -349,24 +349,29 @@ class PlotCasasim(object):
     self._closefig(fig)
   
   
-  def plot_integrated(self, image, zlim=[None, None],**kwargs):
+  def plot_integrated(self, image, zlim=[None, None],mJy=True,**kwargs):
     """
     Plots a zeroth moment image (integrated intensity) image.
     """
+    scalefac=1.0
+    if mJy==True:
+      scalefac=1000.0
     
     if image is None: return
     
     vmin = zlim[0]
     vmax = zlim[1]
     if vmin is None: vmin = numpy.min(image.data)
-    if vmax is None: vmax = numpy.max(image.data) 
+    if vmax is None: vmax = numpy.max(image.data)
+    vmin=vmin*scalefac
+    vmax=vmax*scalefac 
   
     # wcsim=wcs.WCS(image.header)    
     # wcsrel=linear_offset_coords(wcsim, image.centerpix)
     fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=image.wcsrel))
     
     
-    im = ax.imshow(image.data, cmap="inferno", vmin=vmin, vmax=vmax)
+    im = ax.imshow(image.data*scalefac, cmap="inferno", vmin=vmin, vmax=vmax)
     # ax.coords[0].set_major_formatter('hh:mm:ss')
     ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
     ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
@@ -392,7 +397,8 @@ class PlotCasasim(object):
     CB = fig.colorbar(im, ax=ax, pad=0.02,
                     format="%5.2f", fraction=0.04)  
     CB.set_ticks(ticks)
-    CB.set_label("[Jy/beam km/s]")
+    if mJy==True:
+      CB.set_label("[mJy/beam km/s]")
           
     self._closefig(fig)
 
