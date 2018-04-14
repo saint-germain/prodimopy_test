@@ -1453,8 +1453,6 @@ def spnToLatex(spname):
   if "_H" in newname:
     newname=newname.replace("_H","\_H")
       
-  print(name,newname)
-      
   # repair the double ionized case
   if "^+^+" in newname: newname=newname.replace("^+^+", "^{++}")
       
