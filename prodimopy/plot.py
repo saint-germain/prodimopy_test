@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import astropy.units as u
 import math
+import copy
 
 
 class Plot(object):
@@ -545,6 +546,74 @@ class Plot(object):
     
     self._dokwargs(ax, **kwargs) 
     #self._legend(ax)
+    
+    return self._closefig(fig)
+
+  def plot_cdnmol(self, model, species,colors=None,styles=None, 
+                  scalefacs=None,norm=None,ylabel="$\mathrm{N_{ver}\,[cm^{-2}}]$", 
+                  patches=None,**kwargs):
+    '''
+    Plots the vertical column densities as a function of radius for the 
+    given species.
+    '''
+    print("PLOT: plot_cdnmol ...")
+    
+    
+    if colors is None:
+      colors=[None]*len(species)
+    
+    if styles is None:
+      styles=[None]*len(species)
+    
+    fig, ax = plt.subplots(1, 1)      
+    
+    
+    x = model.x[:, 0]
+    
+    ymin=1.e99
+    ymax=1.e-99
+    
+    if scalefacs is None:
+      scalefacs=np.ones(len(species))
+    
+    iplot=0  
+    for spec,fac in zip(species,scalefacs):
+      
+      ispec=-1
+      try:
+        ispec=model.spnames[spec]
+      except:
+        print("WARNING: Could not find species: ",spec)
+        continue
+        
+      y=model.cdnmol[:,0,ispec]/fac
+      if norm is not None:
+        y=y/norm
+      
+      label="$"+spnToLatex(spec)+"$"
+      if fac != 1.0:
+        label+="/"+"{:3.1e}".format(fac)        
+              
+      ax.plot(x, y,marker=None,linestyle=styles[iplot],color=colors[iplot],
+              label=label)
+         
+      ymin=np.min([np.min(y),ymin])
+      ymax=np.max([np.max(y),ymax])
+      iplot=iplot+1
+      
+    if patches is not None:
+      for patch in patches:
+        ax.add_patch(copy.copy(patch))
+    
+    ax.set_xlim(np.min(x),np.max(x))
+    ax.set_ylim(ymin,ymax)
+    ax.semilogy()
+            
+    ax.set_xlabel(r"r [au]")
+    ax.set_ylabel(ylabel)
+    
+    self._dokwargs(ax, **kwargs) 
+    self._legend(ax)
     
     return self._closefig(fig)
 
@@ -1210,6 +1279,50 @@ class Plot(object):
               bbox=dict(boxstyle='square,pad=0.1', fc='white', ec='none'))
       ibox+=1
       
+    return self._closefig(fig)
+
+  def plot_lineprofile(self,model,wl,ident=None,linetxt=None,lineObs=None,**kwargs):
+    '''
+    Plots the line profile for the given line (id wavelength and line ident) 
+    '''  
+    print("PLOT: plot_line_profile ...")
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
+    
+    line=model.getLine(wl,ident=ident)
+    if line==None: 
+      print("WARN: line "+ str(ident)+" at "+str(line.wl)+" micron not found")  
+    
+    # text for the title
+ 
+    x = line.profile.velo           
+    y = line.profile.flux-line.fcont  # remove the continuum
+
+    if linetxt is None:
+      linetxt=line.species+"@"+"{:.2f}".format(line.wl)+" $\mathrm{\mu m}$"    
+    ax.plot(x, y,marker=None, label=linetxt)
+    
+    # plot the line profile if it exists
+    if lineObs is not None:
+      # FIXME: this is not very nice
+      # make a warning if lineObs and line Data are not consistent
+      # it could be that they are for one model       
+      lineIdx=model._getLineIdx(wl,ident=ident)
+
+      line=lineObs[lineIdx]
+      if line.profile is not None:
+        x=line.profile.velo
+        y = line.profile.flux  # remove the continuum      
+        if line.profileErr is not None:
+          ax.fill_between(x, y-line.profileErr , y+line.profileErr, color='0.8',zorder=0)
+        ax.plot(x, y, marker=None, color="black", label="Obs.",zorder=0)
+
+
+    ax.set_xlabel(r"$\mathrm{velocity\,[km\;s^{-1}}$]")    
+    ax.set_ylabel(r"$\mathrm{flux\,[Jy]}$")    
+      
+    self._dokwargs(ax, **kwargs)                
+    self._legend(ax,**kwargs)
+               
     return self._closefig(fig)
   
 # def dominant_process(self,model, cd, process_dict):
