@@ -242,7 +242,11 @@ class Plot(object):
              
     if oconts is not None:
       for cont in oconts:
-        ACS=ax.contour(x, y,cont.field,levels=cont.levels, 
+        if cont.filled is True:
+          ACS=ax.contourf(x, y,cont.field,levels=cont.levels, 
+                       colors=cont.colors,linestyles=cont.linestyles,linewidths=cont.linewidths)
+        else:
+          ACS=ax.contour(x, y,cont.field,levels=cont.levels, 
                        colors=cont.colors,linestyles=cont.linestyles,linewidths=cont.linewidths)
     
     CB = fig.colorbar(CS, ax=ax,ticks=ticks,pad=0.01)
@@ -550,7 +554,7 @@ class Plot(object):
     return self._closefig(fig)
 
   def plot_cdnmol(self, model, species,colors=None,styles=None, 
-                  scalefacs=None,norm=None,ylabel="$\mathrm{N_{ver}\,[cm^{-2}}]$", 
+                  scalefacs=None,norm=None,normidx=None,ylabel="$\mathrm{N_{ver}\,[cm^{-2}}]$", 
                   patches=None,**kwargs):
     '''
     Plots the vertical column densities as a function of radius for the 
@@ -565,7 +569,7 @@ class Plot(object):
     if styles is None:
       styles=[None]*len(species)
     
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
     
     
     x = model.x[:, 0]
@@ -575,6 +579,9 @@ class Plot(object):
     
     if scalefacs is None:
       scalefacs=np.ones(len(species))
+      
+    if normidx is not None:
+      normspec=model.cdnmol[:,0,normidx]      
     
     iplot=0  
     for spec,fac in zip(species,scalefacs):
@@ -586,13 +593,16 @@ class Plot(object):
         print("WARNING: Could not find species: ",spec)
         continue
         
+      if normidx is not None:
+        y=model.cdnmol[:,0,ispec]/normspec
+
       y=model.cdnmol[:,0,ispec]/fac
       if norm is not None:
         y=y/norm
       
       label="$"+spnToLatex(spec)+"$"
-      if fac != 1.0:
-        label+="/"+"{:3.1e}".format(fac)        
+      if fac != 1.0 and norm is None:
+        label+="/"+"{:3.1e}".format(fac)
               
       ax.plot(x, y,marker=None,linestyle=styles[iplot],color=colors[iplot],
               label=label)
@@ -613,7 +623,7 @@ class Plot(object):
     ax.set_ylabel(ylabel)
     
     self._dokwargs(ax, **kwargs) 
-    self._legend(ax)
+    self._legend(ax,**kwargs)
     
     return self._closefig(fig)
 
@@ -1405,7 +1415,7 @@ class Contour(object):
   filled 2D contour plots 
   '''
   def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5,showlabels=False,
-               label_locations=None,label_fmt="%.1f",label_fontsize=7,label_inline_spacing=5):
+               label_locations=None,label_fmt="%.1f",label_fontsize=7,label_inline_spacing=5,filled=False):
     self.field = field
     self.levels=levels
     self.colors=colors
@@ -1416,6 +1426,7 @@ class Contour(object):
     self.label_fmt=label_fmt
     self.label_fontsize=label_fontsize
     self.label_inline_spacing=label_inline_spacing
+    self.filled=filled
 
 
 def spnToLatex(spname):
@@ -1452,8 +1463,6 @@ def spnToLatex(spname):
   # for line names (species)    
   if "_H" in newname:
     newname=newname.replace("_H","\_H")
-      
-  print(name,newname)
       
   # repair the double ionized case
   if "^+^+" in newname: newname=newname.replace("^+^+", "^{++}")
