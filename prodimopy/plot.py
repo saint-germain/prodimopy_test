@@ -259,7 +259,7 @@ class Plot(object):
 
     return self._closefig(fig)
     
-  
+   
   def plot_cont(self, model, values, label="value", zlog=True, 
                 zlim=[None,None],zr=True,clevels=None,clabels=None,contour=True,
                 extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
