@@ -49,6 +49,11 @@ class PlotCasasim(object):
     if "xlim" in kwargs: 
       print(kwargs["xlim"])
       ax.set_xlim(kwargs["xlim"])
+
+    if "ylim" in kwargs: 
+      print(kwargs["ylim"])
+      ax.set_ylim(kwargs["ylim"])
+
 #               
 #     if "xlog" in kwargs:
 #       if kwargs["xlog"]: 
@@ -349,7 +354,7 @@ class PlotCasasim(object):
     self._closefig(fig)
   
   
-  def plot_integrated(self, image, zlim=[None, None],mJy=True,**kwargs):
+  def plot_integrated(self, image, zlim=[None, None],mJy=False,**kwargs):
     """
     Plots a zeroth moment image (integrated intensity) image.
     """
@@ -399,6 +404,8 @@ class PlotCasasim(object):
     CB.set_ticks(ticks)
     if mJy==True:
       CB.set_label("[mJy/beam km/s]")
+    else:
+      CB.set_label("[Jy/beam km/s]")
           
     self._closefig(fig)
 
