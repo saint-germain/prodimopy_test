@@ -1234,7 +1234,7 @@ class Plot(object):
   
   
     if boxcolors is None:
-      boxcolors=["black","blue","orange","green","red"]
+      boxcolors=[self.pcolors["purple"],self.pcolors["orange"],self.pcolors["green"],self.pcolors["gray"]]
   
     lestimates=list()
     for id in ids:
@@ -1264,12 +1264,10 @@ class Plot(object):
         if zr is True:
           point[1]=point[1]/point[0]
       
-      patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox],zorder=100)
+      patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=2.0)
         
       patches.append(patch)
       ibox+=1
-  
-    print(ibox)
   
     fig =self.plot_cont(model, field, label=label, zlog=zlog, 
                 zlim=zlim,zr=zr,clevels=clevels,clabels=clabels,contour=False,
