@@ -992,8 +992,14 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   data.heat = numpy.zeros(shape=(data.nx, data.nz, data.nheat))
   data.cool = numpy.zeros(shape=(data.nx, data.nz, data.ncool))
   
+  
+  
+  # Make some checks for the format 
+  # new EXP format for x and z:
+  newexpformat=bool(lines[idata].find("E",0,25)) 
+  
   # FIXME: that is not very nice
-  #        make at least some checks if the output format has changed or something
+  #        make at least some checks if the output format has changed or something  
   # number of fixed fields in ProDiMo.out (before heating and cooling rates)
   nfixFields = 21  
   # index after the J data/fields in ProDiMo 
@@ -1003,9 +1009,16 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     
   # read the species names, these are taken from the column titles
   colnames = lines[idata - 1]
-  specStart = 233 + data.nheat * 13 + data.ncool * 13 + 13  
+  
+  # FIXME: Again hardconding. Might be better to read the Species names
+  # from Species.out
+  # Assume that the first species is e- and search for that
+  # that is more flexible in case other names change 
+  #specStart = 233 + data.nheat * 13 + data.ncool * 13 + 13
+  specStart=colnames.find("        e-")
   spnames = colnames[specStart:specStart + (data.nspec) * 13]
   spnames = spnames.split()
+  print(spnames)
   if (len(spnames) != data.nspec): 
     print("ERROR: something is wrong with the number of Species!")
     return None  
@@ -1014,15 +1027,18 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   data.spnames = OrderedDict()
   # Make a dictionary for the spans
   for i in range(data.nspec):    
-    data.spnames[spnames[i]] = i  
+    data.spnames[spnames[i]] = i
   
-  i = 0            
+  i = 0
+  
+              
   for iz in range(data.nz):
     for ix in range(data.nx): 
       # stupid workaround for big disks envelops where x,y can be larger than 10000 AU
       # there is no space between the numbers for x and z so always add one if none is there
-      if lines[idata+i][20]!= " ":        
-        line=lines[idata + i][:20]+" "+lines[idata + i][20:]        
+      # this might can be removed in the future as the newest ProDiMo version use exp format now
+      if (not newexpformat) and lines[idata+i][20]!= " ":
+        line=lines[idata + i][:20]+" "+lines[idata + i][20:]
       else:
         line=lines[idata + i]
             
@@ -1061,7 +1077,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
       if len(fields) > (iAJJ + 17): data.zetaSTCR[ix, zidx] = float(fields[iAJJ + 17]) 
       data.dummyH2[ix, zidx] = float(fields[iACool + 5])  # FIXME: I think that was a temporary thing, remove it    
       data.nmol[ix, zidx, :] = numpy.array(list(map(float, fields[iACool + 1:iACool + 1 + data.nspec])))
-      data.radFields[ix,zidx,:]=numpy.array(list(map(float, fields[iASpec :iASpec + data.nlam])))      
+      data.radFields[ix,zidx,:]=numpy.array(list(map(float, fields[iASpec :iASpec + data.nlam])))
       
       i = i + 1
 
@@ -1817,7 +1833,7 @@ def calc_columnd(data):
   TODO: move this to utils
   '''    
   data.cdnmol = 0.0 * data.nmol
-  for ix in range(data.nx):          
+  for ix in range(data.nx):
     for iz in range(data.nz - 2, -1, -1):  # from top to bottom        
       dz = (data.z[ix, iz + 1] - data.z[ix, iz])
       dz = dz * u.au.to(u.cm)
@@ -1834,17 +1850,17 @@ def calc_columnd(data):
   for iz in range(data.nz):
     for ix in range(1,data.nx,1):  # first ix point (ix=0= remains zero  
       r1= (data.x[ix, iz]**2+data.z[ix, iz]**2)**0.5
-      r2 = (data.x[ix-1, iz]**2+data.z[ix-1, iz]**2)**0.5              
+      r2 = (data.x[ix-1, iz]**2+data.z[ix-1, iz]**2)**0.5
       dr = r1-r2
       dr = dr * u.au.to(u.cm)
       nn = 0.5 * (data.nmol[ix, iz , :] + data.nmol[ix-1, iz, :])
       data.rcdnmol[ix, iz, :] = data.rcdnmol[ix-1, iz, :] + nn * dr
 
-  # FIXME: test the integration error can be at most 16% ... good enough for now (most fields are better)
-  #nHverC=data.rcdnmol[:,:,data.spnames["H"]]+data.rcdnmol[:,:,data.spnames["H+"]]+data.rcdnmol[:,:,data.spnames["H2"]]*2.0
-  #izt=data.nz-2
-  #print(nHverC[:,izt],data.NHrad[:,izt])
-  #print(numpy.max(numpy.abs(1.0-nHverC[1:,:]/data.NHrad[1:,:])))    
+#   # FIXME: test the integration error can be at most 16% ... good enough for now (most fields are better)
+#   nHverC=data.rcdnmol[:,:,data.spnames["H"]]+data.rcdnmol[:,:,data.spnames["H+"]]+data.rcdnmol[:,:,data.spnames["H2"]]*2.0
+#   izt=data.nz-2
+#   print(nHverC[:,izt],data.NHrad[:,izt])
+#   print(numpy.max(numpy.abs(1.0-nHverC[1:,:]/data.NHrad[1:,:])))
 
 
 ###############################################################################
