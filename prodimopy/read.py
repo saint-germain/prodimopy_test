@@ -996,8 +996,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   
   # Make some checks for the format 
   # new EXP format for x and z:
-  newexpformat=bool(lines[idata].find("E",0,25)) 
-  
+  newexpformat=lines[idata].find("E",0,25)>=0
   # FIXME: that is not very nice
   #        make at least some checks if the output format has changed or something  
   # number of fixed fields in ProDiMo.out (before heating and cooling rates)
@@ -1018,7 +1017,6 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   specStart=colnames.find("        e-")
   spnames = colnames[specStart:specStart + (data.nspec) * 13]
   spnames = spnames.split()
-  print(spnames)
   if (len(spnames) != data.nspec): 
     print("ERROR: something is wrong with the number of Species!")
     return None  
@@ -1042,7 +1040,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
       else:
         line=lines[idata + i]
             
-      fields = line.split()      
+      fields = line.split()
             
       zidx = data.nz - iz - 1            
       data.x[ix, zidx] = float(fields[2])
