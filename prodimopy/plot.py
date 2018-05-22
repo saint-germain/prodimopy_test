@@ -1117,7 +1117,7 @@ class Plot(object):
     return self._closefig(fig)
 
 
-  def plot_sed(self, model,plot_starSpec=True,sedObs=None,**kwargs): 
+  def plot_sed(self, model,plot_starSpec=True,sedObs=None,unit="erg",**kwargs): 
     '''
     Plots the seds and the StarSpectrum
     '''  
@@ -1129,7 +1129,11 @@ class Plot(object):
     if model.sed == None: return   
     # only use every 5 element to speed up plotting
     x = model.sed.lam
-    y = model.sed.nu*model.sed.fnuErg      
+    if unit=="W":
+      y = model.sed.nuFnuW
+    else:  
+      y = model.sed.nu*model.sed.fnuErg
+    
     dist = ((model.sed.distance*u.pc).to(u.cm)).value
     
     if plot_starSpec:
@@ -1166,7 +1170,10 @@ class Plot(object):
     ax.semilogx()
     ax.semilogy()
     ax.set_xlabel(r"wavelength [$\mathrm{\mu}$m]")    
-    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")
+    if unit == "W":
+      ax.set_ylabel(r"$\mathrm{\lambda F_{\lambda}\,[W\,m^{-2}]}$")
+    else:
+      ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")
 #    ax.yaxis.tick_right()
 #    ax.yaxis.set_label_position("right")
       
