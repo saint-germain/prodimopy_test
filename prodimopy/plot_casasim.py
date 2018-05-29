@@ -156,7 +156,7 @@ class PlotCasasim(object):
         ax = axis[ir, ic]
         iax = ir * ncol + ic         
         velidx = cvel_idx + (iax - naxesh)*step
-        im = ax.imshow(cube.data[velidx, :, :], cmap="inferno", vmin=vmin, vmax=vmax)      
+        im = ax.imshow(cube.data[velidx, :, :], cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")      
               
         # set the border of the coordinate frames to white
         ax.coords[0].frame.set_color("white")
@@ -247,7 +247,7 @@ class PlotCasasim(object):
         iax = ir * ncol + ic
         idata = iax - naxesh
         wlidx = icenter + idata           
-        im = ax.imshow(cube.data[wlidx, :, :], cmap="inferno", vmin=vmin, vmax=vmax)      
+        im = ax.imshow(cube.data[wlidx, :, :], cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")      
               
         # set the border of the coordinate frames to white
         ax.coords[0].frame.set_color("white")
@@ -306,9 +306,9 @@ class PlotCasasim(object):
                            figsize=pplot.scale_figs([2.1,1.0]))
     
     
-    im = axes[0].imshow(imageObs.data, cmap="inferno", vmin=vmin, vmax=vmax)
-    im2 = axes[1].imshow(imageModel.data, cmap="inferno", vmin=vmin, vmax=vmax)
-    im3 = axes[2].imshow(imageDiff.data, cmap="inferno", vmin=vmin, vmax=vmax)
+    im = axes[0].imshow(imageObs.data, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
+    im2 = axes[1].imshow(imageModel.data, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
+    im3 = axes[2].imshow(imageDiff.data, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
     
     # calculate the rms of the residual    
     rms=numpy.nansum((imageDiff.data**2.0)/imageDiff.data.size)**0.5
@@ -376,7 +376,8 @@ class PlotCasasim(object):
     fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=image.wcsrel))
     
     
-    im = ax.imshow(image.data*scalefac, cmap="inferno", vmin=vmin, vmax=vmax)
+    im = ax.imshow(image.data*scalefac, cmap="inferno", vmin=vmin, vmax=vmax,
+                   origin="lower")
     # ax.coords[0].set_major_formatter('hh:mm:ss')
     ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
     ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
@@ -388,7 +389,7 @@ class PlotCasasim(object):
     ax.set_ylabel("rel. Dec. ['']")
     
     # mark the center
-    ax.plot(image.centerpix[0], image.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=3)
+    ax.plot(image.centerpix[0], image.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=2)
   
     #ax.axvline(image.centerpix[0],color="0.6",linewidth=0.8,linestyle=":")  
     #ax.axhline(image.centerpix[1],color="0.6",linewidth=0.8,linestyle=":")
@@ -398,14 +399,19 @@ class PlotCasasim(object):
   
     self._dokwargs(ax,**kwargs)
   
+    if mJy==True:
+      cformat="%3.0f"
+      clabel="[mJy/beam km/s]"
+    else:
+      cformat="%5.2f"
+      clabel="[Jy/beam km/s]"
+      
+  
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
     CB = fig.colorbar(im, ax=ax, pad=0.02,
-                    format="%5.2f", fraction=0.04)  
+                    format=cformat, fraction=0.04)  
     CB.set_ticks(ticks)
-    if mJy==True:
-      CB.set_label("[mJy/beam km/s]")
-    else:
-      CB.set_label("[Jy/beam km/s]")
+    CB.set_label(clabel)
           
     self._closefig(fig)
 
@@ -432,9 +438,9 @@ class PlotCasasim(object):
     for ax in axes:
       ax.set_facecolor("black")
       
-    im = axes[0].imshow(veldataObs, cmap="seismic", vmin=vmin, vmax=vmax)  
-    im1 = axes[1].imshow(veldataModel, cmap="seismic", vmin=vmin, vmax=vmax)
-    im2 = axes[2].imshow(imageDiff.data, cmap="seismic", vmin=vmin, vmax=vmax)
+    im = axes[0].imshow(veldataObs, cmap="seismic", vmin=vmin, vmax=vmax,origin="lower")  
+    im1 = axes[1].imshow(veldataModel, cmap="seismic", vmin=vmin, vmax=vmax,origin="lower")
+    im2 = axes[2].imshow(imageDiff.data, cmap="seismic", vmin=vmin, vmax=vmax,origin="lower")
     
     
     rms=numpy.nansum((imageDiff.data**2.0)/imageDiff.data.size)**0.5
@@ -493,7 +499,7 @@ class PlotCasasim(object):
     fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=image.wcsrel))
     ax.set_facecolor("black")
       
-    im = ax.imshow(veldata, cmap="seismic", vmin=vmin, vmax=vmax)  
+    im = ax.imshow(veldata, cmap="seismic", vmin=vmin, vmax=vmax,origin="lower")  
     ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
     ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
     ax.coords[0].frame.set_color("white")
@@ -574,7 +580,7 @@ class PlotCasasim(object):
                            loc=3, pad=0.5, borderpad=0.4, frameon=False)    
     ax.add_artist(ar)
       
-    im = ax.imshow(image.data, cmap="inferno", vmin=vmin, vmax=vmax, aspect='auto')
+    im = ax.imshow(image.data, cmap="inferno", vmin=vmin, vmax=vmax, aspect='auto',origin="lower")
     ax.set_xticks(xticks)
     ax.set_xticklabels(map(str, xticklabels))
     ax.set_yticks(yticks)
@@ -672,7 +678,7 @@ class PlotCasasim(object):
     
     # indicate the beam 
     ax.set_xlabel("radius ['']")
-    ax.set_ylabel("flux [$\mathrm{Jy/beam\,km\,s^{-1}}$]")
+    ax.set_ylabel("flux [$\mathrm{Jy/beam\,km/s}$]")
     ax.set_xlim(0, None)
     
     if radprof.bwidth is not None:
