@@ -14,6 +14,7 @@ import numpy
 
 from astropy import units as u
 from astropy import constants as const
+import numpy as np
 import os
 from collections import OrderedDict
 import math
@@ -74,7 +75,12 @@ class Data_ProDiMo(object):
     self.dust2gas = None
     """ float :
       The global dust to gass mass ratio (single value, given Parameter)        
-    """ 
+    """
+    self.mstar = None
+    """ float :
+      The stellar mass in solar units.
+      is taken from ProDiMo.out        
+    """
     self.x = None         
     """ array_like(float,ndim=2) :
     The x coordinates (radial direction).
@@ -139,6 +145,16 @@ class Data_ProDiMo(object):
     """ array_like(float,ndim=2) :
     The dust temperature.
     `UNIT:` K, `DIMS:` (nx,nz)
+    """ 
+    self.pressure = None
+    """ array_like(float,ndim=2) :
+    The gas pressure
+    `UNIT:` |erg cm^-3|, `DIMS:` (nx,nz)
+    """
+    self.soundspeed = None
+    """ array_like(float,ndim=2) :
+    The isothermal sound speed.
+    `UNIT:` |km s^-1|, `DIMS:` (nx,nz)
     """ 
     self.damean = None    
     """ array_like(float,ndim=2) :
@@ -242,8 +258,6 @@ class Data_ProDiMo(object):
     Vertical radiative diffussion timescale (using the Rosseland mean opacities).
     `UNIT:` yr, `DIMS:` (nx,nz)
     """
-
-    
     self.spnames = None  # 
     """ dictionary :
     Dictionary providing the index of a particular species (e.g. spnames["CO"]). This index
@@ -561,7 +575,46 @@ class Data_ProDiMo(object):
       return None 
     
     return self.nmol[:,:,self.spnames[spname]]/self.nHtot
-   
+
+  def get_toomreQ(self,mstar=None):
+    '''
+    Returns the Toomre Q parameter as a function of radius.
+    (for the midplane). 
+    
+    Q is given by 
+    
+    Q(r)=k(r)*cs(r)/(pi * G * sigma(r))
+ 
+    for k we use the keplerian frequency, cs is the soundspeed (from the mdoel) 
+    and sigma is the total gas surface density (both halfs of the disk). 
+    
+    Parameters
+    ----------
+    mstar : float
+      The stellar mass in solar units (optional). 
+      If `None` the value from the model is taken.
+    
+    Returns
+    -------
+    array_like(float,ndim=1) 
+      an array of dimension [nx] with the Q param  
+    '''
+    if mstar is None:
+      mstar=self.mstar
+    
+    mstarc=(mstar*u.M_sun).cgs.value
+    grav=const.G.cgs.value
+    r=(self.x[:,0]*u.au).cgs.value
+    # isothermal soundspeed 
+    cs=(self.soundspeed[:,0]*u.km/u.s).cgs.value
+    # surface density factor two for both half of the disks
+    sigma=2.0*(self.sdg[:,0]*u.g/u.cm**2).cgs.value
+
+    # assuem keplerian rotation for Epicyclic frequency
+    kappa=np.sqrt(grav*mstarc/r**3)
+    Q=kappa*cs/(math.pi*grav*sigma)
+    
+    return Q
 
 class DataLineProfile():
   
@@ -945,6 +998,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
    
   data = Data_ProDiMo(name)
   
+  data.mstar = float(lines[0].split()[1])
   data.dust2gas = float(lines[9].split()[1])
   
   strs = lines[21].split()  
@@ -968,7 +1022,9 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   data.tg = numpy.zeros(shape=(data.nx, data.nz))
   data.td = numpy.zeros(shape=(data.nx, data.nz))
   data.nd = numpy.zeros(shape=(data.nx, data.nz))
+  data.soundspeed = numpy.zeros(shape=(data.nx, data.nz))
   data.rhog = numpy.zeros(shape=(data.nx, data.nz))
+  data.pressure = numpy.zeros(shape=(data.nx, data.nz))
   data.tauchem = numpy.zeros(shape=(data.nx, data.nz))
   data.taucool = numpy.zeros(shape=(data.nx, data.nz))
   data.taudiff = numpy.zeros(shape=(data.nx, data.nz))  
@@ -992,8 +1048,6 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   data.cdnmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec)) 
   data.heat = numpy.zeros(shape=(data.nx, data.nz, data.nheat))
   data.cool = numpy.zeros(shape=(data.nx, data.nz, data.ncool))
-  
-  
   
   # Make some checks for the format 
   # new EXP format for x and z:
@@ -1053,7 +1107,9 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
       data.nd[ix, zidx] = float(fields[8])
       data.tg[ix, zidx] = float(fields[9])
       data.td[ix, zidx] = float(fields[10])
+      data.soundspeed[ix, zidx] = float(fields[11])
       data.rhog[ix, zidx] = float(fields[12])
+      data.pressure[ix, zidx] = float(fields[13])
       data.chi[ix, zidx] = float(fields[15])
       data.tauchem[ix,zidx]=float(fields[16])
       data.taucool[ix,zidx]=float(fields[17])
@@ -1809,9 +1865,12 @@ def calc_NHrad_oi(data):
 
 def calc_surfd(data):
   '''
-  Caluclates the gas and dust vertical surface densities
-  '''
+  Caluclates the gas and dust vertical surface densities at every point in the
+  model.
   
+  Only one half of the disk is considered. If one needs the total surface density
+  simply multiply the value from the midplane (zidx=0) by two.
+  '''
   data.sdg = 0.0 * data.rhog
   data.sdd = 0.0 * data.rhod
   for ix in range(data.nx):          
@@ -1829,6 +1888,9 @@ def calc_columnd(data):
   Calculated the vertical and radial column number densities for every species 
   at every point in the disk (from top to bottom). Very simple and rough method.
   
+  Only one half of the disk is considered. If one needs the total surface density
+  simply multiply the value from the midplane (zidx=0) by two.
+  
   TODO: move this to utils
   '''    
   data.cdnmol = 0.0 * data.nmol
@@ -1838,7 +1900,7 @@ def calc_columnd(data):
       dz = dz * u.au.to(u.cm)
       nn = 0.5 * (data.nmol[ix, iz + 1, :] + data.nmol[ix, iz, :])
       data.cdnmol[ix, iz, :] = data.cdnmol[ix, iz + 1, :] + nn * dz
-      
+
   # check if integration is correct 
   # for the total hydrogen column density the error is less than 1.e-3
   # that should be good enough for plotting
