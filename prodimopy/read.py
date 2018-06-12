@@ -1709,10 +1709,16 @@ def read_sed(directory,filename="SED.out"):
     elems = f.readline().split()
     sed.lam[i] = float(elems[0])
     sed.nu[i] = float(elems[1])
-    sed.fnuErg[i] = float(elems[2])
-    sed.nuFnuW[i] = float(elems[3])
-    sed.fnuJy[i] = float(elems[4])
-  
+
+    # FIXME: Workaround to catch strange values from ProDiMo .. should be fixed 
+    # in ProDiMo
+    try:    
+      sed.fnuErg[i] = float(elems[2])
+      sed.nuFnuW[i] = float(elems[3])
+      sed.fnuJy[i] = float(elems[4])      
+    except ValueError as err:
+      print("WARN: Could not read value from SED.out: ", err)
+      
   sed.setLbolTbol()
   
   f.close()
