@@ -154,15 +154,23 @@ class PlotModels(object):
     else:
       return fig              
                  
-  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,showBoxes=True,lineObs=None,**kwargs):
+  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,showBoxes=True,
+                 lineObs=None,lineObsLabel="Obs.",peakFlux=False,showCont=False,**kwargs):
     """
     Plots a selection of lines or lineEstimates.
     
     TODO: split lines and lineEstimates plots
     
-    TODO: if not FlineEstimates than it would be also possible to plot all lines for which line transfer is done           
+    TODO: if not FlineEstimates than it would be also possible to plot all lines for which line transfer is done
+    
+    peakFlux=True only works with useLineEstimate=False and jansky=True
+               
     """
     print("PLOT: plot_lines ...")
+    
+    if peakFlux is True and (useLineEstimate is True or jansky is False):
+      print("WARN: ","peakFlux=True can only be used for useLineEstimate=False and jansky=True")
+      peakFlux=False
     
     if len(lineidents)>10:
       fig, ax = plt.subplots(1, 1,figsize=self._sfigs(sfigs=[2.0,1.0]))
@@ -177,6 +185,7 @@ class PlotModels(object):
       iline = 1  
       x = list()
       y = list()
+      yCont=list()
       for ident in lineidents:         
         line=None
         
@@ -190,10 +199,17 @@ class PlotModels(object):
                             
         # Convert lineflux to Jansky
         if line is not None:
-          if jansky:          
-            y.append(line.flux_Jy())        
+          if jansky:                      
+            if peakFlux:
+              y.append(np.max(line.profile.flux)-line.fcont)
+            else:
+              y.append(line.flux_Jy())
+              
+            if showCont is True:
+              yCont.append(line.fcont)
           else:
             y.append(line.flux)
+            
         else:
             y.append(None)
         
@@ -215,7 +231,12 @@ class PlotModels(object):
       ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=ms,mew=mew, 
               color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name,
               zorder=10)      
-         
+      
+      if showCont:
+        ax.plot(x, yCont, marker="s", linestyle='None', ms=ms,mew=mew, 
+              color=self.colors[imodel], markeredgecolor=self.colors[imodel],
+              zorder=12)      
+
       imodel = imodel + 1  
 
     # boxes for factor 3 and 10 relative to the last model
@@ -252,9 +273,10 @@ class PlotModels(object):
           ylinesObsUl.append(0.0)  
     
       # the observations
-      # takes the x frmo above
-      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr2,fmt=".",ms=0.0,color="lightgrey",linewidth=10)
-      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr,uplims=ylinesObsUl,fmt="o",ms=4.0,color="black",capsize=2,label="Obs.",zorder=5)
+      # takes the x from above
+      if showBoxes:
+        ax.errorbar(x,ylinesObs,yerr=ylinesObsErr2,fmt=".",ms=0.0,color="lightgrey",linewidth=10)
+      ax.errorbar(x,ylinesObs,yerr=ylinesObsErr,uplims=ylinesObsUl,fmt="o",ms=4.0,color="black",capsize=2,label=lineObsLabel,zorder=5)
    
     ax.set_xlim(0.5, iline - 0.5)
     
@@ -267,7 +289,10 @@ class PlotModels(object):
     ax.semilogy()        
     
     if jansky:   
-      ax.set_ylabel(r" line flux [Jy km$\,$s$^{-1}$]")
+      if peakFlux:
+        ax.set_ylabel(r" peak line flux [Jy]")
+      else:
+        ax.set_ylabel(r" line flux [Jy km$\,$s$^{-1}$]")
     else:
       ax.set_ylabel(r" line flux [W$\,$m$^{-2}$]")
       
@@ -595,7 +620,8 @@ class PlotModels(object):
   # FIXME: xlim is difficult to set automatically if a field is given. 
   #        however, in that case xlim can always be set manually
   def plot_midplane(self, models, fieldname, ylabel, 
-                    xfieldname=None, xlabel=None,species=None,patches=None,**kwargs):
+                    xfieldname=None, xlabel=None,species=None,patches=None,
+                    scaleToRin=False,**kwargs):
     '''
     Plots a quantitiy in in the midplane as a function of radius
     fieldname is any field in Data_ProDiMo
@@ -616,13 +642,17 @@ class PlotModels(object):
         print(x)
       else:         
         x = model.x[:, 0]
+      
+      if scaleToRin:
+        x=x-model.x[0, 0]+1.e-5*model.x[0, 0]
+        print(x)
         
       if species!=None:
         y = getattr(model, fieldname)[:, 0,model.spnames[species]]/model.nHtot[:,0]
       else:
         y = getattr(model, fieldname)[:, 0]                    
       
-      line, = ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
+      line, = ax.plot(x, y, self.styles[iplot], marker="+", color=self.colors[iplot], label=model.name)
       if self.styles[iplot]=="--": self._set_dashes(line)
       
       if "markradius" in kwargs:
@@ -655,8 +685,10 @@ class PlotModels(object):
     ax.set_ylim(ymin, ymax)              
     ax.semilogy()
 
-    if xlabel is not None:            
+    if xlabel is not None:
       ax.set_xlabel(xlabel)
+    elif scaleToRin:
+      ax.set_xlabel(r"r-R$_\mathrm{in}$ [au]")
     else:
       ax.set_xlabel(r"r [au]")
         
@@ -878,7 +910,7 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
     
-  def plot_sed(self, models,plot_starSpec=True,sedObs=None,sedObsModels=False,**kwargs): 
+  def plot_sed(self, models,plot_starSpec=True,sedObs=None,sedObsModels=False,unit="erg",**kwargs): 
     '''
     Plots the Seds and the StarSpectrum (optionally).
     '''  
@@ -895,7 +927,14 @@ class PlotModels(object):
         continue    
       # only use every 5 element to speed up plotting
       x = model.sed.lam
-      y = model.sed.nu*model.sed.fnuErg      
+      
+      if unit=="W":
+        y = model.sed.nuFnuW
+      elif unit == "Jy":
+        y = model.sed.fnuJy
+      else:  
+        y = model.sed.nu*model.sed.fnuErg
+      
       dist = ((model.sed.distance*u.pc).to(u.cm)).value                          
       pl=ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name,
                  linewidth=1.0)
@@ -909,6 +948,14 @@ class PlotModels(object):
         xStar = model.starSpec.lam[0::10]
         yStar= (model.starSpec.nu*model.starSpec.Inu)[0::10]
         yStar = yStar*(r**2.0*pi*dist**(-2.0))
+        
+        if unit=="W":
+          yStar=(yStar*u.erg/(u.s*u.cm**2)).to(u.Watt/u.m**2).value
+        elif unit == "Jy":
+          yStar= (model.starSpec.Inu)[0::10]
+          yStar = yStar*(r**2.0*pi*dist**(-2.0))
+          yStar=(yStar*u.erg/(u.s*u.cm**2*u.Hz)).to(u.Jy).value
+                
         ax.plot(xStar, yStar, self.styles[iplot],color=colsed,linewidth=0.5*lwsed,zorder=-1,linestyle="--")
         
         if max(yStar) > ymax: ymax = max(yStar)
@@ -927,15 +974,33 @@ class PlotModels(object):
           sedcolor="0.5"
 
         if plSedObs is not None:
-          okidx=np.where(plSedObs.flag=="ok")      
-          ax.errorbar(plSedObs.lam[okidx],plSedObs.nu[okidx]*plSedObs.fnuErg[okidx],
-                      yerr=plSedObs.nu[okidx]*plSedObs.fnuErgErr[okidx],markeredgecolor="0.3",
+          okidx=np.where(plSedObs.flag=="ok")     
+          
+          xsedObs=sedObs.lam
+          ysedObs=sedObs.nu*sedObs.fnuErg
+          ysedObsErr=sedObs.nu*sedObs.fnuErgErr
+
+          if unit=="W":
+            ysedObs=sedObs.nu*((sedObs.fnuJy*u.Jy).si.value)
+            ysedObsErr=sedObs.nu*((sedObs.fnuJyErr*u.Jy).si.value)
+          elif unit=="Jy":
+            ysedObs=sedObs.fnuJy
+            ysedObsErr=sedObs.fnuJyErr
+          
+           
+          ax.errorbar(xsedObs[okidx],ysedObs[okidx],
+                      yerr=ysedObsErr[okidx],markeredgecolor="0.3",
                     linestyle="",fmt="o",color=sedcolor,ms=2,linewidth=1.0,
                     markeredgewidth=0.5,zorder=1000,ecolor='0.3')
           nokidx=np.where(plSedObs.flag!="ok")
-          ax.plot(plSedObs.lam[nokidx],plSedObs.nu[nokidx]*plSedObs.fnuErg[nokidx],linestyle="",
+          ax.plot(xsedObs[nokidx],ysedObs[nokidx],linestyle="",
                   marker=".",markeredgecolor="0.3",markeredgewidth=0.5,
                   color=sedcolor)
+          ulidx=np.where(plSedObs.flag=="ul")
+          ax.errorbar(xsedObs[ulidx],ysedObs[ulidx],uplims=True,
+                      yerr=ysedObsErr[okidx],markeredgecolor="0.3",markeredgewidth=0.2,
+                    linestyle="",fmt="o",color=sedcolor,ms=1,linewidth=1.0,zorder=1000,ecolor='0.3')
+
         
           if plSedObs.specs is not None:
             for spec in plSedObs.specs:
@@ -968,7 +1033,12 @@ class PlotModels(object):
     ax.semilogx()
     ax.semilogy()
     ax.set_xlabel(r"wavelength [$\mu$m]")    
-    ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
+    if unit == "W":
+      ax.set_ylabel(r"$\mathrm{\lambda F_{\lambda}\,[W\,m^{-2}]}$")
+    elif unit == "Jy":
+      ax.set_ylabel(r"$\mathrm{flux\,[Jy]}$")
+    else:
+      ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")    
       
     self._dokwargs(ax, **kwargs)                
     
