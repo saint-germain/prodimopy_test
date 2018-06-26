@@ -10,7 +10,7 @@ from matplotlib.ticker import MaxNLocator
 import astropy.units as u
 import math
 import copy
-
+import prodimopy.extinction as ext
 
 class Plot(object):
   '''
@@ -528,16 +528,24 @@ class Plot(object):
 
   def plot_radial(self, model, values, ylabel, zidx=0, **kwargs):
     '''
-    Plots a quantitiy along the radial grid for the given zindx (from the ProDiMo Array)
-    as a function of radius
-    values is any ProDiMo 2D array in Data_ProDiMo    
+    Plots a quantitiy along the radial grid for the given zidx (from the ProDiMo Array)
+    as a function of radius. 
+    
+    `values` is any ProDiMo 2D array in `Data_ProDiMo` 
+    or a 1D array with dim nx if `zidx` is `None` 
+    
     '''
-    print("PLOT: plot_midplane ...")
+    print("PLOT: plot_radial ...")
     fig, ax = plt.subplots(1, 1)      
     
     
-    x = np.sqrt(model.x[:, zidx]**2.0+model.z[:, zidx]**2.0)
-    y = values[:,zidx]         
+    
+    if zidx is None:
+      x = np.sqrt(model.x[:, 0]**2.0+model.z[:, 0]**2.0)
+      y = values      
+    else:
+      x = np.sqrt(model.x[:, zidx]**2.0+model.z[:, zidx]**2.0)
+      y = values[:,zidx]         
       
     ax.plot(x, y,marker=None)
                  
@@ -1117,7 +1125,7 @@ class Plot(object):
     return self._closefig(fig)
 
 
-  def plot_sed(self, model,plot_starSpec=True,sedObs=None,unit="erg",**kwargs): 
+  def plot_sed(self, model,plot_starSpec=True,sedObs=None,unit="erg",reddening=False,**kwargs): 
     '''
     Plots the seds and the StarSpectrum
     '''  
@@ -1131,8 +1139,16 @@ class Plot(object):
     x = model.sed.lam
     if unit=="W":
       y = model.sed.nuFnuW
+    elif unit == "Jy":
+      y = model.sed.fnuJy
     else:  
       y = model.sed.nu*model.sed.fnuErg
+      
+    if reddening==True and sedObs is not None and sedObs.A_V is not None:
+      # idx validity of extinction function
+      ist=np.argmin(np.abs(x-0.0912))
+      ien=np.argmin(np.abs(x-6.0))
+      y[ist:ien]=y[ist:ien]/ext.reddening(x[ist:ien]*1.e4, a_v=sedObs.A_V,r_v=sedObs.R_V, model="f99")
     
     dist = ((model.sed.distance*u.pc).to(u.cm)).value
     
@@ -1141,8 +1157,16 @@ class Plot(object):
       r= ((model.starSpec.r*u.R_sun).to(u.cm)).value      
       
       xStar = model.starSpec.lam[0::1]
-      ystar= (model.starSpec.nu*model.starSpec.Inu)[0::1]
-      yStar = ystar*(r**2.0*math.pi*dist**(-2.0))
+      yStar= (model.starSpec.nu*model.starSpec.Inu)[0::1]
+      yStar = yStar*(r**2.0*math.pi*dist**(-2.0))
+      
+      if unit=="W":
+        yStar=(yStar*u.erg/(u.s*u.cm**2)).to(u.Watt/u.m**2).value
+      elif unit == "Jy":
+        yStar= (model.starSpec.Inu)[0::1]
+        yStar = yStar*(r**2.0*math.pi*dist**(-2.0))
+        yStar=(yStar*u.erg/(u.s*u.cm**2*u.Hz)).to(u.Jy).value
+      
       ax.plot(xStar, yStar, color="black")
 
     # plot the SED  
@@ -1150,18 +1174,32 @@ class Plot(object):
     
     if sedObs is not None:
       okidx=np.where(sedObs.flag=="ok")
+
+      xsedObs=sedObs.lam
+      ysedObs=sedObs.nu*sedObs.fnuErg
+      ysedObsErr=sedObs.nu*sedObs.fnuErgErr
+
+      if unit=="W":
+        ysedObs=sedObs.nu*((sedObs.fnuJy*u.Jy).si.value)
+        ysedObsErr=sedObs.nu*((sedObs.fnuJyErr*u.Jy).si.value)
+      elif unit=="Jy":
+        ysedObs=sedObs.fnuJy
+        ysedObsErr=sedObs.fnuJyErr
+
       #ax.plot(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx],linestyle="",marker="x",color="0.5",ms=3)
-      ax.errorbar(sedObs.lam[okidx],sedObs.nu[okidx]*sedObs.fnuErg[okidx], yerr=sedObs.nu[okidx]*sedObs.fnuErgErr[okidx],
+      ax.errorbar(xsedObs[okidx],ysedObs[okidx], yerr=ysedObsErr[okidx],
                   fmt='o',color="0.5",ms=2,linewidth=1.0,zorder=0)
-      nokidx=np.where(sedObs.flag!="ok")
-      ax.plot(sedObs.lam[nokidx],sedObs.nu[nokidx]*sedObs.fnuErg[nokidx],linestyle="",marker=".",color="0.5")
+
+      nokidx=np.where(sedObs.flag!="ok")      
       
+      ax.plot(xsedObs[nokidx],ysedObs[nokidx],linestyle="",marker=".",color="0.5")
+      
+      # FIXME: no proper unit treatment yet
       if sedObs.specs is not None:
         for spec in sedObs.specs:
           nu=(spec[:,0]* u.micrometer).to(u.Hz, equivalencies=u.spectral()).value
           fnuerg=(spec[:,1]* u.Jy).cgs.value
           ax.plot(spec[:,0],nu*fnuerg,linestyle="-",linewidth=0.5,color="0.5")
-      
 
                           
     # set defaults, can be overwritten by the kwargs
@@ -1172,6 +1210,8 @@ class Plot(object):
     ax.set_xlabel(r"wavelength [$\mathrm{\mu}$m]")    
     if unit == "W":
       ax.set_ylabel(r"$\mathrm{\lambda F_{\lambda}\,[W\,m^{-2}]}$")
+    elif unit == "Jy":
+      ax.set_ylabel(r"$\mathrm{flux\,[Jy]}$")
     else:
       ax.set_ylabel(r"$\mathrm{\nu F_{\nu}\,[erg\,cm^{-2}\,s^{-1}]}$")
 #    ax.yaxis.tick_right()
