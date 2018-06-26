@@ -19,7 +19,6 @@ import os
 from collections import OrderedDict
 import math
 import glob
-import sys
 
 class Data_ProDiMo(object):
   """ 
@@ -616,6 +615,37 @@ class Data_ProDiMo(object):
     
     return Q
 
+
+  def get_KeplerOmega(self,mstar=None):
+    '''
+    Returns the Keplerian orbital frequency [1/s]
+    (for the midplane). 
+    
+    omega=sqrt(G*mstar/r**3)
+        
+    Parameters
+    ----------
+    mstar : float
+      The stellar mass in solar units (optional). 
+      If `None` the value from the model is taken.
+    
+    Returns
+    -------
+    array_like(float,ndim=1) 
+      Keplerian orbital frequency as function of radius [1/s]  
+    '''
+    if mstar is None:
+      mstar=self.mstar
+    
+    mstarc=(mstar*u.M_sun).cgs.value
+    grav=const.G.cgs.value
+    r=(self.x[:,0]*u.au).cgs.value
+
+    # assuem keplerian rotation for Epicyclic frequency
+    omega=np.sqrt(grav*mstarc/r**3)
+    
+    return omega
+
 class DataLineProfile():
   
   def __init__(self, nvelo):           
@@ -908,9 +938,6 @@ class DataSED(object):
     #print(numpy.trapz(sed.fnuErg,x=sed.nu))
     self.Tbol=1.25e-11*numpy.trapz((self.nu[mask]*self.fnuErg[mask]),x=self.nu[mask])/numpy.trapz(self.fnuErg[mask],x=self.nu[mask])  
       
-      
-      
-
 
 class DataBgSpec(object):
   '''
