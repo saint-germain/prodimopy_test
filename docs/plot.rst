@@ -27,8 +27,10 @@ Usage example
       # vertical hydrogen number density 
       pp.plot_NH(model,ylim=[1.e20,None])
       # a generic contour plot routine with many options
-      pp.plot_cont(model, model.nHtot, r"$\mathsf{n_{<H>} [cm^{-3}]}$",zlim=[1.e4,None],extend="both   
-  
+      pp.plot_cont(model, model.nHtot, r"$\mathsf{n_{<H>} [cm^{-3}]}$",
+                   zlim=[1.e4,None],extend="both")
+
+
 Source documentation
 --------------------  
 .. automodule:: prodimopy.plot
