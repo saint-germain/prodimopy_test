@@ -90,6 +90,11 @@ class Data_ProDiMo(object):
     The z coordinates (vertical direction).  
     `UNIT:` au, `DIMS:` (nx,nz)    
     """
+    self.vol = None         
+    """ array_like(float,ndim=2) :
+    The volume for each grid point  
+    `UNIT:` |gcm^-3|, `DIMS:` (nx,nz)    
+    """
     self.rhog = None
     """ array_like(float,ndim=2) :
     The gas density.
@@ -1244,6 +1249,12 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   calc_columnd(data)
   print("INFO: Calculate surface densities")
   calc_surfd(data)
+  print("INFO: Calculate volumes")
+  _calc_vol(data)
+  
+  # Test for volume stuff ... total integrated mass
+  #mass=np.sum(np.multiply(data.vol,data.rhog))
+  #print("Total gas mass", (mass*u.g).to(u.M_sun))
 
   print(" ")
 
@@ -1954,6 +1965,35 @@ def calc_surfd(data):
       data.sdg[ix, iz] = data.sdg[ix, iz + 1,] + nn * dz
       nn = 0.5 * (data.rhod[ix, iz + 1] + data.rhod[ix, iz])
       data.sdd[ix, iz] = data.sdd[ix, iz + 1,] + nn * dz
+
+
+def _calc_vol(data):
+  '''
+  Inits the vol field (:attr:`~prodimpy.read.Data_ProDiMo.vol` for each individual grid point. 
+  
+  This is useful to estimate mean quantities which are weighted by volume
+  but also by mass.
+  
+  The routine follows the same method as in the prodimo.pro (the IDL skript)
+   
+  '''
+  
+  tocm=(1.0*u.au).to(u.cm).value
+  data.vol=numpy.zeros(shape=(data.nx, data.nz))
+  print(tocm)
+  for ix in range(data.nx):
+    ix1 = np.max([0,ix-1])
+    ix2 = ix
+    ix3 = np.min([data.nx-1,ix+1])
+    x1=math.sqrt(data.x[ix1,0]*data.x[ix2,0])*tocm
+    x2=math.sqrt(data.x[ix2,0]*data.x[ix3,0])*tocm      # does not depend on iz    
+    for iz in range(data.nz):    
+      iz1 = np.max([0,iz-1])
+      iz2 = iz
+      iz3 = np.min([data.nz-1,iz+1])
+      tanbeta1=0.5*(data.z[ix,iz1]+data.z[ix,iz2])/data.x[ix,0]  
+      tanbeta2=0.5*(data.z[ix,iz2]+data.z[ix,iz3])/data.x[ix,0]  
+      data.vol[ix,iz]=4.0*math.pi/3.0 * (x2**3-x1**3) * (tanbeta2-tanbeta1)
 
 
 def calc_columnd(data):
