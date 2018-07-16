@@ -911,6 +911,9 @@ class DataSED(object):
     self.nuFnuW = numpy.zeros(shape=(nlam))
     self.fnuJy = numpy.zeros(shape=(nlam))
     #self.nuFnu = numpy.zeros(shape=(nlam))
+    
+    # the analysis data
+    self.sedAna=None
 
   def setLbolTbol(self):
     """
@@ -937,7 +940,19 @@ class DataSED(object):
     #print(numpy.trapz((sed.nu*sed.fnuErg),x=sed.nu)) 
     #print(numpy.trapz(sed.fnuErg,x=sed.nu))
     self.Tbol=1.25e-11*numpy.trapz((self.nu[mask]*self.fnuErg[mask]),x=self.nu[mask])/numpy.trapz(self.fnuErg[mask],x=self.nu[mask])  
-      
+
+
+class DataSEDAna(object):
+  '''
+  Holds the analysis data for the Spectral Energy Distribution (SEDana.out).  
+  '''
+  def __init__(self,nlam,nx):
+    self.lams=numpy.zeros(shape=(nlam))
+    self.r15=numpy.zeros(shape=(nlam))
+    self.r85=numpy.zeros(shape=(nlam))
+    self.z15=numpy.zeros(shape=(nlam,nx))
+    self.z85=numpy.zeros(shape=(nlam,nx))
+
 
 class DataBgSpec(object):
   '''
@@ -1706,9 +1721,9 @@ def read_continuumObs(directory,filename="SEDobs.dat"):
   
   return contObs
 
-def read_sed(directory,filename="SED.out"):
+def read_sed(directory,filename="SED.out",filenameAna="SEDana.out"):
   ''' 
-  Reads an ProDiMo SED output.
+  Reads the ProDiMo SED output including the analysis data.
   '''
   rfile = directory + "/"+filename    
   try:
@@ -1747,9 +1762,34 @@ def read_sed(directory,filename="SED.out"):
       print("WARN: Could not read value from SED.out: ", err)
       
   sed.setLbolTbol()
-  
   f.close()
+  
+  # The analysis data
+  rfile = directory + "/"+filenameAna
+  try:
+    f = open(rfile, 'r')
+  except:
+    print("WARN: Could not read " + rfile + "!")
+    return None
+  
+  nlam,nx=f.readline().split()
+  nlam=int(nlam)
+  nx=int(nx)
+  
+  sed.sedAna=DataSEDAna(nlam,nx)
+  
+  for i in range(nlam):
+    elems=f.readline().split()
+    sed.sedAna.lams[i]=float(elems[0])
+    sed.sedAna.r15[i]=float(elems[1])
+    sed.sedAna.r85[i]=float(elems[2])
+    for j in range(nx):
+      elems=f.readline().split()
+      sed.sedAna.z15[i,j]=float(elems[0])
+      sed.sedAna.z85[i,j]=float(elems[1])
       
+  f.close()
+    
   return sed
 
 def read_starSpec(directory,filename="StarSpectrum.out"):
