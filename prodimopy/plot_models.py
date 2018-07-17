@@ -172,10 +172,11 @@ class PlotModels(object):
       print("WARN: ","peakFlux=True can only be used for useLineEstimate=False and jansky=True")
       peakFlux=False
     
+    # FIXME: enable sfigs for both cases
     if len(lineidents)>10:
       fig, ax = plt.subplots(1, 1,figsize=self._sfigs(sfigs=[2.0,1.0]))
     else:
-      fig, ax = plt.subplots(1, 1)  
+      fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))  
          
     imodel = 0          
     lticks = list()
@@ -221,7 +222,7 @@ class PlotModels(object):
         iline = iline + 1  
 
       mew=None
-      ms=3
+      ms=4
       if self.markers[imodel]=="+" or self.markers[imodel]=="x":        
         mew=1.5
         ms=4     
@@ -230,9 +231,10 @@ class PlotModels(object):
               
       ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=ms,mew=mew, 
               color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name,
-              zorder=10)      
+              zorder=10)
       
       if showCont:
+        # shift the continuum a bit
         ax.plot(x, yCont, marker="s", linestyle='None', ms=ms,mew=mew, 
               color=self.colors[imodel], markeredgecolor=self.colors[imodel],
               zorder=12)      
@@ -296,9 +298,12 @@ class PlotModels(object):
     else:
       ax.set_ylabel(r" line flux [W$\,$m$^{-2}$]")
       
-    xgrid=np.array(x)      
-    ax.vlines(xgrid-0.5,ymin=ax.get_ylim()[0],ymax=ax.get_ylim()[1],linestyle="solid",linewidth=0.5,color="grey")  
-    ax.yaxis.grid(color="grey",zorder=0)
+    xgrid=np.array(x)    
+    #ygrid=ax.get_yticks()
+    #print(ygrid)      
+    ax.vlines(xgrid-0.5,ymin=ax.get_ylim()[0],ymax=ax.get_ylim()[1],linestyle="solid",linewidth=0.5,color="grey",zorder=-100)
+    #ax.hlines(ygrid,xmin=ax.get_xlim()[0],xmax=ax.get_xlim()[1],linestyle="solid",linewidth=0.5,color="grey",zorder=100)  
+    ax.yaxis.grid(color="grey",zorder=-100)
   
      
     ax.set_xticklabels(lticks, rotation='70', minor=False)
@@ -309,8 +314,7 @@ class PlotModels(object):
     if "title" in kwargs and kwargs["title"] != None:
       ax.set_title(kwargs["title"])
      
-    self.pdf.savefig()
-    plt.close(fig)
+    return self._closefig(fig)
   
   def plot_NH(self, models, marker=None,**kwargs):
     '''
@@ -408,8 +412,7 @@ class PlotModels(object):
     self._dokwargs(ax,**kwargs)          
     self._legend(ax,**kwargs)
   
-    self.pdf.savefig()
-    plt.close(fig)  
+    return self._closefig(fig)  
     
   def plot_tauline(self, models, lineIdent, xlog=True, **kwargs):
     """
@@ -479,8 +482,7 @@ class PlotModels(object):
   
     self._legend(ax)  
   
-    self.pdf.savefig()
-    plt.close(fig)  
+    return self._closefig(fig) 
   
   def plot_avgabun(self,models,species,**kwargs):
     '''
@@ -516,8 +518,7 @@ class PlotModels(object):
     self._dokwargs(ax,**kwargs)    
     self._legend(ax)
     
-    self.pdf.savefig()
-    plt.close(fig) 
+    return self._closefig(fig)
     
     
   def plot_abunvert(self, models, r, species, **kwargs):
@@ -610,8 +611,7 @@ class PlotModels(object):
     self._dokwargs(ax, **kwargs) 
     self._legend(ax,**kwargs)
     
-    self.pdf.savefig()
-    plt.close(fig) 
+    return self._closefig(fig)
   
   # FIXME: plot radial and plot_midplane are more or less the same thing
   # extend plot_radial so that also a string can be used as a field name 
@@ -638,14 +638,12 @@ class PlotModels(object):
     ymax = -1.e00 
     for model in models:        
       if xfieldname is not None:
-        x=getattr(model, xfieldname)[:, 0]      
-        print(x)
+        x=getattr(model, xfieldname)[:, 0]
       else:         
         x = model.x[:, 0]
       
       if scaleToRin:
         x=x-model.x[0, 0]+1.e-5*model.x[0, 0]
-        print(x)
         
       if species!=None:
         y = getattr(model, fieldname)[:, 0,model.spnames[species]]/model.nHtot[:,0]
@@ -696,9 +694,8 @@ class PlotModels(object):
     
     self._dokwargs(ax, **kwargs) 
     self._legend(ax,**kwargs)
-    
-    self.pdf.savefig()
-    plt.close(fig)    
+
+    return self._closefig(fig)
   
   def plot_vertical_nH(self, models, r, field, ylabel, species=None,patches=None,showR=True,**kwargs):
     '''
@@ -915,7 +912,7 @@ class PlotModels(object):
     Plots the Seds and the StarSpectrum (optionally).
     '''  
     print("PLOT: plot_sed ...")
-    fig, ax = plt.subplots(1, 1)      
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
     
     iplot = 0
     xmin = 1.e100
@@ -992,14 +989,20 @@ class PlotModels(object):
                       yerr=ysedObsErr[okidx],markeredgecolor="0.3",
                     linestyle="",fmt="o",color=sedcolor,ms=2,linewidth=1.0,
                     markeredgewidth=0.5,zorder=1000,ecolor='0.3')
-          nokidx=np.where(plSedObs.flag!="ok")
-          ax.plot(xsedObs[nokidx],ysedObs[nokidx],linestyle="",
-                  marker=".",markeredgecolor="0.3",markeredgewidth=0.5,
-                  color=sedcolor)
-          ulidx=np.where(plSedObs.flag=="ul")
-          ax.errorbar(xsedObs[ulidx],ysedObs[ulidx],uplims=True,
-                      yerr=ysedObsErr[okidx],markeredgecolor="0.3",markeredgewidth=0.2,
-                    linestyle="",fmt="o",color=sedcolor,ms=1,linewidth=1.0,zorder=1000,ecolor='0.3')
+          #nokidx=np.where(plSedObs.flag!="ok")
+          #ax.plot(xsedObs[nokidx],ysedObs[nokidx],linestyle="",
+          #        marker=".",markeredgecolor="0.3",markeredgewidth=0.5,
+          #        color=sedcolor)
+          ulidx=np.where(sedObs.flag=="ul")
+          ax.plot(xsedObs[ulidx],ysedObs[ulidx],linestyle="",marker="v",color="0.5",ms=2.0)
+
+          #            yerr=ysedObsErr[okidx],markeredgecolor="0.3",markeredgewidth=0.2,
+          #          linestyle="",fmt="o",color=sedcolor,ms=1,linewidth=1.0,zorder=1000,ecolor='0.3')
+
+          
+          #ax.errorbar(xsedObs[ulidx],ysedObs[ulidx],uplims=True,
+          #            yerr=ysedObsErr[okidx],markeredgecolor="0.3",markeredgewidth=0.2,
+          #          linestyle="",fmt="o",color=sedcolor,ms=1,linewidth=1.0,zorder=1000,ecolor='0.3')
 
         
           if plSedObs.specs is not None:
@@ -1044,9 +1047,7 @@ class PlotModels(object):
     
     self._legend(ax)
     
-    self.pdf.savefig()
-    plt.close(fig)   
-    
+    return self._closefig(fig)    
     
   def plot_dust_opac(self,models,xenergy=False,opactype="both",**kwargs):
     '''
@@ -1320,6 +1321,5 @@ class PlotModels(object):
     
     self._legend(ax,**kwargs)
                
-    self.pdf.savefig()
-    plt.close(fig)      
+    return self._closefig(fig)
     
