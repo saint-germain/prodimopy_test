@@ -54,18 +54,17 @@ class PlotCasasim(object):
       print(kwargs["ylim"])
       ax.set_ylim(kwargs["ylim"])
 
-#               
-#     if "xlog" in kwargs:
-#       if kwargs["xlog"]: 
-#         ax.semilogx()
-#       else:
-#         ax.set_xscale("linear")
-#       
-#     if "ylog" in kwargs:
-#       if kwargs["ylog"]: 
-#         ax.semilogy()
-#       else:              
-#         ax.set_yscale("linear")
+    if "xlog" in kwargs:
+      if kwargs["xlog"]: 
+        ax.semilogx()
+      else:
+        ax.set_xscale("linear")
+       
+    if "ylog" in kwargs:
+      if kwargs["ylog"]: 
+        ax.semilogy()
+      else:              
+        ax.set_yscale("linear")
 #       
 #     if "xlabel" in kwargs:
 #       ax.set_xlabel(kwargs["xlabel"])  
