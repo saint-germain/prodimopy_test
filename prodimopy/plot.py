@@ -1190,9 +1190,8 @@ class Plot(object):
       ax.errorbar(xsedObs[okidx],ysedObs[okidx], yerr=ysedObsErr[okidx],
                   fmt='o',color="0.5",ms=2,linewidth=1.0,zorder=0)
 
-      nokidx=np.where(sedObs.flag!="ok")      
-      
-      ax.plot(xsedObs[nokidx],ysedObs[nokidx],linestyle="",marker=".",color="0.5")
+      ulidx=np.where(sedObs.flag=="ul")
+      ax.plot(xsedObs[ulidx],ysedObs[ulidx],linestyle="",marker="v",color="0.5",ms=2.0)
       
       # FIXME: no proper unit treatment yet
       if sedObs.specs is not None:
@@ -1220,6 +1219,105 @@ class Plot(object):
     self._dokwargs(ax, **kwargs)                        
     
     return self._closefig(fig)
+
+
+  def _getSEDana_boxpoints(self,lam,model,zr=True):
+    '''
+    Creates an array of (x,y) coordinates representing the emission origin  for the SEDana which can be used 
+    for the given wavelength. Those coordinates can be used to draw a box on a plot.
+    (e.g. can be passed to a matplotlib Polygon
+    to draw a box (Polygon).
+    
+    Parameters
+    ----------
+    lam : float 
+      the wavelength for which the emission origin should be calculated
+    model : :class:`prodimopy.read.Data_ProDiMo` 
+      the ProDiMo model including the SED analysis data (SEDana) 
+    zr : boolean
+      If `zr==True` (default) then the z coordinate of the points is returned in 
+      z/r units. Optional parameter. 
+  
+    Returns
+    -------
+    array_like(float,ndim=1) :
+      list of (x,y) points (in au). if zr=True the z coordinate is in z/r units. 
+    '''
+    
+    
+          # interpolate       
+    sedAna = model.sed.sedAna
+    r15=interp1d(sedAna.lams, sedAna.r15, bounds_error=False, fill_value=0.0, kind="linear")(lam)
+    r85=interp1d(sedAna.lams, sedAna.r85, bounds_error=False, fill_value=0.0, kind="linear")(lam)
+    xi15=np.argmin(np.abs(model.x[:,0]-r15))      
+    xi85=np.argmin(np.abs(model.x[:,0]-r85))
+     
+    z85s=[[model.x[ix,0],interp1d(sedAna.lams, sedAna.z85[:,ix], bounds_error=False, fill_value=0.0, kind="linear")(lam)] 
+           for ix in range(xi15,xi85)]
+    z15s=[[model.x[ix,0],interp1d(sedAna.lams, sedAna.z15[:,ix], bounds_error=False, fill_value=0.0, kind="linear")(lam)] 
+          for ix in range(xi85-1,xi15-1,-1)]
+    points=z85s+z15s
+    
+    for point in points:
+      if zr is True:
+        point[1]=point[1]/point[0]
+
+
+    return points
+
+
+  def plot_sedAna(self, model,lams=[1.0,10,100.0,1000.0],field=None,label=None,boxcolors=None, zlog=True, 
+                zlim=[None,None],zr=True,clevels=None,clabels=None,
+                extend="neither",oconts=None,nbins=70,
+                bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
+                rasterized=False,**kwargs):  
+    '''
+    Plots the SED analysis stuff (origin of the emission).
+    '''  
+    print("PLOT: plot_sedAna ...")
+    
+    if boxcolors is None:
+      boxcolors=[self.pcolors["purple"],self.pcolors["orange"],self.pcolors["red"],"black"]
+  
+    if patches is None:
+      patches=list()
+        
+    ibox=0
+    for lam in lams:
+      
+      patch = mpl.patches.Polygon(self._getSEDana_boxpoints(lam, model, zr=True),
+                                  True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=2.0)
+        
+      patches.append(patch)
+      ibox+=1
+  
+    if field is None:
+      field=model.nHtot
+      label=r"log $n_\mathrm{<H>}\,\mathrm{[cm^{-3}]}$"
+      oconts=[Contour(model.AV,[1],linestyles="--",colors=self.pcolors["gray"])]
+      
+    fig =self.plot_cont(model, field, label=label, zlog=zlog, 
+                zlim=zlim,zr=zr,clevels=clevels,clabels=clabels,contour=False,
+                extend=extend,oconts=oconts,nbins=nbins,
+                bgcolor=bgcolor,cb_format=cb_format,scalexy=scalexy,patches=patches,
+                rasterized=rasterized,returnFig=True,**kwargs)
+    
+
+    ax=fig.axes[0]    
+    
+    ibox=0    
+    for lam in lams:
+      ax.text(0.02, 0.92-ibox/18.0,"$"+"{:5.1f}".format(lam)+r"\,\mathrm{\mu m}$",
+              horizontalalignment='left',
+              verticalalignment='bottom',fontsize=6,
+              transform = ax.transAxes,color=boxcolors[ibox],
+              bbox=dict(boxstyle='square,pad=0.1', fc='white', ec='none'))
+      ibox+=1    
+
+    self._dokwargs(ax, **kwargs)                        
+    
+    return self._closefig(fig)
+
   
 
   def plot_taulines(self, model, lineIdents, **kwargs):
@@ -1269,19 +1367,16 @@ class Plot(object):
   
     return self._closefig(fig)
 
-
-
-  
   
   def plot_line_origin(self,model,ids,field, label="value", boxcolors=None, zlog=True, 
                 zlim=[None,None],zr=True,clevels=None,clabels=None,contour=False,
                 extend="neither",oconts=None,nbins=70,
                 bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
-                rasterized=False,**kwargs): 
+                rasterized=False,showContOrigin=False,**kwargs): 
   
   
     if boxcolors is None:
-      boxcolors=[self.pcolors["purple"],self.pcolors["orange"],self.pcolors["green"],self.pcolors["gray"]]
+      boxcolors=[self.pcolors["gray"],self.pcolors["orange"],self.pcolors["green"],self.pcolors["red"]]
   
     lestimates=list()
     for id in ids:
@@ -1314,6 +1409,12 @@ class Plot(object):
       patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=2.0)
         
       patches.append(patch)
+      
+      if showContOrigin is True:
+        pointsc=self._getSEDana_boxpoints(lesti.wl, model,zr)
+        patchc = mpl.patches.Polygon(pointsc,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=2.0,linestyle="--")
+        patches.append(patchc)
+      
       ibox+=1
   
     fig =self.plot_cont(model, field, label=label, zlog=zlog, 
