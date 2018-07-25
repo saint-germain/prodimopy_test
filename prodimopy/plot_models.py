@@ -9,6 +9,7 @@ import numpy as np
 from math import pi
 
 import prodimopy.plot as pplot
+import prodimopy.extinction as ext
 
 import astropy.units as u
 import astropy.constants as const
@@ -316,24 +317,24 @@ class PlotModels(object):
      
     return self._closefig(fig)
   
-  def plot_NH(self, models, marker=None,**kwargs):
+  def plot_NH(self, models, sdscale=False, marker=None,**kwargs):
     '''
     Plots the total vertical hydrogen column density for all the models, 
     as a function of radius
     '''
     print("PLOT: plot_NH ...")
-    fig, ax = plt.subplots(1, 1)  
+    fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))  
     
     xmin = 1.e100
     xmax = 0
-        
+
     iplot = 0    
     for model in models:
       x = model.x[:, 0]
       y = model.NHver[:, 0]
       
       # print y.min() 
-      line, = ax.plot(x, y, self.styles[iplot], marker=marker,ms=3.0, color=self.colors[iplot],alpha=0.7, label=model.name)
+      line, = ax.plot(x, y, self.styles[iplot], marker=marker,ms=3.0, color=self.colors[iplot],label=model.name)
       if line.is_dashed(): self._set_dashes(line)
           
       iplot = iplot + 1
@@ -341,7 +342,7 @@ class PlotModels(object):
       if min(x) < xmin: xmin = min(x)
       if max(x) > xmax: xmax = max(x)
        
-  
+    
     ax.set_xlim(xmin, xmax)
          
     ax.semilogy()     
@@ -350,6 +351,24 @@ class PlotModels(object):
   
     self._dokwargs(ax,**kwargs)
     self._legend(ax,**kwargs)
+
+    if sdscale:
+      ax2 = ax.twinx()  
+      ax2.set_ylabel(r"$\Sigma\,\mathrm{[g\,cm^{-2}]}$")
+      #ax2.set_xlim(xmin, xmax)
+        
+        # this needs to be done to get the correct scale
+      ylim=np.array(ax.get_ylim())*model.muH
+      ax2.set_ylim(ylim)
+      
+      # cannot do the full kwargs again but if ylog in kwargs I also have 
+      # to set this here again.
+      ax2.semilogy()
+      if "ylog" in kwargs:
+        if kwargs["ylog"]: 
+          ax2.semilogy()
+        else:              
+          ax2.set_yscale("linear")
     
     return self._closefig(fig)
     
@@ -907,7 +926,7 @@ class PlotModels(object):
     self.pdf.savefig()
     plt.close(fig)    
     
-  def plot_sed(self, models,plot_starSpec=True,sedObs=None,sedObsModels=False,unit="erg",**kwargs): 
+  def plot_sed(self, models,plot_starSpec=True,sedObs=None,sedObsModels=False,unit="erg",reddening=False,**kwargs): 
     '''
     Plots the Seds and the StarSpectrum (optionally).
     '''  
@@ -931,6 +950,13 @@ class PlotModels(object):
         y = model.sed.fnuJy
       else:  
         y = model.sed.nu*model.sed.fnuErg
+        
+        
+      if reddening is True and sedObsModels is True and model.sedObs is not None and model.sedObs.A_V is not None:
+        # idx validity of extinction function
+        ist=np.argmin(np.abs(x-0.0912))
+        ien=np.argmin(np.abs(x-6.0))
+        y[ist:ien]=y[ist:ien]/ext.reddening(x[ist:ien]*1.e4, a_v=model.sedObs.A_V,r_v=model.sedObs.R_V, model="f99")
       
       dist = ((model.sed.distance*u.pc).to(u.cm)).value                          
       pl=ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name,
@@ -973,16 +999,16 @@ class PlotModels(object):
         if plSedObs is not None:
           okidx=np.where(plSedObs.flag=="ok")     
           
-          xsedObs=sedObs.lam
-          ysedObs=sedObs.nu*sedObs.fnuErg
-          ysedObsErr=sedObs.nu*sedObs.fnuErgErr
+          xsedObs=plSedObs.lam
+          ysedObs=plSedObs.nu*plSedObs.fnuErg
+          ysedObsErr=plSedObs.nu*plSedObs.fnuErgErr
 
           if unit=="W":
-            ysedObs=sedObs.nu*((sedObs.fnuJy*u.Jy).si.value)
-            ysedObsErr=sedObs.nu*((sedObs.fnuJyErr*u.Jy).si.value)
+            ysedObs=plSedObs.nu*((plSedObs.fnuJy*u.Jy).si.value)
+            ysedObsErr=plSedObs.nu*((sedObs.fnuJyErr*u.Jy).si.value)
           elif unit=="Jy":
-            ysedObs=sedObs.fnuJy
-            ysedObsErr=sedObs.fnuJyErr
+            ysedObs=plSedObs.fnuJy
+            ysedObsErr=plSedObs.fnuJyErr
           
            
           ax.errorbar(xsedObs[okidx],ysedObs[okidx],
@@ -993,7 +1019,7 @@ class PlotModels(object):
           #ax.plot(xsedObs[nokidx],ysedObs[nokidx],linestyle="",
           #        marker=".",markeredgecolor="0.3",markeredgewidth=0.5,
           #        color=sedcolor)
-          ulidx=np.where(sedObs.flag=="ul")
+          ulidx=np.where(plSedObs.flag=="ul")
           ax.plot(xsedObs[ulidx],ysedObs[ulidx],linestyle="",marker="v",color="0.5",ms=2.0)
 
           #            yerr=ysedObsErr[okidx],markeredgecolor="0.3",markeredgewidth=0.2,
