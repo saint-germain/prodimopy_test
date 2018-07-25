@@ -126,15 +126,29 @@ class Plot(object):
     else:
       return scale_figs([1.0,1.0])
   
-  def plot_NH(self, model, muH=None,marker=None, **kwargs):
+  def plot_NH(self, model, sdscale=False, muH=None,marker=None, **kwargs):
     '''
     Plots the total vertical hydrogen column number density 
     as a function of radius.
     
-    muH ... if muH is provided a second y scale is plotted (on the right)
+    Parameters
+    ----------
+    model : :class:`~prodimopy.read.Data_ProDiMo` 
+      the model data
+        
+    sdscale: bool 
+      show additionally a scale with units in ` |gcm^-3|`
+    
+    Returns
+    -------
+    :class:`matplotlib.figure.Figure` object if `self.pdf` is `None` 
+       otherwise the plot is written directl into the pdf object. 
     '''
     print("PLOT: plot_NH ...")
     fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
+    
+    if muH is None:
+      muH = model.muH
     
     x = model.x[:, 0]
     y = model.NHver[:, 0]    
@@ -153,7 +167,7 @@ class Plot(object):
     self._legend(ax)    
         
     # second sale on the right 
-    if muH is not None:        
+    if sdscale:
       ax2 = ax.twinx()    
       y = model.NHver[:, 0]*muH
       # just plot it again, is the easiest way (needs to be the same style etc)
@@ -1223,9 +1237,9 @@ class Plot(object):
 
   def _getSEDana_boxpoints(self,lam,model,zr=True):
     '''
-    Creates an array of (x,y) coordinates representing the emission origin  for the SEDana which can be used 
-    for the given wavelength. Those coordinates can be used to draw a box on a plot.
-    (e.g. can be passed to a matplotlib Polygon
+    Creates an array of (x,y) coordinates representing the emission origin for 
+    the SEDana which can be used or the given wavelength. Those coordinates can 
+    be used to draw a box on a plot (e.g. can be passed to a matplotlib Polygon)
     to draw a box (Polygon).
     
     Parameters
@@ -1241,15 +1255,17 @@ class Plot(object):
     Returns
     -------
     array_like(float,ndim=1) :
-      list of (x,y) points (in au). if zr=True the z coordinate is in z/r units. 
+      list of (x,y) points (in au). if zr=True the z coordinate is in z/r units.
+      
+      
+    TODO: maybe merge somehow with :func:`~prodimopy.Data_ProDiMo.getSEDAnaMask`
     '''
-    
-    
-          # interpolate       
+    # interpolate       
     sedAna = model.sed.sedAna
+    
     r15=interp1d(sedAna.lams, sedAna.r15, bounds_error=False, fill_value=0.0, kind="linear")(lam)
     r85=interp1d(sedAna.lams, sedAna.r85, bounds_error=False, fill_value=0.0, kind="linear")(lam)
-    xi15=np.argmin(np.abs(model.x[:,0]-r15))      
+    xi15=np.argmin(np.abs(model.x[:,0]-r15))
     xi85=np.argmin(np.abs(model.x[:,0]-r85))
      
     z85s=[[model.x[ix,0],interp1d(sedAna.lams, sedAna.z85[:,ix], bounds_error=False, fill_value=0.0, kind="linear")(lam)] 
@@ -1261,7 +1277,6 @@ class Plot(object):
     for point in points:
       if zr is True:
         point[1]=point[1]/point[0]
-
 
     return points
 
@@ -1368,13 +1383,20 @@ class Plot(object):
     return self._closefig(fig)
 
   
-  def plot_line_origin(self,model,ids,field, label="value", boxcolors=None, zlog=True, 
+  def plot_line_origin(self,model,ids,field, label="value", boxcolors=None, showLineLabels=True, zlog=True, 
                 zlim=[None,None],zr=True,clevels=None,clabels=None,contour=False,
                 extend="neither",oconts=None,nbins=70,
                 bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
                 rasterized=False,showContOrigin=False,**kwargs): 
-  
-  
+    '''
+    Plots the line origins for a list of lineestimates given by their ids
+    ([lineid,wavelength])
+    
+    Does not give the exact same results as the corresponding idl routines
+    as we do not use interpolation here. We rather use the same method for 
+    calculating the averaged values over the emission area and for plotting
+    this area.
+    '''
     if boxcolors is None:
       boxcolors=[self.pcolors["gray"],self.pcolors["orange"],self.pcolors["green"],self.pcolors["red"]]
   
@@ -1387,23 +1409,21 @@ class Plot(object):
     
     ibox=0
     for lesti in lestimates:
-      fcfluxes=np.array([x.Fcolumn for x in lesti.rInfo])
-      
-      Fcum=fcfluxes[:]
-      for i in range(1,model.nx):
-        Fcum[i]=Fcum[i-1]+fcfluxes[i]
-      
-      # create a patch
-      xi15=np.argmin(np.abs(Fcum/lesti.flux-0.15))
-      xi85=np.argmin(np.abs(Fcum/lesti.flux-0.85))
-      
-      z85s=[[model.x[rp.ix-1,0],rp.z85] for rp in lesti.rInfo[xi15:xi85]]
-      z15s=[[model.x[rp.ix-1,0],rp.z15] for rp in lesti.rInfo[xi85-1:xi15-1:-1]]
+      # to be consistent we use the LineOriginMask to determine the box
+      # as a result the plotted region is not necessarely the same as in idl
+      # as we do not interpolate here
+      xmasked=np.ma.masked_array(model.x,mask=model.getLineOriginMask(lesti))
+      x15=np.min(xmasked)
+      x85=np.max(xmasked)      
+      xi15=np.argmin(np.abs(model.x[:,0]-x15))
+      xi85=np.argmin(np.abs(model.x[:,0]-x85))
+
+      z85s=[[model.x[rp.ix,0],rp.z85] for rp in lesti.rInfo[xi15:xi85+1]]
+      z15s=[[model.x[rp.ix,0],rp.z15] for rp in lesti.rInfo[xi85:xi15-1:-1]]
       points=z85s+z15s
-      
-      for point in points:
-        point[1]=(point[1]*u.cm).to(u.au).value
-        if zr is True:
+
+      if zr is True:
+        for point in points:
           point[1]=point[1]/point[0]
       
       patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=2.0)
@@ -1423,17 +1443,17 @@ class Plot(object):
                 bgcolor=bgcolor,cb_format=cb_format,scalexy=scalexy,patches=patches,
                 rasterized=rasterized,returnFig=True,**kwargs)
     
-
-    ax=fig.axes[0]    
+    ax=fig.axes[0]
     
-    ibox=0    
-    for idline in ids:
-      ax.text(0.02, 0.92-ibox/18.0,"$"+spnToLatex(idline[0])+"$ "+str(idline[1]),
-              horizontalalignment='left',
-              verticalalignment='bottom',fontsize=6,
-              transform = ax.transAxes,color=boxcolors[ibox],
-              bbox=dict(boxstyle='square,pad=0.1', fc='white', ec='none'))
-      ibox+=1
+    if showLineLabels:
+      ibox=0    
+      for idline in ids:
+        ax.text(0.02, 0.92-ibox/18.0,"$"+spnToLatex(idline[0])+"$ "+str(idline[1]),
+                horizontalalignment='left',
+                verticalalignment='bottom',fontsize=6,
+                transform = ax.transAxes,color=boxcolors[ibox],
+                bbox=dict(boxstyle='square,pad=0.1', fc='white', ec='none'))
+        ibox+=1
       
     return self._closefig(fig)
 
