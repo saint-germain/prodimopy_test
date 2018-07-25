@@ -15,6 +15,7 @@ import numpy
 from astropy import units as u
 from astropy import constants as const
 import numpy as np
+from scipy.interpolate import interp1d
 import os
 from collections import OrderedDict
 import math
@@ -120,7 +121,14 @@ class Data_ProDiMo(object):
     """ array_like(float,ndim=2) :
     The total hydrogen number density.
     `UNIT:` |cm^-3|, `DIMS:` (nx,nz)
-    """    
+    """
+    self.muH = None
+    """ float :
+    The conversion constant from nHtot to rhog
+    It is assume that this is constant throught the disk. It is given by 
+    by `rhog/nHtot`
+    `UNIT:` |g|
+    """
     self.NHver = None     # 
     """ array_like(float,ndim=2) :
     Vertical total hydrogen column density. `nHtot` is integrated from the disk 
@@ -619,6 +627,82 @@ class Data_ProDiMo(object):
     Q=kappa*cs/(math.pi*grav*sigma)
     
     return Q
+  
+  def getSEDAnaMask(self,lam):
+    '''
+    Returns a numpy mask where only the grid points outside the emission 
+    origin area for the given wavelength (continuum) are marked as invalid.
+    
+    This mask can be used in e.g. :func:`~prodimopy.Data_ProDiMo.avg_quantity`
+
+    TODO: in case of optically thin emission only the points of one half 
+          of the disk are considered. In that case an average quantity of this
+          box(mask) will not be completely correct.
+    
+    Parameters
+    ----------
+    lam : float
+      the wavelength for which the emission origin region should be determined:
+      UNITS: micron
+
+    Returns
+    -------
+    array_like(float,ndim=2)
+      Numpy mask with `DIMS:` (nx,nz)
+      
+    '''
+    sedAna = self.sed.sedAna
+    x15=interp1d(sedAna.lams, sedAna.r15, bounds_error=False, fill_value=0.0, kind="linear")(lam)
+    x85=interp1d(sedAna.lams, sedAna.r85, bounds_error=False, fill_value=0.0, kind="linear")(lam)
+    
+    mask=numpy.ones(shape=(self.nx, self.nz))
+    for ix in range(self.nx):
+      if self.x[ix,0]>=x15 and self.x[ix,0]<=x85:
+        z85=interp1d(sedAna.lams, sedAna.z85[:,ix], bounds_error=False, fill_value=0.0, kind="linear")(lam)
+        z15=interp1d(sedAna.lams, sedAna.z15[:,ix], bounds_error=False, fill_value=0.0, kind="linear")(lam)
+        for iz in range(self.nz):
+          if self.z[ix,iz]<=z15 and self.z[ix,iz]>=z85:
+            mask[ix,iz]=0 
+    
+    return mask
+
+  def getLineOriginMask(self,lineEstimate):
+    '''
+    Returns a numpy mask where only the grid points outside the emission 
+    origin area for the given lineEstimate are marked as invalid.
+    
+    This mask can be used in e.g. :func:`~prodimopy.Data_ProDiMo.avg_quantity`
+    
+    Parameters
+    ----------
+    lineEstimate : `:class:`prodimopy.read.DataLineEstimate`
+      a line Estimate object for which the operation should be done
+
+    Returns
+    -------
+    array_like(float,ndim=2)
+      Numpy mask with `DIMS:` (nx,nz) 
+    '''
+    fcfluxes=np.array([x.Fcolumn for x in lineEstimate.rInfo])
+      
+    Fcum=fcfluxes[:]
+    for i in range(1,self.nx):
+      Fcum[i]=Fcum[i-1]+fcfluxes[i]
+    
+    interx=interp1d(Fcum/Fcum[-1],self.x[:,0])
+    x15=interx(0.15)
+    x85=interx(0.85)
+    
+    mask=numpy.ones(shape=(self.nx, self.nz))
+    for ix in range(self.nx):
+      if (self.x[ix,0] >= x15 and self.x[ix,0] <= x85):
+        for iz in range(self.nz):
+          rinfo=lineEstimate.rInfo[ix]
+        #print(rinfo.z15,rinfo.z85)
+          if self.z[ix,iz] <= rinfo.z15 and self.z[ix,iz] >= rinfo.z85:
+            mask[ix,iz]=0 
+          
+    return mask
 
 
   def get_KeplerOmega(self,mstar=None):
@@ -650,6 +734,46 @@ class Data_ProDiMo(object):
     omega=np.sqrt(grav*mstarc/r**3)
     
     return omega
+
+  def avg_quantity(self,quantity,weight="gmass",weightArray=None,mask=None):
+    '''
+    Calculates the weighted mean value for the given field (e.g. td). 
+    Different weights can be used (see `weight` parameter)
+    
+    TODO: option for region (e.g. a box)  
+    
+    Parameters
+    ----------
+    quantity : array_like(float,ndim=2)  
+      the quantity to average. `DIMS:` (nx,nz).
+    weight: str
+      option for the weight. Values: `gmass` (gass mass) `dmass` (dust mass) or 
+      `vol` (Volume). DEFAULT: `gmass`
+  
+    '''
+    
+    vol=np.ma.masked_array(self.vol,mask=mask)
+    quantitym=np.ma.masked_array(quantity,mask=mask)
+    
+    if weightArray is not None:
+      wA=np.ma.masked_array(weightArray,mask=mask)
+      mean=np.sum(np.multiply(wA,quantitym))
+      return mean/np.sum(wA)
+    else: 
+      if weight is "vol":
+        mean=np.sum(np.multiply(vol,quantitym))
+        return mean/np.sum(vol)
+      else:
+        if weight is "dmass":
+          rho=np.ma.masked_array(self.rhod,mask=mask)
+        else:
+          rho=np.ma.masked_array(self.rhog,mask=mask)
+        
+        mass=np.multiply(vol,rho)
+        mean=np.sum(np.multiply(mass,quantitym))
+        mean=mean/np.sum(mass)
+        return mean
+
 
 class DataLineProfile():
   
@@ -1242,7 +1366,6 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   if readObs:
     data.sedObs=read_continuumObs(directory)
     
-    
   
   # calculate the columnd densitis
   print("INFO: Calculate column densities")
@@ -1251,6 +1374,9 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   calc_surfd(data)
   print("INFO: Calculate volumes")
   _calc_vol(data)
+  
+    # set muH
+  data.muH=data.rhog[0,0]/data.nHtot[0,0]  
   
   # Test for volume stuff ... total integrated mass
   #mass=np.sum(np.multiply(data.vol,data.rhog))
@@ -1429,7 +1555,7 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
 
 def _read_lineEstimateRinfo(pdata, lineEstimate):
   '''
-  Reads the additional Rinfo data for the given lineEstimate  
+  Reads the additional Rinfo data for the given lineEstimate.
   '''  
   try:
     f = open(pdata.__fpFlineEstimates, 'rb')
@@ -1451,9 +1577,10 @@ def _read_lineEstimateRinfo(pdata, lineEstimate):
       # print "read_lineEstimates line: ", le.ident  ," error: ", e
       tauLine = 0.0
     tauDust = float(fieldsR[4])
-    z15 = float(fieldsR[5])
-    z85 = float(fieldsR[6])               
-    rInfo = DataLineEstimateRInfo(ix,iz, Fcolumn, tauLine, tauDust, z15, z85)
+    z15 = (float(fieldsR[5])*u.cm).to(u.au).value
+    z85 = (float(fieldsR[6])*u.cm).to(u.au).value
+    # ix -1 and iz-1 because in python we start at 0
+    rInfo = DataLineEstimateRInfo(ix-1,iz-1, Fcolumn, tauLine, tauDust, z15, z85)
     lineEstimate.rInfo.append(rInfo)
       
   f.close()
@@ -1965,7 +2092,7 @@ def calc_surfd(data):
       data.sdg[ix, iz] = data.sdg[ix, iz + 1,] + nn * dz
       nn = 0.5 * (data.rhod[ix, iz + 1] + data.rhod[ix, iz])
       data.sdd[ix, iz] = data.sdd[ix, iz + 1,] + nn * dz
-
+      
 
 def _calc_vol(data):
   '''
