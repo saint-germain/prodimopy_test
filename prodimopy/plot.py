@@ -1383,7 +1383,8 @@ class Plot(object):
     return self._closefig(fig)
 
   
-  def plot_line_origin(self,model,ids,field, label="value", boxcolors=None, showLineLabels=True, zlog=True, 
+  def plot_line_origin(self,model,ids,field, label="value", boxcolors=None, 
+                       boxlinestyles=None,showLineLabels=True, zlog=True, 
                 zlim=[None,None],zr=True,clevels=None,clabels=None,contour=False,
                 extend="neither",oconts=None,nbins=70,
                 bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
@@ -1399,6 +1400,9 @@ class Plot(object):
     '''
     if boxcolors is None:
       boxcolors=[self.pcolors["gray"],self.pcolors["orange"],self.pcolors["green"],self.pcolors["red"]]
+    
+    if boxlinestyles is None:
+      boxlinestyles=["-"]*4
   
     lestimates=list()
     for id in ids:
@@ -1426,7 +1430,9 @@ class Plot(object):
         for point in points:
           point[1]=point[1]/point[0]
       
-      patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=2.0)
+      patch = mpl.patches.Polygon(points,True,fill=False,color=boxcolors[ibox],
+                                  linestyle=boxlinestyles[ibox],
+                                  zorder=100,linewidth=2.0)
         
       patches.append(patch)
       
