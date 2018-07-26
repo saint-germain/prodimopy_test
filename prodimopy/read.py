@@ -497,10 +497,10 @@ class Data_ProDiMo(object):
   
     return self.lineEstimates[found]
   
-  def selectLineEstimates(self, ident):
+  def selectLineEstimates(self, ident,wlrange=None):
     """
     Returns a list of all line estimates (i.e. all transitions) for the 
-    given line ident.
+    given line ident and/or in the given wavelength range.
     
     Parameters
     ----------    
@@ -508,6 +508,13 @@ class Data_ProDiMo(object):
       The line identification (species name) as defined in |prodimo|.
       The ident is not necessarely equal to the underlying chemial species 
       name (e.g. isotopologues, ortho-para, or cases like N2H+ and HN2+)
+      if wlrange is set ident can be `None` in that case all line in the given 
+      wlrange are returned
+      
+    wlrange : array_like
+      All lines in the given wavelength range [start,end] and the given ident
+      are returned. if the ident is `None` all lines are returned. 
+      Default: `None` Units: micron
                 
     Returns
     -------    
@@ -521,13 +528,19 @@ class Data_ProDiMo(object):
     (see :class:`~prodimopy.read.DataLineEstimateRInfo`) is not read. 
          
     """    
-    lines = list()     
-    for le in self.lineEstimates: 
-      if le.ident == ident:
-        lines.append(le)
-  
-    return lines
+    lines = list()
+    if wlrange is None:
+      for le in self.lineEstimates:
+        if le.ident == ident:
+          lines.append(le)
+    else:
+      # TODO: this might can be done more efficient
+      for le in self.lineEstimates:
+        if le.wl>= wlrange[0] and le.wl<=wlrange[1]:
+          if ident is None or le.ident == ident:
+            lines.append(le)
 
+    return lines
 
   def selectLines(self, ident):
     """
