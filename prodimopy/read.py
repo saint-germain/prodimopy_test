@@ -309,6 +309,14 @@ class Data_ProDiMo(object):
     Cooling rates for the various coling
     `UNIT:` |???|, `DIMS:` (nx,nz,cool)
     """
+    self.heat_names = None
+    """ list (string)
+    All the names of the cooling processes. 
+    """
+    self.cool_names = None
+    """ list (string)
+    All the names of the cooling processes. 
+    """
     self.heat_mainidx = None
     """ array_like(float,ndim=3) :
     Index of the main heating process at the given grid point.
@@ -1232,6 +1240,8 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   data.cdnmol = numpy.zeros(shape=(data.nx, data.nz, data.nspec)) 
   data.heat = numpy.zeros(shape=(data.nx, data.nz, data.nheat))
   data.cool = numpy.zeros(shape=(data.nx, data.nz, data.ncool))
+  data.heat_names=list()
+  data.cool_names=list()
   
   # Make some checks for the format 
   # new EXP format for x and z:
@@ -1329,12 +1339,20 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     for iz in range(data.nz):
       data.AV[ix,iz] = numpy.min([data.AVver[ix,iz],data.AVrad[ix,iz],data.AVrad[data.nx-1,iz]-data.AVrad[ix,iz]])  
   
-  # read additonal data (now only the band wavelenghts)
-  iwls=idata+data.nx*data.nz+2+data.ncool+2+data.nheat+2
+  # read the heating and cooling names
+  iheat=idata+data.nx*data.nz+2
+  for i in range(data.nheat):    
+    data.heat_names.append(lines[iheat+i][3:].strip())
+
+  icool=idata+data.nx*data.nz+2+data.nheat+2
+  for i in range(data.ncool):    
+    data.cool_names.append(lines[icool+i][3:].strip())
+  
+  # read the band wavelenghts
+  iwls=idata+data.nx*data.nz+2+data.nheat+2+data.ncool+2
   i=0
   for i in range(data.nlam):      
     data.lams[i]=float((lines[iwls+i].split())[1])
-  
   
   # Read FlineEstimates.out
   if readlineEstimates == True:
