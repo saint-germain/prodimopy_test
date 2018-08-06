@@ -502,6 +502,9 @@ class Data_ProDiMo(object):
     if self.lineEstimates[found].rInfo == None:
       # TODO: read the radial data if required
       _read_lineEstimateRinfo(self, self.lineEstimates[found])
+      
+      # also set the frequency, very expensive during reading
+      
   
     return self.lineEstimates[found]
   
@@ -838,6 +841,10 @@ class DataLine(object):
   def flux_Jy(self):    
     '''
     Returns the flux value Jansky km s^-1
+    
+    TODO: convert this to a property and check for simpler conversion (e.g. 
+    general routine)
+    
     '''
     res=self.flux*u.Watt/(u.m**2.0)
     ckm=const.c.to('km/s')
@@ -886,11 +893,6 @@ class DataLineEstimate(object):
       The wavelength of the line.
       `UNIT: micron`
     """    
-    self.frequency = (self.wl * u.micrometer).to(u.GHz, equivalencies=u.spectral()).value
-    """ float :
-      The frequency of the line.
-      `UNIT: GHz`
-    """    
     self.jup = jup
     self.jlow = jlow
     self.flux = flux    
@@ -899,6 +901,38 @@ class DataLineEstimate(object):
       The extra radial information of the line.
     """
     self.__posrInfo = None  # stores the position of the radial information to access is later on     
+
+  @property
+  def frequency(self):
+    """
+    Frequency of the line [GHz]. Is not done during init because it is very 
+    slow. This way it is only done if required. 
+    
+    Returns
+    -------
+    float
+      The frequency of the line. `UNIT: GHz`
+    """    
+    return (self.wl * u.micrometer).to(u.GHz, equivalencies=u.spectral()).value
+  
+  def flux_Jy(self):    
+    '''
+    The line flux in Jansky.
+    
+    TODO: convert this to a property
+    TODO: check proper conversion
+    
+    Returns
+    -------
+    float
+      The flux of the line. `UNIT: Jansky km s^-1`
+    '''
+    res=self.flux*u.Watt/(u.m**2.0)
+    ckm=const.c.to('km/s')
+       
+    res=(res).to(u.Jansky,equivalencies=u.spectral_density(self.frequency()*u.GHz))
+      
+    return (res*ckm).value
     
   def __str__(self):
     text = (self.ident + "/" + 
@@ -1527,7 +1561,7 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
     print(("WARN: Could not open " + rfile + "!"))
     pdata.lineEstimates = None
     return
-  
+
   # check for version currently just check if it exist
   line = f.readline().decode()  
   version = 1
@@ -1542,11 +1576,12 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
   
   pdata.lineEstimates = list()  
   nxrange = list(range(pdata.nx))
-  startBytes = 0  
+  startBytes = 0
+
   for i in range(nlines):
     # has to be done in fixed format
     # FIXME: it can be that nline is not really equal the nubmer of available line
-    # this ir probably a But in ProDiMo but maybe intended (see 
+    # this ir probably a but in ProDiMo but maybe intended (see 
     # OUTPUT_FLINE_ESTIMATE in ProDiMo, Therefore add a check     
     line = f.readline()            
     if not line: break
@@ -1565,11 +1600,9 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
         raise err
     else:
       raise ValueError('Unknown version of FlineEstimates.out! version=' + str(version))          
-            
-    le.frequency = (le.wl * u.micrometer).to(u.GHz, equivalencies=u.spectral()).value
-          
+
     # Fine out the number of bytes in one radial line to use seek in the 
-    # next iterations    
+    # next iterations
     if i == 0:
       start = f.tell()
       le.__posrInfo = start  # store the position for reading this info if required
