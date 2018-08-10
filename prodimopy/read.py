@@ -956,20 +956,6 @@ class DataLineEstimateRInfo(object):
     self.z15 = z15          
     self.z85 = z85     
 
-  
-  def flux_Jy(self):    
-    '''
-    Returns the flux value Jansky km s^-1
-    
-    FIXM: I think that is at the wrong location
-    '''
-    res=self.flux*u.Watt/(u.m**2.0)
-    ckm=const.c.to('km/s')
-       
-    res=(res).to(u.Jansky,equivalencies=u.spectral_density(self.frequency*u.GHz))  
-      
-    return (res*ckm).value
-
 class DataGas(object):
   '''
   Holds the data for the gas (mainly from dust_opac.out)
