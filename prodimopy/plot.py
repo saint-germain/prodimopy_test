@@ -340,7 +340,7 @@ class Plot(object):
     
     # rasterize the filled contours only, text ect. not  
     if rasterized: 
-      ax.set_rasterization_zorder(-19)  
+      ax.set_rasterization_zorder(-19)
   
     # axis equal needs to be done here already ... at least it seems so
     if "axequal" in kwargs:
@@ -1399,10 +1399,11 @@ class Plot(object):
     this area.
     '''
     if boxcolors is None:
-      boxcolors=[self.pcolors["gray"],self.pcolors["orange"],self.pcolors["green"],self.pcolors["red"]]
+      boxcolors=[self.pcolors["gray"],self.pcolors["orange"],self.pcolors["brown"],self.pcolors["red"],
+                 self.pcolors["purple"]]
     
     if boxlinestyles is None:
-      boxlinestyles=["-"]*4
+      boxlinestyles=["-"]*5
   
     lestimates=list()
     for id in ids:
@@ -1438,7 +1439,7 @@ class Plot(object):
       
       if showContOrigin is True:
         pointsc=self._getSEDana_boxpoints(lesti.wl, model,zr)
-        patchc = mpl.patches.Polygon(pointsc,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=2.0,linestyle="--")
+        patchc = mpl.patches.Polygon(pointsc,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=1.0,linestyle="--")
         patches.append(patchc)
       
       ibox+=1
