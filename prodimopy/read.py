@@ -930,7 +930,7 @@ class DataLineEstimate(object):
     res=self.flux*u.Watt/(u.m**2.0)
     ckm=const.c.to('km/s')
        
-    res=(res).to(u.Jansky,equivalencies=u.spectral_density(self.frequency()*u.GHz))
+    res=(res).to(u.Jansky,equivalencies=u.spectral_density(self.frequency*u.GHz))
       
     return (res*ckm).value
     
