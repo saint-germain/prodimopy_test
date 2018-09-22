@@ -155,10 +155,26 @@ class PlotModels(object):
     else:
       return fig              
                  
-  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,showBoxes=True,
-                 lineObs=None,lineObsLabel="Obs.",peakFlux=False,showCont=False,**kwargs):
+  def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,
+                 showBoxes=True,lineObs=None,lineObsLabel="Obs.",peakFlux=False,
+                 showCont=False,xLabelGHz=False,**kwargs):
     """
     Plots a selection of lines or lineEstimates.
+    
+    
+    Parameters
+    ----------
+    models : array_like
+      The list of models of type :class:`prodimopy.read.Data_ProDiMo`
+    
+    lineidents : array_like
+      a list of line identifiers. Each entry should contain `[ident,wl]`.
+      Those values are passed to :func:`~prodimopy.Data_ProDiMo.getLineEstimate`
+    
+    useLineEstimate: boolean
+      if true the lines are selected from the lineEstimates otherwise 
+      the lines are taken from the full line radiative transfer.
+      Default: `True` 
     
     TODO: split lines and lineEstimates plots
     
@@ -216,9 +232,12 @@ class PlotModels(object):
             y.append(None)
         
         if imodel == 0:
+          if xLabelGHz is True:
+            lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.2f}".format(line.frequency))
+          else:
           # lticks.append(r"$\mathrm{"+pplot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
           # FIXME: spnToLatex does not work here with all line names ... 
-          lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.2f}".format(line.wl))   
+            lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.2f}".format(line.wl))   
            
         iline = iline + 1  
 
