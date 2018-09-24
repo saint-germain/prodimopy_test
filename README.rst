@@ -13,7 +13,9 @@ If you want to take a look before installing something you can try prodimopy
 on the web in a binder environment:
 
 .. image:: https://mybinder.org/badge.svg 
-   :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fcheesyog%2Fprodimopy/997e05a5ea66dfdf4d01be523180d8156963c576?filepath=notebooks&urlpath=lab
+   :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fcheesyog%2Fprodimopy/997e05a5ea66dfdf4d01be523180d8156963c576?filepath=notebooks&urlpath=lab/tree/notebooks
+
+On your left hand side you will see the notebooks (currently only one), just open one and try it!
 
 Requirements
 ************
