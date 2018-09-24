@@ -842,7 +842,7 @@ class DataLine(object):
     '''
     The flux of the line `UNIT: Jansky km s^-1`
     '''
-    return __flux_Wm2toJykms(self.flux,self.frequency)
+    return _flux_Wm2toJykms(self.flux,self.frequency)
 
 
 class DataLineObs(DataLine):
@@ -905,7 +905,7 @@ class DataLineEstimate(object):
     '''
     The flux of the line `UNIT: Jansky km s^-1`
     '''
-    return __flux_Wm2toJykms(self.flux,self.frequency)
+    return _flux_Wm2toJykms(self.flux,self.frequency)
     
   def __str__(self):
     text = (self.ident + "/" + 
@@ -1179,7 +1179,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     filenameLineEstimates=filenameLineEstimates.replace(".out",rpstr)
     filenameLineFlux=filenameLineFlux.replace(".out",rpstr)  
 
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
 
   # read all date into the memory
   # easier to handle afterwards
@@ -1383,8 +1383,6 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     read_species(directory,data,tarfile=tarfile)
     #print("INFO: Calc total species masses")
     #calc_spmassesTot(data)        
-  
-    rfile = directory + "/"+filename
 
   if readObs:
     data.sedObs=read_continuumObs(directory)
@@ -1429,7 +1427,7 @@ def read_elements(directory,filename="Elements.out",tarfile=None):
 
   '''
   
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
   
   # skip the first line
@@ -1467,7 +1465,7 @@ def read_species(directory,pdata,filename="Species.out",tarfile=None):
   filename: str 
     an alternative Filename
   '''
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  
     pdata.spmasses=None    
     return None
@@ -1501,7 +1499,7 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out",tarfile=N
     an alternative Filename
 
   '''
-  f,rfile=__getfile(filename, directory, tarfile, binary=True)
+  f,rfile=_getfile(filename, directory, tarfile, binary=True)
   if f is None:
     pdata.lineEstimates = None
     return None
@@ -1568,7 +1566,7 @@ def _read_lineEstimateRinfo(pdata, lineEstimate):
   '''
   Reads the additional Rinfo data for the given lineEstimate.
   '''  
-  f,dummy=__getfile(pdata.__fpFlineEstimates, None, pdata.__tarfile, binary=True)
+  f,dummy=_getfile(pdata.__fpFlineEstimates, None, pdata.__tarfile, binary=True)
   if f is None: return None
   
   f.seek(lineEstimate.__posrInfo, 0)
@@ -1609,7 +1607,7 @@ def  read_linefluxes(directory, filename="line_flux.out",tarfile=None):
   list(:class:`prodimopy.read.DataLine`) 
     List of lines.
   """  
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
   
   records = f.readlines()
@@ -1674,7 +1672,7 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat",tarfile=None):
   '''
   Reads the lineobs Data. the number of lines have to be known.
   '''
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
     
   records = f.readlines()
@@ -1727,7 +1725,7 @@ def read_lineObsProfile(filename,directory=".",tarfile=None):
   '''
   reads a line profile file which can be used for ProDiMo
   '''
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
   
   records = f.readlines()
@@ -1756,7 +1754,7 @@ def read_gas(directory,filename="gas_cs.out",tarfile=None):
   Reads gas_cs.out
   Returns an object of Type DataDust  
   ''' 
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
         
   nlam = int(f.readline().strip())  
@@ -1855,7 +1853,7 @@ def read_sed(directory,filename="SED.out",filenameAna="SEDana.out",tarfile=None)
   ''' 
   Reads the ProDiMo SED output including the analysis data.
   '''
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
   
   elems = f.readline().split()
@@ -1891,7 +1889,7 @@ def read_sed(directory,filename="SED.out",filenameAna="SEDana.out",tarfile=None)
   f.close()
   
   # The analysis data
-  f,dummy = __getfile(filenameAna, directory, tarfile)
+  f,dummy = _getfile(filenameAna, directory, tarfile)
   if f is None:  return None
   
   nlam,nx=f.readline().split()
@@ -1918,7 +1916,7 @@ def read_starSpec(directory,filename="StarSpectrum.out",tarfile=None):
   ''' 
   Reads StarSpectrum.out
   '''
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
       
   teff = float((f.readline().split())[-1])
@@ -1948,7 +1946,7 @@ def read_bgSpec(directory,filename="BgSpectrum.out",tarfile=None):
     :class:`prodimopy.read.DataBgSpec`
     the background spectra or `None` if not found.
   '''
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
              
   nlam = int(f.readline())
@@ -1969,7 +1967,7 @@ def read_dust(directory,filename="dust_opac.out",tarfile=None):
   Returns an object of Type DataDust
   Dust not read the dust composition yet
   ''' 
-  f,dummy = __getfile(filename, directory, tarfile)
+  f,dummy = _getfile(filename, directory, tarfile)
   if f is None:  return None
           
   fields = [int(field) for field in f.readline().split()]
@@ -2095,32 +2093,6 @@ def _calc_vol(data):
       data.vol[ix,iz]=4.0*math.pi/3.0 * (x2**3-x1**3) * (tanbeta2-tanbeta1)
 
 
-def __flux_Wm2toJykms(flux,frequency):
-  '''
-  Converts a flux from W m^-2 to Jy km/s
-  
-  Parameters
-  ----------
-  flux: float
-    the flux in units of [W m^-2]
-  
-  frequency: float
-    the frequency of the flux in [GHz]
-
-  Returns
-  -------
-  float
-    The flux of the line. `UNIT: Jansky km s^-1`
-  '''
-  res=flux*u.Watt/(u.m**2.0)
-  ckm=const.c.to('km/s')
-     
-  res=(res).to(u.Jansky,equivalencies=u.spectral_density(frequency*u.GHz))
-    
-  return (res*ckm).value
-
-
-
 def calc_columnd(data):
   '''
   Calculated the vertical and radial column number densities for every species 
@@ -2161,9 +2133,35 @@ def calc_columnd(data):
 #   print(numpy.max(numpy.abs(1.0-nHverC[1:,:]/data.NHrad[1:,:])))
 
 
-
-def __getfile(filename,directory=None,tarfile=None,binary=False):
+def _flux_Wm2toJykms(flux,frequency):
+  '''
+  Converts a flux from W m^-2 to Jy km/s
   
+  Parameters
+  ----------
+  flux: float
+    the flux in units of [W m^-2]
+  
+  frequency: float
+    the frequency of the flux in [GHz]
+
+  Returns
+  -------
+  float
+    The flux of the line. `UNIT: Jansky km s^-1`
+  '''
+  res=flux*u.Watt/(u.m**2.0)
+  ckm=const.c.to('km/s')
+     
+  res=(res).to(u.Jansky,equivalencies=u.spectral_density(frequency*u.GHz))
+    
+  return (res*ckm).value
+
+
+def _getfile(filename,directory=None,tarfile=None,binary=False):
+  '''
+  Utility function to open a particular file from a ProDiMo model.
+  '''
   pfilename = filename
 
   if tarfile is not None:
