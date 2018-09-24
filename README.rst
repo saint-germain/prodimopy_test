@@ -3,13 +3,13 @@ prodimopy
 
 Python package for reading and plotting ProDiMo results.
 
-This is still under development, but it is usable.
 Any bug reports or feature requests are very welcome.
+If you want to contribute some code please contact me (Christian Rab)
 
 
 Notebook examples
 *****************
-If you want to take a look before installing something you can try prodimopy
+If you want to take a look before installing you can try prodimopy
 on the web in a binder environment:
 
 .. image:: https://mybinder.org/badge.svg 
@@ -71,7 +71,7 @@ in the prodimopy directory. You can directly use the updated code (no reinstall 
 
 Documentation
 *************
-Some preliminary documentation can be found here http://prodimopy.readthedocs.io
+Some documentation can be found here http://prodimopy.readthedocs.io
 
 
 .. _anaconda: https://www.anaconda.com/distribution/
