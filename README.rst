@@ -3,16 +3,19 @@ prodimopy
 
 Python package for reading and plotting ProDiMo results.
 
-This is still under development, but it is usable.
 Any bug reports or feature requests are very welcome.
+If you want to contribute some code please contact me (Christian Rab)
 
 
 Notebook examples
 *****************
-If you want to take a look before installing something you can try prodimopy
+If you want to take a look before installing you can try prodimopy
 on the web in a binder environment:
 
-.. image:: https://mybinder.org/badge.svg :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fcheesyog%2Fprodimopy/997e05a5ea66dfdf4d01be523180d8156963c576?filepath=notebooks&urlpath=lab
+.. image:: https://mybinder.org/badge.svg 
+   :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fcheesyog%2Fprodimopy/997e05a5ea66dfdf4d01be523180d8156963c576?filepath=notebooks&urlpath=lab/tree/notebooks
+
+On your left hand side you will see the notebooks (currently only one), just open one and try it!
 
 Requirements
 ************
@@ -33,9 +36,14 @@ Installation
 ************
 Currently the easiest way to use it is to clone this repository and install the package directly from the source:
 
-* copy the git clone command at the top of this page
-* change into a directory of your choice and execute the command
-* change into the prodimopy directory and type:
+* change into a directory of your choice and 
+* clone the repository 
+
+::
+
+  git clone https://cheesyog@bitbucket.org/cheesyog/prodimopy.git
+ 
+* change into the newly created prodimopy directory and type:
 
 ::
 
@@ -44,7 +52,7 @@ Currently the easiest way to use it is to clone this repository and install the 
 This will install the package in your current python environment (should be the one you want to use for ProDiMo). 
 The develop options allows to update the python code (e.g. via git) without the need to reinstall the package.
 
-If you need root access to install python packages but you do not have it, you can use this
+If you do not have root access to install python packages, this should work
 
 ::
 
@@ -63,7 +71,7 @@ in the prodimopy directory. You can directly use the updated code (no reinstall 
 
 Documentation
 *************
-Some preliminary documentation can be found here http://prodimopy.readthedocs.io
+Some documentation can be found here http://prodimopy.readthedocs.io
 
 
 .. _anaconda: https://www.anaconda.com/distribution/
