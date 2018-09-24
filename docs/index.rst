@@ -16,6 +16,9 @@ Installation
 The package can be installed from a bitbucket repository. 
 For details see https://bitbucket.org/cheesyog/prodimopy
 
+Their you will also find a binder like which allows you to try some features of 
+the package without installing anything. 
+
 
 Source Documentation
 ====================
