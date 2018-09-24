@@ -36,9 +36,14 @@ Installation
 ************
 Currently the easiest way to use it is to clone this repository and install the package directly from the source:
 
-* copy the git clone command at the top of this page
-* change into a directory of your choice and execute the command
-* change into the prodimopy directory and type:
+* change into a directory of your choice and 
+* clone the repository 
+
+::
+
+  git clone https://cheesyog@bitbucket.org/cheesyog/prodimopy.git
+ 
+* change into the newly created prodimopy directory and type:
 
 ::
 
@@ -47,7 +52,7 @@ Currently the easiest way to use it is to clone this repository and install the 
 This will install the package in your current python environment (should be the one you want to use for ProDiMo). 
 The develop options allows to update the python code (e.g. via git) without the need to reinstall the package.
 
-If you need root access to install python packages but you do not have it, you can use this
+If you do not have root access to install python packages, this should work
 
 ::
 
