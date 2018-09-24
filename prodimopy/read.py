@@ -20,6 +20,8 @@ import os
 from collections import OrderedDict
 import math
 import glob
+import tarfile as tar
+import io
 
 class Data_ProDiMo(object):
   """ 
@@ -51,7 +53,8 @@ class Data_ProDiMo(object):
     """ string :
     The name of the model (can be empty)
     """
-    self.__fpFlineEstimates = None  # The path to the FlineEstimates.out File
+    self.__fpFlineEstimates = None  # The path to the FlineEstimates.out File   
+    self.__tarfile=None
     self.nx = None        
     """ int : 
     The number of spatial grid points in the x (radial) direction
@@ -500,12 +503,8 @@ class Data_ProDiMo(object):
       i = i + 1   
   
     if self.lineEstimates[found].rInfo == None:
-      # TODO: read the radial data if required
       _read_lineEstimateRinfo(self, self.lineEstimates[found])
       
-      # also set the frequency, very expensive during reading
-      
-  
     return self.lineEstimates[found]
   
   def selectLineEstimates(self, ident,wlrange=None):
@@ -838,25 +837,17 @@ class DataLine(object):
           str(self.fcont))
     return text 
   
+  @property  
   def flux_Jy(self):    
     '''
-    Returns the flux value Jansky km s^-1
-    
-    TODO: convert this to a property and check for simpler conversion (e.g. 
-    general routine)
-    
+    The flux of the line `UNIT: Jansky km s^-1`
     '''
-    res=self.flux*u.Watt/(u.m**2.0)
-    ckm=const.c.to('km/s')
-       
-    res=(res).to(u.Jansky,equivalencies=u.spectral_density(self.frequency*u.GHz))
-      
-    return (res*ckm).value
+    return __flux_Wm2toJykms(self.flux,self.frequency)
 
 
 class DataLineObs(DataLine):
   '''
-  Holds the observational data for one line
+  Holds the observational data for one line.
   '''  
   def __init__(self, flux, flux_err, fwhm, fwhm_err, flag):
     super(DataLineObs, self).__init__()
@@ -904,35 +895,17 @@ class DataLineEstimate(object):
 
   @property
   def frequency(self):
-    """
-    Frequency of the line [GHz]. Is not done during init because it is very 
-    slow. This way it is only done if required. 
-    
-    Returns
-    -------
-    float
-      The frequency of the line. `UNIT: GHz`
-    """    
+    '''
+    Frequency of the line in [GHz]. 
+    '''
     return (self.wl * u.micrometer).to(u.GHz, equivalencies=u.spectral()).value
-  
+
+  @property
   def flux_Jy(self):    
     '''
-    The line flux in Jansky.
-    
-    TODO: convert this to a property
-    TODO: check proper conversion
-    
-    Returns
-    -------
-    float
-      The flux of the line. `UNIT: Jansky km s^-1`
+    The flux of the line `UNIT: Jansky km s^-1`
     '''
-    res=self.flux*u.Watt/(u.m**2.0)
-    ckm=const.c.to('km/s')
-       
-    res=(res).to(u.Jansky,equivalencies=u.spectral_density(self.frequency*u.GHz))
-      
-    return (res*ckm).value
+    return __flux_Wm2toJykms(self.flux,self.frequency)
     
   def __str__(self):
     text = (self.ident + "/" + 
@@ -1153,7 +1126,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
                  filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", 
                  filenameLineFlux="line_flux.out",
                  td_fileIdx=None):
-  """
+  '''
   Reads in all (not all yet) the output of a ProDiMo model from the given model directory.
   
   Parameters
@@ -1180,7 +1153,14 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   -------
   :class:`prodimopy.read.Data_ProDiMo`
     the |prodimo| model data or `None` in case of errors.
-  """
+  '''
+  # FIXME: tha reading in via a tar file still needs some work, disable it here for the momen
+  # should be a parameter of this routine at some point
+#  tarfile : string
+#    the path to an e.g. tar file (also compressed, everything which works with the python tarfile). 
+#    The routine tries to read the files from the archive also considering the `directory` path
+  tarfile=None
+  
   # guess a name if not set
   if name == None:
     if directory==None or directory=="." or directory=="":
@@ -1198,13 +1178,13 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     filename=filename.replace(".out",rpstr)
     filenameLineEstimates=filenameLineEstimates.replace(".out",rpstr)
     filenameLineFlux=filenameLineFlux.replace(".out",rpstr)  
-    
-  pfilename = directory + "/" + filename
-  f = open(pfilename, 'r')
-  print("READ: Reading File: ", pfilename, " ...")
+
+  f,dummy = __getfile(filename, directory, tarfile)
+
   # read all date into the memory
   # easier to handle afterwards
   lines = f.readlines()  
+  
   f.close()
   idata = 24
    
@@ -1297,7 +1277,6 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     data.spnames[spnames[i]] = i
   
   i = 0
-  
               
   for iz in range(data.nz):
     for ix in range(data.nx): 
@@ -1376,47 +1355,39 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   
   # Read FlineEstimates.out
   if readlineEstimates == True:
-    print(("READ: " + directory + "/" + filenameLineEstimates))
-    read_lineEstimates(directory, data, filename=filenameLineEstimates)
+    read_lineEstimates(directory, data, filename=filenameLineEstimates,tarfile=tarfile)
   else:
     data.lineEstimates = None
     
-  print("READ: " +directory + "/Elements.out" )
-  data.elements=read_elements(directory)
+  data.elements=read_elements(directory,tarfile=tarfile)
      
-  print("READ: " +directory + "/dust_opac.out" )
-  data.dust = read_dust(directory)
+  data.dust = read_dust(directory,tarfile=tarfile)
 
   fileloc=directory + "/dust_opac_env.out"
   if os.path.isfile(fileloc):
-    print("READ: " + fileloc)
-    data.env_dust = read_dust(directory,filename="dust_opac_env.out")  
+    data.env_dust = read_dust(directory,filename="dust_opac_env.out",tarfile=tarfile)  
 
-  print("READ: " + directory + "/StarSpectrum.out")
-  data.starSpec = read_starSpec(directory)
+  data.starSpec = read_starSpec(directory,tarfile=tarfile)
 
   if os.path.exists(directory + "/gas_cs.out"):
-    print("READ: " + directory + "/gas_cs.out")
-    data.gas = read_gas(directory)
+    data.gas = read_gas(directory,tarfile=tarfile)
   
   if os.path.exists(directory + "/"+filenameLineFlux):
-    print("READ: " + directory + "/"+filenameLineFlux)
-    data.lines = read_linefluxes(directory,filename=filenameLineFlux)  
+    data.lines = read_linefluxes(directory,filename=filenameLineFlux,tarfile=tarfile)  
 
   if os.path.exists(directory + "/SED.out"):
-    print("READ: " + directory + "/SED.out")
-    data.sed = read_sed(directory)
+    data.sed = read_sed(directory,tarfile=tarfile)
 
   if os.path.exists(directory + "/Species.out"):
-    print("READ: " + directory + "/Species.out")
     # data is filled in the routine
-    read_species(directory,data)
+    read_species(directory,data,tarfile=tarfile)
     #print("INFO: Calc total species masses")
     #calc_spmassesTot(data)        
   
+    rfile = directory + "/"+filename
+
   if readObs:
     data.sedObs=read_continuumObs(directory)
-    
   
   # calculate the columnd densitis
   print("INFO: Calculate column densities")
@@ -1437,7 +1408,7 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
 
   return data
 
-def read_elements(directory,filename="Elements.out"):
+def read_elements(directory,filename="Elements.out",tarfile=None):
   '''
   Reads the Elements.out file. Currently only the species masses are read.
   Stores the species masses (unit g) in pdata.spmasses
@@ -1454,15 +1425,12 @@ def read_elements(directory,filename="Elements.out"):
   Returns
   -------
   :class:`~prodimopy.read.DataElements`
-    the Elemsnts model data or `None` in case of errors.
+    the Elements model data or `None` in case of errors.
 
   '''
-  rfile = directory + "/" + filename
-  try:
-    f = open(rfile, 'r')
-  except: 
-    print(("WARN: Could not open " + rfile + "!"))        
-    return None
+  
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
   
   # skip the first line
   nelements=int(f.readline())
@@ -1482,7 +1450,7 @@ def read_elements(directory,filename="Elements.out"):
   return elements
 
 
-def read_species(directory,pdata,filename="Species.out"):
+def read_species(directory,pdata,filename="Species.out",tarfile=None):
   '''
   Reads the Species.out file. Currently only the species masses are read.
   Stores the species masses (unit g) in pdata.spmasses
@@ -1499,12 +1467,8 @@ def read_species(directory,pdata,filename="Species.out"):
   filename: str 
     an alternative Filename
   '''
-  rfile = directory + "/" + filename
-  try:
-    
-    f = open(rfile, 'r')
-  except: 
-    print(("WARN: Could not open " + rfile + "!")) 
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  
     pdata.spmasses=None    
     return None
   
@@ -1521,7 +1485,7 @@ def read_species(directory,pdata,filename="Species.out"):
   pdata.spmasses["e-"]=const.m_e.cgs.value
 
 
-def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
+def read_lineEstimates(directory, pdata, filename="FlineEstimates.out",tarfile=None):
   '''
   Read FlineEstimates.out Can only be done after ProDiMo.out is read.
   
@@ -1537,16 +1501,13 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out"):
     an alternative Filename
 
   '''
-  # do not read the whole file as it is huge
-  rfile = directory + "/" + filename
-  try: 
-    # nedd binary read to be compatible to python 3
-    f = open(rfile, 'rb')
-    pdata.__fpFlineEstimates = rfile   
-  except:
-    print(("WARN: Could not open " + rfile + "!"))
+  f,rfile=__getfile(filename, directory, tarfile, binary=True)
+  if f is None:
     pdata.lineEstimates = None
-    return
+    return None
+  else:
+    pdata.__fpFlineEstimates = rfile   
+    pdata.__tarfile=tarfile
 
   # check for version currently just check if it exist
   line = f.readline().decode()  
@@ -1607,11 +1568,8 @@ def _read_lineEstimateRinfo(pdata, lineEstimate):
   '''
   Reads the additional Rinfo data for the given lineEstimate.
   '''  
-  try:
-    f = open(pdata.__fpFlineEstimates, 'rb')
-  except: 
-    print(("WARN: Could not open " + pdata.__fpFlineEstimates))     
-    return None
+  f,dummy=__getfile(pdata.__fpFlineEstimates, None, pdata.__tarfile, binary=True)
+  if f is None: return None
   
   f.seek(lineEstimate.__posrInfo, 0)
   nxrange = list(range(pdata.nx))
@@ -1635,7 +1593,7 @@ def _read_lineEstimateRinfo(pdata, lineEstimate):
       
   f.close()
   
-def  read_linefluxes(directory, filename="line_flux.out"):
+def  read_linefluxes(directory, filename="line_flux.out",tarfile=None):
   """ Reads the line fluxes output.
   
   Parameters
@@ -1651,12 +1609,8 @@ def  read_linefluxes(directory, filename="line_flux.out"):
   list(:class:`prodimopy.read.DataLine`) 
     List of lines.
   """  
-  try:
-    f = open(directory + "/" + filename, 'r')
-  except: 
-    print(("WARN: Could not open " + directory + "/" + filename + "!"))     
-    return None
-    
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
   
   records = f.readlines()
   f.close()
@@ -1716,15 +1670,12 @@ def  read_linefluxes(directory, filename="line_flux.out"):
   
   return lines
 
-def read_lineObs(directory, nlines, filename="LINEobs.dat"):
+def read_lineObs(directory, nlines, filename="LINEobs.dat",tarfile=None):
   '''
   Reads the lineobs Data. the number of lines have to be known.
   '''
-  try:
-    f = open(directory + "/" + filename, 'r')
-  except: 
-    print(("WARN: Could not open " + directory + "/" + filename + "!"))     
-    return None
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
     
   records = f.readlines()
   f.close()
@@ -1749,8 +1700,6 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat"):
      
     linesobs.append(lineobs)
   
-  
-  
   # the additional data
   # check if there is actually more data
   if (len(records)>2 + nlines+1):    
@@ -1774,16 +1723,12 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat"):
   return linesobs
   
   
-def read_lineObsProfile(filename,directory="."):
+def read_lineObsProfile(filename,directory=".",tarfile=None):
   '''
   reads a line profile file which can be used for ProDiMo
   '''
-  
-  try:
-    f = open(directory + "/" + filename, 'r')
-  except: 
-    print(("WARN: Could not open " + directory + "/" + filename + "!"))     
-    return None
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
   
   records = f.readlines()
   f.close()
@@ -1806,17 +1751,13 @@ def read_lineObsProfile(filename,directory="."):
     
   return profile,err
 
-def read_gas(directory,filename="gas_cs.out"):
+def read_gas(directory,filename="gas_cs.out",tarfile=None):
   '''
   Reads gas_cs.out
   Returns an object of Type DataDust  
   ''' 
-  rfile = directory + "/"+filename    
-  try:
-    f = open(rfile, 'r')
-  except:
-    print("WARN: Could not read " + rfile + "!")
-    return None    
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
         
   nlam = int(f.readline().strip())  
   
@@ -1843,8 +1784,9 @@ def read_continuumObs(directory,filename="SEDobs.dat"):
   
   Reads the file SEDobs.dat (phtotometric points) and all files ending 
   with *spec.dat (e.g. the Spitzer spectrum) 
-  '''
   
+  FIXME: does not work yet with tar files
+  '''
   contObs=None
   rfile = directory + "/"+filename
   if os.path.exists(rfile):    
@@ -1909,16 +1851,12 @@ def read_continuumObs(directory,filename="SEDobs.dat"):
   
   return contObs
 
-def read_sed(directory,filename="SED.out",filenameAna="SEDana.out"):
+def read_sed(directory,filename="SED.out",filenameAna="SEDana.out",tarfile=None):
   ''' 
   Reads the ProDiMo SED output including the analysis data.
   '''
-  rfile = directory + "/"+filename    
-  try:
-    f = open(rfile, 'r')
-  except:
-    print("WARN: Could not read " + rfile + "!")
-    return None
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
   
   elems = f.readline().split()
   distance = float(elems[len(elems) - 1])
@@ -1953,12 +1891,8 @@ def read_sed(directory,filename="SED.out",filenameAna="SEDana.out"):
   f.close()
   
   # The analysis data
-  rfile = directory + "/"+filenameAna
-  try:
-    f = open(rfile, 'r')
-  except:
-    print("WARN: Could not read " + rfile + "!")
-    return None
+  f,dummy = __getfile(filenameAna, directory, tarfile)
+  if f is None:  return None
   
   nlam,nx=f.readline().split()
   nlam=int(nlam)
@@ -1980,16 +1914,12 @@ def read_sed(directory,filename="SED.out",filenameAna="SEDana.out"):
     
   return sed
 
-def read_starSpec(directory,filename="StarSpectrum.out"):
+def read_starSpec(directory,filename="StarSpectrum.out",tarfile=None):
   ''' 
   Reads StarSpectrum.out
   '''
-  rfile = directory + "/"+filename    
-  try:
-    f = open(rfile, 'r')
-  except:
-    print("WARN: Could not read " + rfile + "!")
-    return None  
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
       
   teff = float((f.readline().split())[-1])
   elems=f.readline().split()  
@@ -2009,7 +1939,7 @@ def read_starSpec(directory,filename="StarSpectrum.out"):
   f.close()  
   return starSpec 
 
-def read_bgSpec(directory,filename="BgSpectrum.out"):
+def read_bgSpec(directory,filename="BgSpectrum.out",tarfile=None):
   ''' 
   Reads the BgSpectrum.out file. 
   
@@ -2018,12 +1948,8 @@ def read_bgSpec(directory,filename="BgSpectrum.out"):
     :class:`prodimopy.read.DataBgSpec`
     the background spectra or `None` if not found.
   '''
-  rfile = directory + "/"+filename
-  try:
-    f = open(rfile, 'r')
-  except:
-    print("WARN: Could not read " + rfile + "!")
-    return None  
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
              
   nlam = int(f.readline())
   f.readline()
@@ -2037,18 +1963,14 @@ def read_bgSpec(directory,filename="BgSpectrum.out"):
     
   return bgSpec 
 
-def read_dust(directory,filename="dust_opac.out"):
+def read_dust(directory,filename="dust_opac.out",tarfile=None):
   '''
   Reads dust_opac.out
   Returns an object of Type DataDust
   Dust not read the dust composition yet
   ''' 
-  rfile = directory + "/"+filename
-  try:
-    f = open(rfile, 'r')
-  except:
-    print("WARN: Could not read " + rfile + "!")
-    return None  
+  f,dummy = __getfile(filename, directory, tarfile)
+  if f is None:  return None
           
   fields = [int(field) for field in f.readline().split()]
   ndsp = fields[0]      
@@ -2122,7 +2044,7 @@ def calc_NHrad_oi(data):
     NHradoi[ix, :] = NHradoi[ix+1, :] + nn * dr
       
   return NHradoi
-      
+
 
 def calc_surfd(data):
   '''
@@ -2173,6 +2095,32 @@ def _calc_vol(data):
       data.vol[ix,iz]=4.0*math.pi/3.0 * (x2**3-x1**3) * (tanbeta2-tanbeta1)
 
 
+def __flux_Wm2toJykms(flux,frequency):
+  '''
+  Converts a flux from W m^-2 to Jy km/s
+  
+  Parameters
+  ----------
+  flux: float
+    the flux in units of [W m^-2]
+  
+  frequency: float
+    the frequency of the flux in [GHz]
+
+  Returns
+  -------
+  float
+    The flux of the line. `UNIT: Jansky km s^-1`
+  '''
+  res=flux*u.Watt/(u.m**2.0)
+  ckm=const.c.to('km/s')
+     
+  res=(res).to(u.Jansky,equivalencies=u.spectral_density(frequency*u.GHz))
+    
+  return (res*ckm).value
+
+
+
 def calc_columnd(data):
   '''
   Calculated the vertical and radial column number densities for every species 
@@ -2206,13 +2154,44 @@ def calc_columnd(data):
       dr = dr * u.au.to(u.cm)
       nn = 0.5 * (data.nmol[ix, iz , :] + data.nmol[ix-1, iz, :])
       data.rcdnmol[ix, iz, :] = data.rcdnmol[ix-1, iz, :] + nn * dr
-
 #   # FIXME: test the integration error can be at most 16% ... good enough for now (most fields are better)
 #   nHverC=data.rcdnmol[:,:,data.spnames["H"]]+data.rcdnmol[:,:,data.spnames["H+"]]+data.rcdnmol[:,:,data.spnames["H2"]]*2.0
 #   izt=data.nz-2
 #   print(nHverC[:,izt],data.NHrad[:,izt])
 #   print(numpy.max(numpy.abs(1.0-nHverC[1:,:]/data.NHrad[1:,:])))
 
+
+
+def __getfile(filename,directory=None,tarfile=None,binary=False):
+  
+  pfilename = filename
+
+  if tarfile is not None:
+    if directory is not None and directory is not ".":
+      pfilename = directory + "/" + filename
+    
+    tararchive = tar.open(tarfile,"r")
+    if binary:
+      f=tararchive.extractfile(pfilename)
+    else:
+      f=io.TextIOWrapper(tararchive.extractfile(pfilename))
+  else:  
+    if directory is not None:
+      pfilename = directory + "/" + filename
+    
+    try:
+      if binary:
+        f = open(pfilename, 'rb')
+      else:
+        f = open(pfilename, 'r')
+    except: 
+      f=None
+
+  if f is None:
+    print(("WARN: Could not open " + pfilename + "!"))        
+  else:
+    print("READ: Reading File: ", pfilename, " ...")
+  return f,pfilename
 
 ###############################################################################
 # For testing
