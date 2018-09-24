@@ -1,0 +1,9 @@
+# matplotlibrc file
+font.size       : 6.0
+axes.labelsize  : 6.0  # fontsize of the x any y labels
+axes.titlesize  : 6.0
+#TICKS
+xtick.labelsize : 6.0  # fontsize of the tick labels
+ytick.labelsize : 6.0  # fontsize of the tick labels
+
+figure.figsize : 2.0, 1.25 
