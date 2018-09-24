@@ -12,7 +12,8 @@ Notebook examples
 If you want to take a look before installing something you can try prodimopy
 on the web in a binder environment:
 
-.. image:: https://mybinder.org/badge.svg :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fcheesyog%2Fprodimopy/997e05a5ea66dfdf4d01be523180d8156963c576?filepath=notebooks&urlpath=lab
+.. image:: https://mybinder.org/badge.svg 
+   :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fcheesyog%2Fprodimopy/997e05a5ea66dfdf4d01be523180d8156963c576?filepath=notebooks&urlpath=lab
 
 Requirements
 ************
