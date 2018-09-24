@@ -752,8 +752,11 @@ class Plot(object):
     (can be more than one)
     '''
          
-    print("PLOT: plot_abunvert ...")     
+    print("PLOT: plot_abunvert ...")
           
+    if colors is None:
+      colors=list(self.pcolors.values())
+    
     rstr = r"r$\approx${:.2f} au".format(r)   
     
     fig, ax = plt.subplots(1, 1)     
@@ -798,11 +801,7 @@ class Plot(object):
       else: 
         style=styles[iplot]
 
-      # it seems the color always need to be a string
-      # FIXME: check thif for compatibility
-      color="None"
-      if colors!=None:
-        color=colors[iplot]
+      color=colors[iplot]
         
       marker=None  
       if markers!=None:
