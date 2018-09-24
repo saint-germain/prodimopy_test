@@ -221,7 +221,7 @@ class PlotModels(object):
             if peakFlux:
               y.append(np.max(line.profile.flux)-line.fcont)
             else:
-              y.append(line.flux_Jy())
+              y.append(line.flux_Jy)
               
             if showCont is True:
               yCont.append(line.fcont)
