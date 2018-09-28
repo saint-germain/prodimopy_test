@@ -158,6 +158,7 @@ class PlotCasasim(object):
         im = ax.imshow(cube.data[velidx, :, :], cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")      
               
         # set the border of the coordinate frames to white
+        # FIXME: spacing is hardcoded, that does not work always
         ax.coords[0].frame.set_color("white")
         ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
         ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
@@ -191,7 +192,8 @@ class PlotCasasim(object):
                  verticalalignment='top', horizontalalignment="left", bbox=props)
         # FIXME: that would show the image like in the casaviewer
         # ax.invert_yaxis()  
-                                        
+    
+    # FIXME: format is hardcoded that does not work always
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
     CB = fig.colorbar(im, ax=axis.ravel().tolist(), pad=0.02,
                     format="%5.2f", fraction=0.015)  
@@ -322,7 +324,7 @@ class PlotCasasim(object):
                  transform=axes[2].transAxes, fontsize=6,
                  verticalalignment='top', horizontalalignment="right", bbox=props)
     # axes.coords[0].set_major_formatter('hh:mm:ss')     
-
+    
     for ax in axes:
       ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
       ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
@@ -378,6 +380,7 @@ class PlotCasasim(object):
     im = ax.imshow(image.data*scalefac, cmap="inferno", vmin=vmin, vmax=vmax,
                    origin="lower")
     # ax.coords[0].set_major_formatter('hh:mm:ss')
+    # FIXME: spacing is hardcoded that does not work always
     ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
     ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
     ax.coords[0].frame.set_color("white")
@@ -398,8 +401,9 @@ class PlotCasasim(object):
   
     self._dokwargs(ax,**kwargs)
   
+    # FIXME: format is hardcoded that does not work always
     if mJy==True:
-      cformat="%3.0f"
+      cformat="%5.2f"
       clabel="[mJy/beam km/s]"
     else:
       cformat="%5.2f"
