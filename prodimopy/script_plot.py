@@ -23,6 +23,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 # The second one is for plotting
 import prodimopy.read as pread
 import prodimopy.plot as pplot
+import numpy
 
 # The main routine is require to have an entry point. 
 # It is not necessary if you want to write your own script.
@@ -69,21 +70,26 @@ def main(args=None):
     # here the default contour plots are used not very fancy currently. 
     # you can use latex for the labels!
     # note most of the parameters are optional
-    pp.plot_cont(pd, pd.nHtot, r"$\mathsf{n_{<H>} [cm^{-3}]}$")  
+    pp.plot_cont(pd, pd.nHtot, r"$\mathrm{n_{<H>} [cm^{-3}]}$")  
   
-    pp.plot_cont(pd, pd.nHtot, r"$\mathsf{n_{<H>} [cm^{-3}]}$",contour=True,zr=False,xlog=False,ylog=False,
+    pp.plot_cont(pd, pd.nHtot, r"$\mathrm{n_{<H>} [cm^{-3}]}$",contour=True,zr=False,xlog=False,ylog=False,
                    zlim=[1.e4,None], extend="both")  
-    pp.plot_cont(pd, pd.rhod, r"$\mathsf{\rho_{dust} [g\;cm^{-3}]}$",contour=True,zr=False,xlog=False,ylog=False,
+    pp.plot_cont(pd, pd.rhod, r"$\mathsf{\rho_{dust} [g\;cm^{-3}]}$",zr=True,xlog=True,ylog=False,
                     zlim=[1.e-25,None],extend="both")
-    pp.plot_cont(pd, pd.nd, r"$\mathsf{n_{dust} [cm^{-3}]}$",contour=True,zr=False,xlog=False,ylog=False,
+    pp.plot_cont(pd, pd.nd, r"$\mathrm{n_{dust} [cm^{-3}]}$",contour=True,zr=True,xlog=True,ylog=False,
                     zlim=[1.e-8,None],extend="both")
     
     # Plot radiation field at certain wavelengths (here simply done with the index)
-    pp.plot_cont(pd,pd.radFields[:,:,0],zr=False,xlog=False,label="lam="+str(pd.lams[0]),
-                 xlim=[0,3500],ylim=[0,3500])
+    pp.plot_cont(pd,pd.radFields[:,:,0],zr=False,xlog=False,label="lam="+str(pd.lams[0]))
+    pp.plot_cont(pd,pd.radFields[:,:,5],zr=False,xlog=False,label="lam="+str(pd.lams[5]))
 
-    pp.plot_cont(pd,pd.radFields[:,:,5],zr=False,xlog=False,label="lam="+str(pd.lams[5]),
-                 xlim=[0,3500],ylim=[0,3500])
+    pp.plot_cont(pd, pd.tg, r"$\mathrm{T_{gas} [K]}$",contour=True,
+                    zlim=[5,5000],extend="both")
+
+    pp.plot_cont(pd, pd.tg, r"$\mathrm{T_{dust} [K]}$",contour=True,
+                    zlim=[5,1500],extend="both")
+    
+    
   
     # this plots the vertical abundances at different radii for different species
     rs=[1,10,100]
@@ -97,8 +103,16 @@ def main(args=None):
     # contour plots for a couple of species
     species=["CO","H2O","HCO+","HN2+"]
     for spname in species:
-      pp.plot_cont(pd, pd.nmol[:,:,pd.spnames[spname]]/pd.nHtot, r"log $\mathsf{\epsilon("+pplot.spnToLatex(spname)+")}$",
-                   zr=False,xlog=False,ylog=False, zlim=[1.e-4,3.e-15],extend="both")
+      pp.plot_abuncont(pd, spname, zr=True,xlog=True,ylog=False, zlim=[1.e-4,3.e-15],extend="both")
       
+  
+    cth2lines=pd.selectLineEstimates("C2H2_H")
+    fluxes=[lest.flux for lest in cth2lines]
+    imax=numpy.argmax(fluxes)
+    print(cth2lines[imax],cth2lines[imax].wl,cth2lines[imax].ident)    
+  
+    pp.plot_line_origin(pd,[[cth2lines[imax].ident,cth2lines[imax].wl]],
+                        pd.nmol[:,:,pd.spnames["C2H2"]],xlim=[None,30],ylim=[None,0.4],
+                        zlim=[1.e-3,1.e8],extend="both")
   
   
