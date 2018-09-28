@@ -233,7 +233,7 @@ class PlotModels(object):
         
         if imodel == 0:
           if xLabelGHz is True:
-            lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.2f}".format(line.frequency))
+            lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.1f}".format(line.frequency)+r"$\,$GHz")
           else:
           # lticks.append(r"$\mathrm{"+pplot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
           # FIXME: spnToLatex does not work here with all line names ... 
