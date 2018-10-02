@@ -22,6 +22,8 @@ import math
 import glob
 import tarfile as tar
 import io
+from timeit import default_timer as timer
+
 
 class Data_ProDiMo(object):
   """ 
@@ -367,11 +369,6 @@ class Data_ProDiMo(object):
     Holds various properties of the dust component (e.g. opacities) of the envelope.
     Only relevant if |prodimo| is used in the envelope mode.
     see :class:`prodimopy.read.DataDust`    
-    """
-    self.dummyH2 = None
-    """ array_like(float,ndim=2) :
-    TODO remove this, was only used temporarely. 
-    `UNIT:` , `DIMS:` (nx,nz)
     """
     self.elements = None
     """ :class:`prodimopy.read.DataElements` :
@@ -1159,6 +1156,8 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
 #  tarfile : string
 #    the path to an e.g. tar file (also compressed, everything which works with the python tarfile). 
 #    The routine tries to read the files from the archive also considering the `directory` path
+  startAll=timer()
+  
   tarfile=None
   
   # guess a name if not set
@@ -1178,14 +1177,14 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     filename=filename.replace(".out",rpstr)
     filenameLineEstimates=filenameLineEstimates.replace(".out",rpstr)
     filenameLineFlux=filenameLineFlux.replace(".out",rpstr)  
-
+    
   f,dummy = _getfile(filename, directory, tarfile)
-
   # read all date into the memory
-  # easier to handle afterwards
-  lines = f.readlines()  
-  
+  # easier to handle afterwards  
+  lines = f.readlines()
   f.close()
+  
+  # start of the array data block
   idata = 24
    
   data = Data_ProDiMo(name)
@@ -1229,7 +1228,6 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   data.tauX5 = numpy.zeros(shape=(data.nx, data.nz))
   data.tauX10 = numpy.zeros(shape=(data.nx, data.nz))  
   data.zetaX = numpy.zeros(shape=(data.nx, data.nz))
-  data.dummyH2 = numpy.zeros(shape=(data.nx, data.nz))
   data.chi = numpy.zeros(shape=(data.nx, data.nz))
   data.chiRT = numpy.zeros(shape=(data.nx, data.nz))
   data.kappaRoss = numpy.zeros(shape=(data.nx, data.nz))  
@@ -1251,9 +1249,10 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   # number of fixed fields in ProDiMo.out (before heating and cooling rates)
   nfixFields = 21  
   # index after the J data/fields in ProDiMo 
-  iAJJ = nfixFields + data.nheat + data.ncool + 1 + data.nspec + data.nlam
+  
   iACool = nfixFields + data.nheat + data.ncool  
-  iASpec= nfixFields + data.nheat + data.ncool + 1 + data.nspec
+  iASpec= iACool + 1 + data.nspec
+  iAJJ = iASpec + data.nlam
     
   # read the species names, these are taken from the column titles
   colnames = lines[idata - 1]
@@ -1272,72 +1271,10 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   
   # empty dictionary
   data.spnames = OrderedDict()
-  # Make a dictionary for the spans
+  # Make a dictionary for the spnames
   for i in range(data.nspec):    
     data.spnames[spnames[i]] = i
-  
-  i = 0
-              
-  for iz in range(data.nz):
-    for ix in range(data.nx): 
-      # stupid workaround for big disks envelops where x,y can be larger than 10000 AU
-      # there is no space between the numbers for x and z so always add one if none is there
-      # this might can be removed in the future as the newest ProDiMo version use exp format now
-      if (not newexpformat) and lines[idata+i][20]!= " ":
-        line=lines[idata + i][:20]+" "+lines[idata + i][20:]
-      else:
-        line=lines[idata + i]
-            
-      fields = line.split()
-            
-      zidx = data.nz - iz - 1            
-      data.x[ix, zidx] = float(fields[2])
-      data.z[ix, zidx] = float(fields[3])
-      data.NHrad[ix, zidx] = float(fields[4])
-      data.NHver[ix, zidx] = float(fields[5])
-      data.AVrad[ix, zidx] = float(fields[6])
-      data.AVver[ix, zidx] = float(fields[7])
-      data.nd[ix, zidx] = float(fields[8])
-      data.tg[ix, zidx] = float(fields[9])
-      data.td[ix, zidx] = float(fields[10])
-      data.soundspeed[ix, zidx] = float(fields[11])
-      data.rhog[ix, zidx] = float(fields[12])
-      data.pressure[ix, zidx] = float(fields[13])
-      data.chi[ix, zidx] = float(fields[15])
-      data.tauchem[ix,zidx]=float(fields[16])
-      data.taucool[ix,zidx]=float(fields[17])
-      data.taudiff[ix,zidx]=float(fields[18])
-      data.heat_mainidx[ix,zidx]=float(fields[19])
-      data.cool_mainidx[ix,zidx]=float(fields[20])
-      data.heat[ix, zidx, :] = numpy.array(list(map(float, fields[nfixFields:nfixFields+data.nheat])))
-      data.cool[ix, zidx, :] = numpy.array(list(map(float, fields[(nfixFields+data.nheat):(nfixFields+data.nheat+data.ncool)])))
-      data.chiRT[ix, zidx] = float(fields[iAJJ])
-      data.kappaRoss[ix, zidx] = float(fields[iAJJ+1])            
-      data.nHtot[ix, zidx] = float(fields[iACool])
-      data.damean[ix, zidx] = float(fields[iAJJ + 3])
-      data.d2g[ix, zidx] = float(fields[iAJJ + 4])
-      data.Hx[ix, zidx] = float(fields[iAJJ + 5])
-      data.tauX1[ix, zidx] = float(fields[iAJJ + 6])
-      data.tauX5[ix, zidx] = float(fields[iAJJ + 7])
-      data.tauX10[ix, zidx] = float(fields[iAJJ + 8])      
-      data.zetaX[ix, zidx] = float(fields[iAJJ + 9])
-      data.zetaCR[ix, zidx] = float(fields[iAJJ + 16])      
-      if len(fields) > (iAJJ + 17): data.zetaSTCR[ix, zidx] = float(fields[iAJJ + 17]) 
-      data.dummyH2[ix, zidx] = float(fields[iACool + 5])  # FIXME: I think that was a temporary thing, remove it    
-      data.nmol[ix, zidx, :] = numpy.array(list(map(float, fields[iACool + 1:iACool + 1 + data.nspec])))
-      data.radFields[ix,zidx,:]=numpy.array(list(map(float, fields[iASpec :iASpec + data.nlam])))
-      
-      i = i + 1
-
-
-  # derived quantitites
-  data.rhod = data.rhog * data.d2g
-  
-  # AV like defined in the prodimo idl script  
-  for ix in range(data.nx):
-    for iz in range(data.nz):
-      data.AV[ix,iz] = numpy.min([data.AVver[ix,iz],data.AVrad[ix,iz],data.AVrad[data.nx-1,iz]-data.AVrad[ix,iz]])  
-  
+    
   # read the heating and cooling names
   iheat=idata+data.nx*data.nz+2
   for i in range(data.nheat):    
@@ -1349,11 +1286,76 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   
   # read the band wavelenghts
   iwls=idata+data.nx*data.nz+2+data.nheat+2+data.ncool+2
-  i=0
   for i in range(data.nlam):      
-    data.lams[i]=float((lines[iwls+i].split())[1])
+    data.lams[i]=float((lines[iwls+i].split())[1])  
+    
   
-  # Read FlineEstimates.out
+  i = 0  
+  for iz in range(data.nz):
+    zidx = data.nz - iz - 1
+    for ix in range(data.nx):
+
+      # stupid workaround for big disks/envelopes where x,y can be larger than 10000 au
+      # there is no space between the numbers for x and z so always add one if none is there
+      # this might can be removed in the future as the newest ProDiMo version use exp format now
+      if (not newexpformat) and lines[idata+i][20]!= " ":
+        line=lines[idata + i][:20]+" "+lines[idata + i][20:]
+      else:
+        line=lines[idata + i]
+            
+      # This line is what eats the time, but using genfromtxt for the ProDiMo.out
+      # does not seem to be faster
+      fields=numpy.fromstring(line,sep=" ")
+      
+      data.x[ix, zidx] = fields[2]
+      data.z[ix, zidx] = fields[3]
+      data.NHrad[ix, zidx] = fields[4]
+      data.NHver[ix, zidx] = fields[5]
+      data.AVrad[ix, zidx] = fields[6]
+      data.AVver[ix, zidx] = fields[7]
+        
+      data.nd[ix, zidx] = fields[8]
+      data.tg[ix, zidx] = fields[9]
+      data.td[ix, zidx] = fields[10]
+      data.soundspeed[ix, zidx] = fields[11]
+      data.rhog[ix, zidx] = fields[12]
+      data.pressure[ix, zidx] = fields[13]
+      data.chi[ix, zidx] = fields[15]
+      data.tauchem[ix,zidx] = fields[16]
+      data.taucool[ix,zidx] = fields[17]
+      data.taudiff[ix,zidx] = fields[18]
+      data.heat_mainidx[ix,zidx]=fields[19]
+      data.cool_mainidx[ix,zidx]=fields[20]
+      data.heat[ix, zidx, :] = fields[nfixFields:nfixFields+data.nheat]
+      data.cool[ix, zidx, :] = fields[(nfixFields+data.nheat):(nfixFields+data.nheat+data.ncool)]
+      data.nHtot[ix, zidx] = fields[iACool]
+      data.nmol[ix, zidx, :] = fields[iACool + 1:iASpec]
+        
+      data.radFields[ix,zidx,:]=fields[iASpec :iAJJ]
+        
+      data.chiRT[ix, zidx] = fields[iAJJ]
+      data.kappaRoss[ix, zidx] = fields[iAJJ+1]            
+      data.damean[ix, zidx] = fields[iAJJ + 3]
+      data.d2g[ix, zidx] = fields[iAJJ + 4]
+      data.Hx[ix, zidx] = fields[iAJJ + 5]
+      data.tauX1[ix, zidx] = fields[iAJJ + 6]
+      data.tauX5[ix, zidx] = fields[iAJJ + 7]
+      data.tauX10[ix, zidx] = fields[iAJJ + 8]
+      data.zetaX[ix, zidx] = fields[iAJJ + 9]
+      data.zetaCR[ix, zidx] = fields[iAJJ + 16]      
+      if len(fields) > (iAJJ + 17): data.zetaSTCR[ix, zidx] = fields[iAJJ + 17] 
+
+      i = i + 1
+
+  # derived quantitites
+  data.rhod = data.rhog * data.d2g
+  
+  # AV like defined in the prodimo idl script  
+  for ix in range(data.nx):
+    for iz in range(data.nz):
+      data.AV[ix,iz] = numpy.min([data.AVver[ix,iz],data.AVrad[ix,iz],data.AVrad[data.nx-1,iz]-data.AVrad[ix,iz]])
+  
+  # Read FlineEstimates.out  
   if readlineEstimates == True:
     read_lineEstimates(directory, data, filename=filenameLineEstimates,tarfile=tarfile)
   else:
@@ -1386,7 +1388,10 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
 
   if readObs:
     data.sedObs=read_continuumObs(directory)
+    
+  print("INFO: Reading time: ","{:4.2f}".format(timer()-startAll)+" s")  
   
+  start=timer()
   # calculate the columnd densitis
   print("INFO: Calculate column densities")
   calc_columnd(data)
@@ -1394,14 +1399,14 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
   calc_surfd(data)
   print("INFO: Calculate volumes")
   _calc_vol(data)
-  
-    # set muH
-  data.muH=data.rhog[0,0]/data.nHtot[0,0]  
+
+  # set muH
+  data.muH=data.rhog[0,0]/data.nHtot[0,0]
+  print("INFO: Calc time: ","{:4.2f}".format(timer()-start)+" s")  
   
   # Test for volume stuff ... total integrated mass
   #mass=np.sum(np.multiply(data.vol,data.rhog))
   #print("Total gas mass", (mass*u.g).to(u.M_sun))
-
   print(" ")
 
   return data
@@ -1526,7 +1531,7 @@ def read_lineEstimates(directory, pdata, filename="FlineEstimates.out",tarfile=N
   for i in range(nlines):
     # has to be done in fixed format
     # FIXME: it can be that nline is not really equal the nubmer of available line
-    # this ir probably a but in ProDiMo but maybe intended (see 
+    # this ir probably a bug in ProDiMo but maybe intended (see 
     # OUTPUT_FLINE_ESTIMATE in ProDiMo, Therefore add a check     
     line = f.readline()            
     if not line: break
@@ -1888,9 +1893,11 @@ def read_sed(directory,filename="SED.out",filenameAna="SEDana.out",tarfile=None)
   sed.setLbolTbol()
   f.close()
   
-  # The analysis data
+  # The analysis data, if it is not there not a big problem
   f,dummy = _getfile(filenameAna, directory, tarfile)
-  if f is None:  return None
+  if f is None:  
+    sed.sedAna=None
+    return sed
   
   nlam,nx=f.readline().split()
   nlam=int(nlam)
@@ -2077,7 +2084,7 @@ def _calc_vol(data):
   
   tocm=(1.0*u.au).to(u.cm).value
   data.vol=numpy.zeros(shape=(data.nx, data.nz))
-  print(tocm)
+  fourthreepi=4.0*math.pi/3.0
   for ix in range(data.nx):
     ix1 = np.max([0,ix-1])
     ix2 = ix
@@ -2090,7 +2097,7 @@ def _calc_vol(data):
       iz3 = np.min([data.nz-1,iz+1])
       tanbeta1=0.5*(data.z[ix,iz1]+data.z[ix,iz2])/data.x[ix,0]  
       tanbeta2=0.5*(data.z[ix,iz2]+data.z[ix,iz3])/data.x[ix,0]  
-      data.vol[ix,iz]=4.0*math.pi/3.0 * (x2**3-x1**3) * (tanbeta2-tanbeta1)
+      data.vol[ix,iz]=fourthreepi * (x2**3-x1**3) * (tanbeta2-tanbeta1)
 
 
 def calc_columnd(data):
