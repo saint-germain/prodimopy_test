@@ -942,8 +942,8 @@ class PlotModels(object):
     self._dokwargs(ax, **kwargs)  
     self._legend(ax,**kwargs)
     
-    self.pdf.savefig()
-    plt.close(fig)    
+    return self._closefig(fig)
+  
     
   def plot_sed(self, models,plot_starSpec=True,sedObs=None,sedObsModels=False,unit="erg",reddening=False,**kwargs): 
     '''
