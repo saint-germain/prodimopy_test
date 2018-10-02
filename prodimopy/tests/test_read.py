@@ -132,6 +132,10 @@ class TestReadProdimo(unittest.TestCase):
     self.assertNotEqual(data.dust, None)
     self.assertNotEqual(data.sed, None)
     self.assertNotEqual(data.starSpec, None)
+    self.assertEqual(87, len(data.heat_names))
+    self.assertEqual(80, len(data.cool_names))
+    self.assertEqual(26, len(data.lams))
+    self.assertAlmostEqual(0.87869,data.AV[10,10])
     self.assertEqual(data.x[0, data.nz - 1], 0.07)
             
 class TestReadSEDobs(unittest.TestCase):
