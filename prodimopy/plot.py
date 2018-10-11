@@ -1631,14 +1631,12 @@ class Plot(object):
 
 class Contour(object):
   '''
-  Define an additional contour which can be used in the countour plotting
+  Define an additional contour which can be used in the contour plotting
   routines.
   
-  Object of this class can be passed to e.g. the :func:`~prodimopy.plot.Plot.plot_cont` 
-  routine and will be drawn their. 
+  Object of this class can be passed to e.g. the :func:`~prodimopy.plot.Plot.plot_cont` routine and will be drawn their. 
   
-  TODO: provide a field for label strings (arbitrary values) need to be the same 
-        size as levels
+  TODO: provide a field for label strings (arbitrary values) need to be the same size as levels
   '''
   def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5,
                showlabels=False,label_locations=None,label_fmt="%.1f",
@@ -1646,40 +1644,42 @@ class Contour(object):
                label_inline_spacing=5,
                filled=False):
     '''
-    Parameters
-    ----------
-    field : array_like(float,ndim=2)
-      A two dimensional array of values used for the Contours. Needs to 
-      have the same dimensions as the array used for the contour plotting
-      routine. So any 2D array of the :class:`prodimopy.read.Data_ProDiMo` 
-      will do. 
+    Attributes
+    ----------  
       
-    levels : array_like(float,ndim=1)
+    '''
+    self.field = field
+    """ array_like(float,ndim=2) :
+      A 2D array of values used for the Contours. Needs to have the same 
+      dimensions as the array used for the contour plotting routine. So any 
+      2D array of the :class:`prodimopy.read.Data_ProDiMo` will do.
+    """ 
+    self.levels=levels
+    """ array_like(float,ndim=1) :
       list of values for which contour lines should be drawn.
-    
-    colors : array_like(ndim=1)
+    """    
+    self.colors=colors
+    """ array_like(ndim=1) : 
       list of colors for the idividual contours. If only a single value is 
       provided (i.e. no array) this value is applied to all contours.
       The values of colors can be given in the same way as it is done for 
       matplotlib.
-      
-    linestyles : array_like(ndim=1)
+    """
+    self.linestyles=linestyles
+    """ array_like(ndim=1) :
       linestyles for the contours. Works like the `colors` parameter. 
-      Any style that matplotlib understand will work. 
-      
-    linewidths : array_like(ndim=1)
+      Any style that matplotlib understands will work.
+    """ 
+    self.linewidths=linewidths    
+    """ array_like(ndim=1) :
       linewidths for the individual contour levels. Works the same as the 
       `colors` parameter.
-      
-    showlabels : boolean
-      show text label for each level or not (default: False)      
-    '''
-    self.field = field
-    self.levels=levels
-    self.colors=colors
-    self.linestyles=linestyles
-    self.linewidths=linewidths
-    self.showlabels=showlabels        # set to true if labels at the contour lines should be shown (experimental)
+    """    
+    self.showlabels=showlabels
+    """ boolean : `False`
+      show text label for each level or not (default: False)
+      Still kind of experimental
+    """      
     self.label_locations=label_locations
     self.label_fmt=label_fmt
     self.label_fontsize=label_fontsize
