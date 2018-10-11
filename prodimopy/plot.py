@@ -136,13 +136,16 @@ class Plot(object):
     model : :class:`~prodimopy.read.Data_ProDiMo` 
       the model data
         
-    sdscale: bool 
-      show additionally a scale with units in ` |gcm^-3|`
+    sdscale : boolean 
+      show additionally a scale with units in |gcm^-2|
+    
     
     Returns
     -------
-    :class:`matplotlib.figure.Figure` object if `self.pdf` is `None` 
-       otherwise the plot is written directl into the pdf object. 
+    :class:`~matplotlib.figure.Figure` or `None` 
+      object if `self.pdf` is `None` the Figure object is reqturned, otherwise
+      otherwise the plot is written directly into the pdf object(file) and `
+      None` is returned.
     '''
     print("PLOT: plot_NH ...")
     fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
@@ -280,13 +283,28 @@ class Plot(object):
                 bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
                 rasterized=False,returnFig=False,**kwargs):
     '''
-    plot routine for 2D contour plots.
-    oconts needs to be an array of Countour objectes
-    FIXME: acont is deprectated use oconts only 
+    Plot routine for 2D filled contour plots.
+    
+    Parameters
+    ----------
+    model : :class:`~prodimopy.read.Data_ProDiMo` 
+      the model data
+    
+    values : array_like(float,ndim=2)
+      a 2D array with numeric values for the plotting. E.g. any 2D array 
+      of the :class:`~prodimopy.read.Data_ProDiMo` object.
+    
+    oconts : array_like(:class:`~prodimopy.plot.Contour`,ndim=1)
+      list of :class:`~prodimopy.plot.Contour` objects which will be drawn 
+      as additional contour levels. See also the example at the top of the page.
+ 
     
     scalexy: apply a scaling factor for the x and y coordinate (multiplicative)
     patches: a list of matplotlib.patches objects. For each object in the list 
     simply ax.add_patch() is called (at the very end of the routine)
+
+    FIXME: acont is deprectated use oconts only
+
        
     '''
     print("PLOT: plot_cont ...")
@@ -683,30 +701,39 @@ class Plot(object):
                 extend="neither",oconts=None,acont=None,acontl=None,nbins=70,
                 bgcolor=None,cb_format="%.1f",scalexy=[1,1],patches=None,
                 rasterized=False,**kwargs):
-    """
-    Plots the 2D abundance structure of a species using the 
-    :func:`prodimopy.plot.Plot.plot_cont` routine.
-        
-    :param model: a :class:`prodimopy.read.Data_ProDiMo` object
-    :param species: the name of the species as given in |prodimo|
-    :param rel2H: plot abundances relative to the total H nuclei number density. 
-                  If False the number density of the species is plotted
-    :param label: the label for the colorbar. If None the default is plotted
+    '''
+    Plots the 2D abundance structure of a species.
     
-    For all other parameters see :func:`prodimopy.plot.Plot.plot_cont`
-
-    This is a convenience function and simple is a wrapper for the :func:`prodimopy.plot.Plot.plot_cont` routine.
+    This is a convenience function and is simply a wrapper for 
+    :func:`~prodimopy.plot.Plot.plot_cont` routine.
     
     The routine checks if the species exists, calculates the abundance and sets some 
-    defaults (e.g. label) for the :func:`prodimopy.plot.Plot.plot_cont` routine and calls it. 
+    defaults (e.g. label) for the :func:`~prodimopy.plot.Plot.plot_cont` routine and calls it. 
     However, all the defaults can be overwritten by providing the corresponding parameter.
              
     Contributors: L. Klarmann, Ch. Rab 
-    
-    TODO: can be improved with better and smarter default values (e.g. for the colorbar)
-    
-    """
 
+    Parameters
+    ----------
+        
+    model : :class:`prodimopy.read.Data_ProDiMo` 
+      the model data 
+      
+    species : str 
+      the name of the species as given in |prodimo|
+    
+    rel2H : boolean 
+      plot abundances relative to the total H nuclei number density. 
+      If `False` the number density of the species is plotted      
+      
+    label : str 
+      the label for the colorbar. If None the default is plotted
+    
+    
+    For all other parameters see :func:`~prodimopy.plot.Plot.plot_cont`
+
+    TODO: can be improved with better and smarter default values (e.g. for the colorbar)    
+    '''
     print('PLOT: plot_abuncont ...')
 
     # Check if species names exists
@@ -1604,15 +1631,49 @@ class Plot(object):
 
 class Contour(object):
   '''
-  Define contourlines for one Contour for the filled contour plots.
-  field needs to be an array of the same shape as the array data used for the
-  filled 2D contour plots 
+  Define an additional contour which can be used in the countour plotting
+  routines.
+  
+  Object of this class can be passed to e.g. the :func:`~prodimopy.plot.Plot.plot_cont` 
+  routine and will be drawn their. 
   
   TODO: provide a field for label strings (arbitrary values) need to be the same 
         size as levels
   '''
-  def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5,showlabels=False,
-               label_locations=None,label_fmt="%.1f",label_fontsize=7,label_inline_spacing=5,filled=False):
+  def __init__(self, field,levels,colors="white",linestyles="solid",linewidths=1.5,
+               showlabels=False,label_locations=None,label_fmt="%.1f",
+               label_fontsize=7,
+               label_inline_spacing=5,
+               filled=False):
+    '''
+    Parameters
+    ----------
+    field : array_like(float,ndim=2)
+      A two dimensional array of values used for the Contours. Needs to 
+      have the same dimensions as the array used for the contour plotting
+      routine. So any 2D array of the :class:`prodimopy.read.Data_ProDiMo` 
+      will do. 
+      
+    levels : array_like(float,ndim=1)
+      list of values for which contour lines should be drawn.
+    
+    colors : array_like(ndim=1)
+      list of colors for the idividual contours. If only a single value is 
+      provided (i.e. no array) this value is applied to all contours.
+      The values of colors can be given in the same way as it is done for 
+      matplotlib.
+      
+    linestyles : array_like(ndim=1)
+      linestyles for the contours. Works like the `colors` parameter. 
+      Any style that matplotlib understand will work. 
+      
+    linewidths : array_like(ndim=1)
+      linewidths for the individual contour levels. Works the same as the 
+      `colors` parameter.
+      
+    showlabels : boolean
+      show text label for each level or not (default: False)      
+    '''
     self.field = field
     self.levels=levels
     self.colors=colors

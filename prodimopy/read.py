@@ -132,7 +132,7 @@ class Data_ProDiMo(object):
     The conversion constant from nHtot to rhog
     It is assume that this is constant throught the disk. It is given by 
     by `rhog/nHtot`
-    `UNIT:` |g|
+    `UNIT:` `g`
     """
     self.NHver = None     # 
     """ array_like(float,ndim=2) :
@@ -166,12 +166,12 @@ class Data_ProDiMo(object):
     self.pressure = None
     """ array_like(float,ndim=2) :
     The gas pressure
-    `UNIT:` |erg cm^-3|, `DIMS:` (nx,nz)
+    `UNIT:` |ergcm^-3|, `DIMS:` (nx,nz)
     """
     self.soundspeed = None
     """ array_like(float,ndim=2) :
     The isothermal sound speed.
-    `UNIT:` |km s^-1|, `DIMS:` (nx,nz)
+    `UNIT:` |kms^-1|, `DIMS:` (nx,nz)
     """ 
     self.damean = None    
     """ array_like(float,ndim=2) :
@@ -306,13 +306,13 @@ class Data_ProDiMo(object):
     """
     self.heat = None
     """ array_like(float,ndim=3) :
-    Heating rates for the various heating processes.
-    `UNIT:` |???|, `DIMS:` (nx,nz,nheat)
+    Heating rates for the various heating processes. `FIXME:` find out the unit
+    `UNIT:` `DIMS:` (nx,nz,nheat)
     """
     self.cool = None
     """ array_like(float,ndim=3) :
-    Cooling rates for the various coling
-    `UNIT:` |???|, `DIMS:` (nx,nz,cool)
+    Cooling rates for the various coling. `FIXME:` find out the unit.
+    `UNIT:` `DIMS:` (nx,nz,cool)
     """
     self.heat_names = None
     """ list (string)
@@ -1786,7 +1786,7 @@ def read_continuumObs(directory,filename="SEDobs.dat"):
   Reads observational continuum data (SED). 
   
   Reads the file SEDobs.dat (phtotometric points) and all files ending 
-  with *spec.dat (e.g. the Spitzer spectrum) 
+  with `*spec.dat` (e.g. the Spitzer spectrum) 
   
   FIXME: does not work yet with tar files
   '''

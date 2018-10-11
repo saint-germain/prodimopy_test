@@ -32,6 +32,9 @@ Source documentation
 .. some usefull replacements for units
 
 .. |gcm^-3| replace:: g cm\ :sup:`-3`
+.. |gcm^-2| replace:: g cm\ :sup:`-2`
+.. |ergcm^-3| replace:: erg cm\ :sup:`-3`
+.. |kms^-1| replace:: km s\ :sup:`-1`
 .. |cm^-3| replace:: cm\ :sup:`-3`
 .. |cm^-2| replace:: cm\ :sup:`-2`
 .. |cm^-1| replace:: cm\ :sup:`-1`
