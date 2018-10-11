@@ -71,7 +71,11 @@ in the prodimopy directory. You can directly use the updated code (no reinstall 
 
 Documentation
 *************
-Some documentation can be found here https://readthedocs.org/projects/pip/badge/
+Please check out the documentation! Click on the badge!
+
+.. image:: https://readthedocs.org/projects/prodimopy/badge/?version=latest
+  :target: https://prodimopy.readthedocs.io/en/latest/?badge=latest
+  :alt: Documentation Status
 
 
 .. _anaconda: https://www.anaconda.com/distribution/
