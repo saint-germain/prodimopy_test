@@ -144,8 +144,8 @@ class Plot(object):
     -------
     :class:`~matplotlib.figure.Figure` or `None` 
       object if `self.pdf` is `None` the Figure object is reqturned, otherwise
-      otherwise the plot is written directly into the pdf object(file) and `
-      None` is returned.
+      otherwise the plot is written directly into the pdf object(file) and 
+      `None` is returned.
     '''
     print("PLOT: plot_NH ...")
     fig, ax = plt.subplots(1, 1,figsize=self._sfigs(**kwargs))      
