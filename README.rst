@@ -7,7 +7,6 @@ Python package for reading and plotting ProDiMo results.
 Any bug reports or feature requests are very welcome.
 If you want to contribute some code please contact me (Christian Rab)
 
-
 Notebook examples
 *****************
 If you want to take a look before installing you can try prodimopy
@@ -58,7 +57,6 @@ If you do not have root access to install python packages, this should work
 ::
 
   python setup.py develop --user
-
 
 Code Update
 ***********
