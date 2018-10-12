@@ -8,7 +8,7 @@ If you want to contribute some code please contact me (Christian Rab)
 
 
 Notebook examples
------------------
+*****************
 If you want to take a look before installing you can try prodimopy
 on the web in a binder environment:
 
