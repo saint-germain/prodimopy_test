@@ -157,7 +157,7 @@ class PlotModels(object):
                  
   def plot_lines(self, models, lineidents, useLineEstimate=True,jansky=False,
                  showBoxes=True,lineObs=None,lineObsLabel="Obs.",peakFlux=False,
-                 showCont=False,xLabelGHz=False,**kwargs):
+                 showCont=False,xLabelGHz=False,showGrid=True,**kwargs):
     """
     Plots a selection of lines or lineEstimates.
     
@@ -317,19 +317,21 @@ class PlotModels(object):
         ax.set_ylabel(r" line flux [Jy km$\,$s$^{-1}$]")
     else:
       ax.set_ylabel(r" line flux [W$\,$m$^{-2}$]")
-      
-    xgrid=np.array(x)    
-    #ygrid=ax.get_yticks()
-    #print(ygrid)      
-    ax.vlines(xgrid-0.5,ymin=ax.get_ylim()[0],ymax=ax.get_ylim()[1],linestyle="solid",linewidth=0.5,color="grey",zorder=-100)
-    #ax.hlines(ygrid,xmin=ax.get_xlim()[0],xmax=ax.get_xlim()[1],linestyle="solid",linewidth=0.5,color="grey",zorder=100)  
-    ax.yaxis.grid(color="grey",zorder=-100)
+    
+    
+    if showGrid:  
+      xgrid=np.array(x)    
+      #ygrid=ax.get_yticks()
+      #print(ygrid)      
+      ax.vlines(xgrid-0.5,ymin=ax.get_ylim()[0],ymax=ax.get_ylim()[1],linestyle="solid",linewidth=0.5,color="grey",zorder=-100)
+      #ax.hlines(ygrid,xmin=ax.get_xlim()[0],xmax=ax.get_xlim()[1],linestyle="solid",linewidth=0.5,color="grey",zorder=100)  
+      ax.yaxis.grid(color="grey",zorder=-100)
   
      
     ax.set_xticklabels(lticks, rotation='70', minor=False)
     zed = [tick.label.set_fontsize(7) for tick in ax.xaxis.get_major_ticks()]
      
-    self._legend(ax)
+    self._legend(ax,**kwargs)
     
     if "title" in kwargs and kwargs["title"] != None:
       ax.set_title(kwargs["title"])
