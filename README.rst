@@ -1,3 +1,4 @@
+=========
 prodimopy
 =========
 
@@ -6,14 +7,13 @@ Python package for reading and plotting ProDiMo results.
 Any bug reports or feature requests are very welcome.
 If you want to contribute some code please contact me (Christian Rab)
 
-
 Notebook examples
 *****************
 If you want to take a look before installing you can try prodimopy
 on the web in a binder environment:
 
 .. image:: https://mybinder.org/badge.svg 
-   :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fcheesyog%2Fprodimopy/bdb789b71c61d6c55f263de57a8ff95c1e7236c8?filepath=notebooks&urlpath=lab/tree/notebooks
+   :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fcheesyog%2Fprodimopy/1e4d8979e58bf2b0dfae64ce367f0013e1dcc1ad?filepath=notebooks&urlpath=lab/tree/notebooks
 
 On your left hand side you will see the notebooks (currently only one), just open one and try it!
 
@@ -57,7 +57,6 @@ If you do not have root access to install python packages, this should work
 ::
 
   python setup.py develop --user
-
 
 Code Update
 ***********
