@@ -1296,9 +1296,8 @@ class PlotModels(object):
     self._dokwargs(ax, **kwargs)                
     
     self._legend(ax)
-    
-    self.pdf.savefig()
-    plt.close(fig)  
+
+    return self._closefig(fig)
    
   def plot_line_profil(self,models,wl,ident=None,linetxt=None,lineObs=None,**kwargs):
     '''
