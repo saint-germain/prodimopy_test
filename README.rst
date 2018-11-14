@@ -1,6 +1,6 @@
-=========
+*********
 prodimopy
-=========
+*********
 
 Python package for reading and plotting ProDiMo results.
 
@@ -8,7 +8,7 @@ Any bug reports or feature requests are very welcome.
 If you want to contribute some code please contact me (Christian Rab)
 
 Notebook examples
-*****************
+=================
 If you want to take a look before installing you can try prodimopy
 on the web in a binder environment:
 
@@ -18,7 +18,7 @@ on the web in a binder environment:
 On your left hand side you will see the notebooks (currently only one), just open one and try it!
 
 Requirements
-************
+============
 prodimopy uses several additional python packages which are commonly used in the astronomical community. 
 If you use anaconda_ all this packages should be available in your python distribution. 
 The following packages are required
@@ -33,7 +33,7 @@ they are not included in your python distribution. We recommend to use python3 b
 also still work.
 
 Installation
-************
+============
 Currently the easiest way to use it is to clone this repository and install the package directly from the source:
 
 * change into a directory of your choice and 
@@ -58,8 +58,14 @@ If you do not have root access to install python packages, this should work
 
   python setup.py develop --user
 
+Windows
+-------
+We do not really recommend it and also do not test it, but it is also possible to use prodimopy with Windows (at least we know about one succesfull case). 
+It worked with the Anaconda distribution for Windows. With the Anaconda Prompt (comes with the installation) the installation procedure is the
+same as above. However, you most likely likely need to install git first.  
+
 Code Update
-***********
+===========
 Simply type 
 
 ::
@@ -69,7 +75,7 @@ Simply type
 in the prodimopy directory. You can directly use the updated code (no reinstall required).
 
 Documentation
-*************
+=============
 Please check out the documentation! Click on the badge!
 
 .. image:: https://readthedocs.org/projects/prodimopy/badge/?version=latest
