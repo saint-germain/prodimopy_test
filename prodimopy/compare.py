@@ -83,8 +83,8 @@ class CompareAbs(object):
           else:
             print("{:8s}".format("FAILED"),end="")
             if val is not None:
-              print("  Max/Avg/Index Max rel. Error: ","{:10.2%}".format(np.max(val)),
-                    "{:10.2%}".format(np.average(val)),
+              print("  Max/Avg/Index Max rel. Error: ","{:6.3e}%".format(np.max(val)),
+                    "{:6.3e}%".format(np.average(val)),
                     "{:3d}".format(np.argmax(val)))
             else:
               print("  Max rel. Error: ",str(val))
@@ -255,7 +255,7 @@ class CompareMc(CompareAbs):
     self.m=model
     self.mref=modelref
     # the allowed difference between the line fluxes
-    self.d=1.e-4
+    self.d=1.e-10
     
   
   def compareAbundances(self):
@@ -265,6 +265,14 @@ class CompareMc(CompareAbs):
     Assumes that both models used the same number of ages and species in the same order.
     """    
     return self.diffArray(self.m.abundances,self.mref.abundances,self.d)
+
+  def compareRatecoefficients(self):
+    """
+    Compares the rate coefficients of two molecular cloud (0D chemistry) models. 
+    
+    Assumes that both models have exactly the same chemical reactions in the same order.
+    """    
+    return self.diffArray(self.m.ratecoefficients,self.mref.ratecoefficients,self.d)
 
 
 def eval_model_type(modelDir):
