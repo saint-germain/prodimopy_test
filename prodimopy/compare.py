@@ -254,8 +254,9 @@ class CompareMc(CompareAbs):
   def __init__(self,model,modelref):
     self.m=model
     self.mref=modelref
-    # the allowed difference between the line fluxes
-    self.d=1.e-10
+    # the allowed relative difference between two values 
+    self.d=1.e-5
+    self.drc=1.e-8 # the difference for the rate coefficients
     
   
   def compareAbundances(self):
@@ -272,7 +273,7 @@ class CompareMc(CompareAbs):
     
     Assumes that both models have exactly the same chemical reactions in the same order.
     """    
-    return self.diffArray(self.m.ratecoefficients,self.mref.ratecoefficients,self.d)
+    return self.diffArray(self.m.ratecoefficients,self.mref.ratecoefficients,self.drc)
 
 
 def eval_model_type(modelDir):
