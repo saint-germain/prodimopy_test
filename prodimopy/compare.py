@@ -79,15 +79,16 @@ class CompareAbs(object):
           ok,val=cfun()
           
           if ok:
-            print("{:8s}".format("OK"))
+            print("{:8s}".format("OK"),end="")
           else:
             print("{:8s}".format("FAILED"),end="")
-            if val is not None:
-              print("  Max/Avg/Index Max rel. Error: ","{:6.3e}%".format(np.max(val)),
-                    "{:6.3e}%".format(np.average(val)),
-                    "{:3d}".format(np.argmax(val)))
-            else:
-              print("  Max rel. Error: ",str(val))
+          
+          if val is not None:
+            print("  Max/Avg/Index Max rel. Error: ","{:6.3e}%".format(np.max(val)),
+                  "{:6.3e}%".format(np.average(val)),
+                  "{:3d}".format(np.argmax(val)))
+          else:
+            print("  Max rel. Error: ",str(val))
 
 
 class Compare(CompareAbs):
@@ -115,6 +116,7 @@ class Compare(CompareAbs):
     self.lAbundances=1.e-30
     self.dZetaCR=self.d
     self.dZetaX=5.e-1 # FIXME: 50% , should not be that high
+    self.dHX=1.e-3 # FIXME: 50% , should not be that high
     self.lZetaX=1.e-25
     self.specCompare=("e-","H2","CO","H2O","N2","N2#","CO#","H2O#","H3","H3+","HCO+","HN2+","SO2","SiO",
                       "Ne+","Ne++","H+","OH","C+","S+","Si+","CN","HCN","NH3")
@@ -238,7 +240,16 @@ class Compare(CompareAbs):
     self.mref.zetaX[self.mref.zetaX < self.lZetaX]=self.lZetaX
     
     return self.diffArray(self.m.zetaX,self.mref.zetaX,self.dZetaX)
-  
+
+  def compareHX(self):
+    '''
+    checks the Xray energy deposition rate
+    '''
+        # set low values to zero 
+#    self.m.Hx[self.m.zetaX < self.lZetaX]=self.lZetaX
+#    self.mref.Hx[self.mref.zetaX < self.lZetaX]=self.lZetaX
+    
+    return self.diffArray(self.m.Hx,self.mref.Hx,self.dHX)  
 
 class CompareMc(CompareAbs): 
   """
@@ -255,8 +266,8 @@ class CompareMc(CompareAbs):
     self.m=model
     self.mref=modelref
     # the allowed relative difference between two values 
-    self.d=1.e-5
-    self.drc=1.e-8 # the difference for the rate coefficients
+    self.d=1.e-10
+    self.drc=1.e-10 # the difference for the rate coefficients
     
   
   def compareAbundances(self):
@@ -291,11 +302,18 @@ def eval_model_type(modelDir):
   
   FIXME: this is maybe not the best place for this routine
   FIXME: provide constants for the values (what's the best way to do this in pyhton?)
+  FIXME: this is just a quick hack, it would be better to use the parameters in Parameter.in
   
   """
-  mtype="prodimo"
-  if os.path.isfile(modelDir+"/Molecular_Cloud_Input.in"):
+
+  
+  if os.path.isfile(modelDir+"/ProDiMo_01.out"):
+    mtype = "prodimoTD"
+  
+  elif os.path.isfile(modelDir+"/Molecular_Cloud_Input.in"):
     mtype="mc"
+  else:
+      mtype="prodimo"
   
   return mtype
 
