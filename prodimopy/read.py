@@ -1179,6 +1179,12 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     filenameLineFlux=filenameLineFlux.replace(".out",rpstr)  
     
   f,dummy = _getfile(filename, directory, tarfile)
+  
+  # FIXME: with this the calling rouinte can continue
+  # The calling routine has to take care of that
+  # But this is not very nice 
+  if f is None: return None
+  
   # read all date into the memory
   # easier to handle afterwards  
   lines = f.readlines()
