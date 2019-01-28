@@ -72,7 +72,7 @@ setup(
                       'matplotlib',
                       'numpy',
                       'scipy',
-                      'astropy>=1.3'],
+                      'astropy>=1.3,<3'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
