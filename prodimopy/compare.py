@@ -84,8 +84,8 @@ class CompareAbs(object):
             print("{:8s}".format("FAILED"),end="")
           
           if val is not None:
-            print("  Max/Avg/Index Max rel. Error: ","{:6.3e}%".format(np.max(val)),
-                  "{:6.3e}%".format(np.average(val)),
+            print("  Max/Avg/Index Max rel. Error: ","{:6.3f}%".format(100.0*np.max(val)),
+                  "{:6.3f}%".format(100.0*np.average(val)),
                   "{:3d}".format(np.argmax(val)))
           else:
             print("  Max rel. Error: ",str(val))
@@ -106,19 +106,25 @@ class Compare(CompareAbs):
     self.mref=modelref
     # the allowed difference between the line fluxes
     self.d=1.e-2
-    self.dcdnmol=1.0  # the allowed differences for the column densities (radial and vertical)
+    self.dcdnmol=0.5  # the allowed differences for the column densities (radial and vertical)
                       # chemistry is difficult and uncertain :) FIXME: this has to become better, there 
                       # a simply some columns which usually fail an require time-dependent chemistry and 
-                      # the outcome seems to depend on numerical uncertainties ... 
+                      # the outcome seems to depend on numerical uncertainties ...
+    # (e.g. 7% point in the column density goes crazy ... still oka                   
+    self.fcdnmol= 0.1   
     self.dTgas=5e-1   # FIXME: 50% Tgas is also quite sensitive, but lower would be better
     self.dLineFluxes=5.e-2  # 5% for line fluxes
     self.dAbundances=1.e-2  # chemistry is difficult and uncertain :)     
     self.lAbundances=1.e-30
     self.dZetaCR=self.d
-    self.dZetaX=5.e-1 # FIXME: 50% , should not be that high
-    self.dHX=1.e-3 # FIXME: 50% , should not be that high
+    self.dZetaX=3.e-1 # FIXME: 50% , should not be that high
+    self.dHX=3.e-1 # FIXME: 50% , should not be that high
     self.lZetaX=1.e-25
-    self.specCompare=("e-","H2","CO","H2O","N2","N2#","CO#","H2O#","H3","H3+","HCO+","HN2+","SO2","SiO",
+#    self.specCompare=("e-","H2","CO","H2O","Ne+","Ne++","H+")
+#    self.specCompare=("N2","N2#","CO#","H2O#","H3","H3+","HCO+","HN2+","SO2","SiO")
+#    self.specCompare=("CO","CN")
+
+    self.specCompare=("e-","H2","CO","H2O","N2","N2#","CO#","H2O#","H3+","HCO+","HN2+","SO2","SiO",
                       "Ne+","Ne++","H+","OH","C+","S+","Si+","CN","HCN","NH3")
 
       
@@ -163,8 +169,22 @@ class Compare(CompareAbs):
     specidxM=[self.m.spnames[idx] for idx in self.specCompare if idx in self.m.spnames]    
     #print(specidxM)    
     specidxMref=[self.mref.spnames[idx] for idx in self.specCompare if idx in self.mref.spnames] 
-     
-    return self.diffArray(self.m.cdnmol[:,0,specidxM],self.mref.cdnmol[:,0,specidxMref],self.dcdnmol)
+    
+    ok,diffarray= self.diffArray(self.m.cdnmol[:,0,specidxM],self.mref.cdnmol[:,0,specidxMref],self.dcdnmol)
+    
+    # if false check if it is only a certain fraction of the columns, it than can 
+    # be still okay
+    # is not really elegant I would say
+    # TODO: also somehow return the number of failed columns
+    # TODO: maybe merge rcdnmol
+    if ok is False:
+      ok=True # and check if any columns faild    
+      for i in range(len(specidxMref)):
+        faildcolumns=(diffarray[:,i]>self.dcdnmol).sum()
+        if ((float(faildcolumns)/float(len(diffarray[:,i])))>self.fcdnmol):
+          ok=False
+                
+    return ok,diffarray
 
   def compareRcdnmol(self):
     ''' 
@@ -176,7 +196,21 @@ class Compare(CompareAbs):
     #print(specidxM)    
     specidxMref=[self.mref.spnames[idx] for idx in self.specCompare if idx in self.mref.spnames] 
 
-    return self.diffArray(self.m.rcdnmol[-1,:,specidxM],self.mref.rcdnmol[-1,:,specidxMref],self.dcdnmol)
+    ok,diffarray= self.diffArray(self.m.rcdnmol[-1,:,specidxM],self.mref.rcdnmol[-1,:,specidxMref],self.dcdnmol)
+
+    # if false check if it is only a certain fraction of the columns, it than can 
+    # be still okay
+    # is not really elegant I would say
+    # TODO: also somehow return the number of failed columns
+    # TODO: maybe merge Cdnmol
+    if ok is False:
+      ok=True # and check if any columns faild    
+      for i in range(len(specidxMref)):
+        faildcolumns=(diffarray[:,i]>self.dcdnmol).sum()
+        if ((float(faildcolumns)/float(len(diffarray[:,i])))>self.fcdnmol):
+          ok=False
+
+    return ok,diffarray 
   
   def compareDustOpac(self):
     '''
