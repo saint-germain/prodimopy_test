@@ -287,7 +287,7 @@ class Compare(CompareAbs):
 
 class CompareMc(CompareAbs): 
   """
-  Class for comparing to ProDiMo models of type :class:`prodimopy.read_mc.DataMc`       
+  Class for comparing two ProDiMo models of type :class:`prodimopy.read_mc.DataMc`       
   
   Every compare Function returns true or false, and the relative differences
   (in case of arrays these are arrays). 
@@ -301,6 +301,7 @@ class CompareMc(CompareAbs):
     self.mref=modelref
     # the allowed relative difference between two values 
     self.d=1.e-10
+    self.dabundance=1.e-5
     self.drc=1.e-10 # the difference for the rate coefficients
     
   
@@ -310,7 +311,10 @@ class CompareMc(CompareAbs):
     
     Assumes that both models used the same number of ages and species in the same order.
     """    
-    return self.diffArray(self.m.abundances,self.mref.abundances,self.d)
+    # Do not consider the first age entry at it is the initial conditions 
+    # that can vary from model two model and are not really a result
+    
+    return self.diffArray(self.m.abundances[1:,:],self.mref.abundances[1:,:],self.dabundance)
 
   def compareRatecoefficients(self):
     """
