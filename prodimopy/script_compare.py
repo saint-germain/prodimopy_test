@@ -35,8 +35,8 @@ def main(args=None):
     model2=pread_mc.read_mc("mc_output.txt",directory=args.model2)
     compare=pcomp.CompareMc(model1, model2)
   else:
-    model1=pread.read_prodimo(args.model1,readlineEstimates=False,td_fileIdx=args.tdIdx1)
-    model2=pread.read_prodimo(args.model2,readlineEstimates=False,td_fileIdx=args.tdIdx1)
+    model1=pread.read_prodimo(args.model1,readlineEstimates=True,td_fileIdx=args.tdIdx1)
+    model2=pread.read_prodimo(args.model2,readlineEstimates=True,td_fileIdx=args.tdIdx1)
     compare=pcomp.Compare(model1, model2)
     
   compare.doAll()
