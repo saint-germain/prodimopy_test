@@ -101,7 +101,7 @@ class Plot(object):
     '''
     Save and close the plot (Figure). 
     
-    If self.pdf is None than nothing is done and the figure is returend
+    If self.pdf is None than nothing is done and the figure is returned
     
     #set the transparent attribut (used rcParam savefig.transparent)
     '''    
@@ -176,6 +176,8 @@ class Plot(object):
       # just plot it again, is the easiest way (needs to be the same style etc)
       ax2.plot(x, y, color="black")
       ax2.set_ylabel(r"$\Sigma\,\mathrm{[g\,cm^{-2}]}$")
+      # FIXME: does not allow to manually set xlim
+      #        need to check if that works with the two scales
       ax2.set_xlim(min(x), max(x))
       
       # this needs to be done to get the correct scale
@@ -1464,9 +1466,12 @@ class Plot(object):
       patches.append(patch)
       
       if showContOrigin is True:
-        pointsc=self._getSEDana_boxpoints(lesti.wl, model,zr)
-        patchc = mpl.patches.Polygon(pointsc,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=1.0,linestyle="--")
-        patches.append(patchc)
+        if (model.sed is not None and model.sed.sedAna is not None):
+          pointsc=self._getSEDana_boxpoints(lesti.wl, model,zr)
+          patchc = mpl.patches.Polygon(pointsc,True,fill=False,
+                                       color=boxcolors[ibox],zorder=100,
+                                       linewidth=1.0,linestyle="--")
+          patches.append(patchc)
       
       ibox+=1
   
