@@ -452,7 +452,7 @@ class PlotModels(object):
     self._dokwargs(ax,**kwargs)          
     self._legend(ax,**kwargs)
   
-    return self._closefig(fig)  
+    return self._closefig(fig)
     
   def plot_tauline(self, models, lineIdent, xlog=True, **kwargs):
     """
@@ -610,8 +610,7 @@ class PlotModels(object):
     #   verticalalignment='bottom', horizontalalignment='left',
     #   transform=ax.transAxes,alpha=0.75)
       
-    self.pdf.savefig()
-    plt.close(fig) 
+    return self._closefig(fig)
   
   
   def plot_radial(self, models, fields, ylabel,zidx=0,**kwargs):
@@ -897,8 +896,7 @@ class PlotModels(object):
     #self._dokwargs(ax,kwargs)
     self._legend(ax,**kwargs)
     
-    self.pdf.savefig()
-    plt.close(fig)    
+    return self._closefig(fig)  
     
     
   def plot_abunradial(self, models, species, perH2=False,**kwargs):
@@ -1187,8 +1185,7 @@ class PlotModels(object):
     
     self._legend(ax,**kwargs)
     
-    self.pdf.savefig()
-    plt.close(fig)    
+    return self._closefig(fig)
     
   def plot_starspec_xray(self, models,nuInu=False,**kwargs): 
     '''
@@ -1299,7 +1296,8 @@ class PlotModels(object):
 
     return self._closefig(fig)
    
-  def plot_line_profil(self,models,wl,ident=None,linetxt=None,lineObs=None,**kwargs):
+  def plot_line_profil(self,models,wl,ident=None,linetxt=None,lineObs=None,
+                       normalized=False,**kwargs):
     '''
     Plots the line profile for the given line (id wavelength and line ident) 
     '''  
@@ -1320,6 +1318,11 @@ class PlotModels(object):
         linetxt=line.species+"@"+"{:.2f}".format(line.wl)+" $\mathrm{\mu m}$" 
       x = line.profile.velo           
       y = line.profile.flux-line.fcont  # remove the continuum
+      
+      # normalize to their peak
+      if normalized:
+        print("Normalize it")
+        y=y/np.max(y)
       
       ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name)
       
