@@ -26,16 +26,21 @@ class PlotCasasim(object):
   
   This class can be used together with :mod:`prodimoy.read_casasim`
   '''
-  def __init__(self, pdf):
+  def __init__(self, pdf,labelspacing=1.0):
     """
     
     Parameters
     ----------
     pdf : class:`matplotlib.backends.backend_pdf.PdfPages` 
       this object is used to save the plots in a pdf file.
+      
+    labelspacing : int
+      the spacing for the x and y labels in images in arcseconds. 
+      i.e. 1 weans there will be an x(y) tick every 1 arcsec
     
     """    
     self.pdf = pdf
+    self.labelspacing=labelspacing
     
   def _dokwargs(self,ax,**kwargs):
     '''
@@ -110,12 +115,25 @@ class PlotCasasim(object):
   
   
   def plot_cube(self, cube, nrow=3, ncol=3, cvel_idx=None,step=1, 
-                zlim=[None, None],rms=False,**kwargs):
+                zlim=[None, None],rms=False,mJy=False,
+                cb_format="%5.1f",
+                cb_fraction=0.015,
+                cb_pad=0.01,
+                cb_extend="neither",
+                vellabel_fontsize=5,
+                clevels=None,
+                ccolors=None,
+                **kwargs):
     """
     Plots a spectral line cube.
     """
     
     if cube is None: return
+    
+    scalefac=1.0
+    if mJy==True:
+      scalefac=1000.0
+    
     
     nimages = cube.data.shape[0]
     
@@ -130,8 +148,10 @@ class PlotCasasim(object):
     
     vmin = zlim[0]
     vmax = zlim[1]
-    if vmin is None: vmin = numpy.min(cube.data)
-    if vmax is None: vmax = numpy.max(cube.data)  
+    if vmin is None: vmin = numpy.nanmin(cube.data)
+    if vmax is None: vmax = numpy.nanmax(cube.data)
+    vmin=vmin*scalefac
+    vmax=vmax*scalefac  
   
   
     # cube.header['CRVAL1'] = 0.0
@@ -152,16 +172,24 @@ class PlotCasasim(object):
    
     for ir in range(nrow):
       for ic in range(ncol):
-        ax = axis[ir, ic]
-        iax = ir * ncol + ic         
+        
+        # in that case the axis array is only 1D
+        if nrow == 1:
+          ax = axis[ic]
+        else:        
+          ax = axis[ir, ic]
+        iax = ir * ncol + ic
+        
         velidx = cvel_idx + (iax - naxesh)*step
-        im = ax.imshow(cube.data[velidx, :, :], cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")      
+        
+        im = ax.imshow(cube.data[velidx, :, :]*scalefac, cmap="inferno", 
+                       vmin=vmin, vmax=vmax,origin="lower")
               
         # set the border of the coordinate frames to white
         # FIXME: spacing is hardcoded, that does not work always
         ax.coords[0].frame.set_color("white")
-        ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
-        ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
+        ax.coords[0].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
+        ax.coords[1].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
         if not (ir == nrow - 1 and ic == 0):
           ax.coords[0].set_ticklabel_visible(False)
         else:
@@ -175,11 +203,20 @@ class PlotCasasim(object):
         # print the velocities relative to the systemic velocities
         props = dict(boxstyle='round', facecolor='white', edgecolor="none")
         
-        ax.text(0.95, 0.95, "{:5.2f}".format(cube.vel[velidx] - cube.systemic_velocity * (u.km / u.s)), transform=ax.transAxes, fontsize=6,
-          verticalalignment='top', horizontalalignment="right", bbox=props)
+        ax.text(0.95, 0.95, "{:5.2f}".format(cube.vel[velidx] - cube.systemic_velocity * (u.km / u.s)), 
+                transform=ax.transAxes, fontsize=vellabel_fontsize,
+                verticalalignment='top', horizontalalignment="right", bbox=props)
         
         # mark the center
         ax.plot(cube.centerpix[0], cube.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=3)
+        
+        if clevels is not None:
+          if ccolors is None:
+            ccolors="black"
+          ax.contour(cube.data[velidx, :, :]*scalefac,np.array(clevels)*scalefac,origin="lower",
+                     linewidths=0.5,
+                     colors=ccolors)
+        
         
         # ax.axis('equal')
         self.add_beam(ax, cube)  
@@ -195,14 +232,17 @@ class PlotCasasim(object):
     
     # FIXME: format is hardcoded that does not work always
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
-    CB = fig.colorbar(im, ax=axis.ravel().tolist(), pad=0.02,
-                    format="%5.2f", fraction=0.015)  
+    CB = fig.colorbar(im, ax=axis.ravel().tolist(), format=cb_format,
+                       fraction=cb_fraction,pad=cb_pad,extend=cb_extend)  
     CB.set_ticks(ticks)
-    CB.set_label("[Jy/beam]")
-      
-    # plt.tight_layout(pad=0.1)
+    if mJy:
+      CB.set_label("[mJy/beam]")
+    else:  
+      CB.set_label("[Jy/beam]")
+    #plt.tight_layout(pad=0.1)
     
-    self._closefig(fig)
+    return self._closefig(fig)
+
 
   def plot_cube_cont(self, cube, nrow=3, ncol=3, zlim=[None, None],**kwargs):
     """
@@ -252,8 +292,8 @@ class PlotCasasim(object):
               
         # set the border of the coordinate frames to white
         ax.coords[0].frame.set_color("white")
-        ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
-        ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
+        ax.coords[0].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
+        ax.coords[1].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
         if not (ir == nrow - 1 and ic == 0):
           ax.coords[0].set_ticklabel_visible(False)
         else:
@@ -326,8 +366,8 @@ class PlotCasasim(object):
     # axes.coords[0].set_major_formatter('hh:mm:ss')     
     
     for ax in axes:
-      ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
-      ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
+      ax.coords[1].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
+      ax.coords[0].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
       ax.coords[0].frame.set_color("white")
       ax.set_xlabel("rel. RA ['']")
       
@@ -352,7 +392,7 @@ class PlotCasasim(object):
     CB.set_ticks(ticks)
     CB.set_label("[Jy/beam km/s]")
           
-    self._closefig(fig)
+    return self._closefig(fig)
   
   
   def plot_integrated(self, image, zlim=[None, None],mJy=False,**kwargs):
@@ -381,8 +421,8 @@ class PlotCasasim(object):
                    origin="lower")
     # ax.coords[0].set_major_formatter('hh:mm:ss')
     # FIXME: spacing is hardcoded that does not work always
-    ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
-    ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
+    ax.coords[1].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
+    ax.coords[0].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
     ax.coords[0].frame.set_color("white")
     
     # needs to be converted to pixels, that is the data unit
@@ -416,7 +456,7 @@ class PlotCasasim(object):
     CB.set_ticks(ticks)
     CB.set_label(clabel)
           
-    self._closefig(fig)
+    return self._closefig(fig)
 
 
   def plot_mom1_diff(self, imageObs,imageModel,imageDiff, zlim=[None, None],**kwargs):
@@ -461,8 +501,8 @@ class PlotCasasim(object):
                  verticalalignment='top', horizontalalignment="right", bbox=props)
     
     for ax in axes:
-      ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
-      ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
+      ax.coords[1].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
+      ax.coords[0].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
       ax.coords[0].frame.set_color("white")
       ax.set_xlabel("rel. RA ['']")
     # needs to be converted to pixels, that is the data unit
@@ -503,8 +543,8 @@ class PlotCasasim(object):
     ax.set_facecolor("black")
       
     im = ax.imshow(veldata, cmap="seismic", vmin=vmin, vmax=vmax,origin="lower")  
-    ax.coords[1].set_ticks(color="white", spacing=1.0 * u.arcsec)
-    ax.coords[0].set_ticks(color="white", spacing=1.0 * u.arcsec)
+    ax.coords[1].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
+    ax.coords[0].set_ticks(color="white", spacing=self.labelspacing * u.arcsec)
     ax.coords[0].frame.set_color("white")
     
     # needs to be converted to pixels, that is the data unit
@@ -616,9 +656,9 @@ class PlotCasasim(object):
     """
     Plots a spectral profile (histogram style).
     """
-    
-    if specprof is None: return
 
+    if specprof is None and models is None: return
+    
 
     
     fig, ax = plt.subplots(1, 1)
@@ -630,9 +670,10 @@ class PlotCasasim(object):
       for model,label in zip(models,modelNames):
         x, y = self.specprof_xy_hist(model)
         ax.plot(x, y, label=label)
-    
-    x, y = self.specprof_xy_hist(specprof)
-    ax.plot(x, y, label="Observation",color="black")  
+
+    if specprof is not None:
+      x, y = self.specprof_xy_hist(specprof)
+      ax.plot(x, y, label="Observation",color="black")  
     
     #pGrayBox=0.3
     #ax.fill_between(x, y *(1.0-pGrayBox), y * (1+pGrayBox), color='0.8')
@@ -648,7 +689,7 @@ class PlotCasasim(object):
       
     self._dokwargs(ax,**kwargs)
   
-    self._closefig(fig)
+    return self._closefig(fig)
 
 
   def plot_radprof(self, radprof, models=None,modelNames=None,pmGrayBox=0.25,**kwargs):
@@ -725,17 +766,25 @@ class PlotCasasim(object):
     return x, np.array(y)
     
     
-  def _closefig(self, fig):
+  def _closefig(self,fig):
     '''
-    save and close the plot
+    Save and close the plot (Figure). 
     
-    set the transparent attribut (used rcParam savefig.transparent)
+    If self.pdf is None than nothing is done and the figure is returned
     
-    FIXME: make it general together with the other plot stuff
+    FIXME: this routine exists in also in plot.py and plot_models etc. 
+           make it general
+    #set the transparent attribut (used rcParam savefig.transparent)
     '''    
-    self.pdf.savefig(figure=fig, transparent=False)
-    plt.close(fig)
     
+    #trans=mpl.rcParams['savefig.transparent']    
+    if self.pdf is not None:
+      self.pdf.savefig(figure=fig,transparent=False)
+      plt.close(fig)
+      return None
+    else:
+      return fig
+
   
 class AnchoredRectangle(AnchoredOffsetbox):
     def __init__(self, transform, width, height, loc,
