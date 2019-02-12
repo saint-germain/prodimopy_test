@@ -1118,6 +1118,43 @@ class DataStarSpec(object):
     self.nu = numpy.zeros(shape=(nlam))    
     self.Inu = numpy.zeros(shape=(nlam))    
 
+class DataReaction(object):
+  """
+  Data container for a chemical reaction in the Reaction Network   
+  of one particular ProDiMo model. That are the Reaction in Reactions.out 
+  
+  TODO: this is very preliminary and does not yet contain all the Information
+  """
+  def __init__(self):
+    self.id=None
+    """ int :
+    The Reaction Id ad is 
+    """
+    self.Uid=None
+    """ int :
+    The Umist reaction id ... it is unclear what this actually is.   
+    """
+    self.type=None
+    """ string :
+    The Reation type identifier as used in ProDiMo    
+    """
+    self.gasphase=None
+    """ boolean :
+    Gas phase reaction or not
+    """
+
+    " Still a lot of stuff missing but that's it for now"
+
+  def __str__(self):
+    output = str(self.id)
+    output += " "
+    output += str(self.Uid)
+    output += " "
+    output += str(self.type)
+    output += " "
+    output += str(self.gasphase)
+    return output   
+
 
 def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True, 
                  filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", 
@@ -1457,6 +1494,47 @@ def read_elements(directory,filename="Elements.out",tarfile=None):
     elements.massRatio[name]=float(fields[3])
     
   return elements
+
+def read_reactions(directory,filename="Reactions.out",tarfile=None):
+  """
+  Reads the Reactions.out file. 
+  
+  Parameters
+  ----------
+  directory : str 
+    the directory of the model
+    
+  filename: str 
+    an alternative Filename
+
+  Returns
+  -------
+  list(:class:`prodimopy.read.DataReation`) 
+    List of of chemical Reactions.
+    
+  FIXME: Not all data is read yet.
+  """
+
+  f,dummy = _getfile(filename, directory, tarfile)
+  if f is None:
+    return None
+
+  reactions=list()
+  for line in f:
+    
+    # Ignore the multpile temp
+    if ":" in line:
+      fields=line.split()
+      reaction=DataReaction()
+      reaction.id=int(fields[0])
+      reaction.Uid=int(fields[1])
+      reaction.type=fields[2].strip()
+      reaction.gasphase=fields[3].strip()=="T:"
+      reactions.append(reaction)
+    else:
+      "ignore the multipe temperature stuff for now"
+
+  return reactions
 
 
 def read_species(directory,pdata,filename="Species.out",tarfile=None):
