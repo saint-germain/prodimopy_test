@@ -125,7 +125,7 @@ class Compare(CompareAbs):
 #    self.specCompare=("CO","CN")
 
     self.specCompare=("e-","H2","CO","H2O","N2","N2#","CO#","H2O#","H3+","HCO+","HN2+","SO2","SiO",
-                      "Ne+","Ne++","H+","OH","C+","S+","Si+","CN","HCN","NH3")
+                      "Ne+","Ne++","H+","OH","C+","S+","Si+","N+","CN","HCN","NH3")
 
       
   def compareLineFluxes(self): 
@@ -146,6 +146,28 @@ class Compare(CompareAbs):
       return False,d
   
     return True,None
+  
+  def compareLineEstimates(self): 
+    '''
+    Compares the fluxes from the line estimates
+    Currently assumes that both models include the same lines in the same order.
+    
+    TODO: can actually be merged with compareLineFluxes
+    '''
+    if self.m.lineEstimates is None and self.mref.lineEstimates is None: return True,None
+    
+    if self.m.lineEstimates is not None and self.mref.lineEstimates is None: return False,None
+    
+    if self.m.lineEstimates is None and self.mref.lineEstimates is not None: return False,None       
+
+    mFluxes=np.array([x.flux for x in self.m.lineEstimates])
+    mrefFluxes=np.array([x.flux for x in self.mref.lineEstimates])
+    f,d=self.diffArray(mFluxes, mrefFluxes, self.dLineFluxes)
+    if f == False:
+      return False,d
+  
+    return True,None
+  
     
   def compareSED(self):
     """
