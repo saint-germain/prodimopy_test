@@ -689,7 +689,7 @@ class PlotModels(object):
       else:
         y = getattr(model, fieldname)[:, 0]                    
       
-      line, = ax.plot(x, y, self.styles[iplot], marker="+", color=self.colors[iplot], label=model.name)
+      line, = ax.plot(x, y, self.styles[iplot], marker="+", color=self.colors[iplot], label=model.name,ms=3)
       if self.styles[iplot]=="--": self._set_dashes(line)
       
       if "markradius" in kwargs:
