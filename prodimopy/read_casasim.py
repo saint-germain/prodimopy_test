@@ -314,7 +314,11 @@ class CASAImage(object):
       the header of the fits file. It is just a reference to the fits header.
       
     data : array_like(float)
-      the fits data. Assumes that there is only one HDU.
+      the fits data. Assumes that is always the image data.
+
+    btable : array_like
+      an additioanl extension (table). Assumes that it is a table with beam date
+      for e.g. a lie cube
       
     bmaj : float
       the major axis of the beam (same units as in the fits file)
@@ -343,10 +347,24 @@ class CASAImage(object):
       fitsdata= fits.open(filename)
       self.header=fitsdata[0].header
       self.data=fitsdata[0].data
+      # is there something more
+      # we always assume here it is a table with beam sizes and calculte 
+      if len(fitsdata) >1:
+        self.btable=fitsdata[1].data
+      else:
+        self.btable=None
     
-    self.bmaj=self.header["BMAJ"]
-    self.bmin=self.header["BMIN"]
-    self.bPA=self.header["BPA"]
+    if self.btable is not None:
+      #calculate an average beam sizes
+      # FIXME: that might not be always what somebody wants
+      # FIXME assumes that the beam size is in arcsec (usually it is gegree)
+      self.bmaj=numpy.average(self.btable.field(0))/3600.0
+      self.bmin=numpy.average(self.btable.field(1))/3600.0
+      self.bPA=numpy.average(self.btable.field(2))/3600.0
+    else:
+      self.bmaj=self.header["BMAJ"]
+      self.bmin=self.header["BMIN"]
+      self.bPA=self.header["BPA"]
         
     # this is all a bit strange but if it is even pixels now -1 is better
     # FIXME: this is not general
