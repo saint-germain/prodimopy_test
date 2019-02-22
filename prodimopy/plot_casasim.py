@@ -208,7 +208,7 @@ class PlotCasasim(object):
                 verticalalignment='top', horizontalalignment="right", bbox=props)
         
         # mark the center
-        ax.plot(cube.centerpix[0], cube.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=3)
+        ax.plot(cube.centerpix[0], cube.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=2)
         
         if clevels is not None:
           if ccolors is None:
@@ -341,6 +341,8 @@ class PlotCasasim(object):
     vmax = zlim[1]
     if vmin is None: vmin = numpy.nanmin([imageObs.data,imageDiff.data])
     if vmax is None: vmax = numpy.nanmax([imageObs.data,imageDiff.data]) 
+    #print("interated_diff: ",vmin,vmax,numpy.nanmin([imageDiff.data]),numpy.nanmax([imageDiff.data]))
+    
     # wcsim=wcs.WCS(image.header)    
     # wcsrel=linear_offset_coords(wcsim, image.centerpix)
     fig, axes = plt.subplots(1, 3, subplot_kw=dict(projection=imageObs.wcsrel),
@@ -431,7 +433,8 @@ class PlotCasasim(object):
     ax.set_ylabel("rel. Dec. ['']")
     
     # mark the center
-    ax.plot(image.centerpix[0], image.centerpix[1], marker="x", color="0.6", linewidth=0.5, ms=2)
+    # FIXME: alow to control the size of the cross
+    ax.plot(image.centerpix[0], image.centerpix[1], marker="x", color="0.6", linewidth=0.2, ms=1)
   
     #ax.axvline(image.centerpix[0],color="0.6",linewidth=0.8,linestyle=":")  
     #ax.axhline(image.centerpix[1],color="0.6",linewidth=0.8,linestyle=":")
@@ -708,7 +711,7 @@ class PlotCasasim(object):
         modelNames=["model"+"{:0d}".format(i+1) for i in range(len(models))]        
       
       for model,label in zip(models,modelNames):
-        ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label=label)
+        ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label=label,elinewidth=0.5)
 
     if pmGrayBox is not None:
       ax.fill_between(radprof.arcsec, 
@@ -718,7 +721,7 @@ class PlotCasasim(object):
     # ax.plot(radprof.arcsec,radprof.flux)
     ax.errorbar(radprof.arcsec, radprof.flux, 
                 yerr=radprof.flux_err, label="observation",
-                color="black")
+                color="black",elinewidth=0.5)
     
     # indicate the beam 
     ax.set_xlabel("radius ['']")
@@ -736,7 +739,7 @@ class PlotCasasim(object):
       
     self._dokwargs(ax,**kwargs)
   
-    self._closefig(fig)
+    return self._closefig(fig)
 
 
   def specprof_xy_hist(self, specprof):
