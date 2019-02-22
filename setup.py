@@ -56,7 +56,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='astonomy astrophysics star-formation protoplanetary-disks',
+    keywords='astronomy astrophysics star-formation protoplanetary-disks',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
@@ -69,10 +69,10 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     # FIXME: include proper version numbers
     install_requires=[
-                      'matplotlib',
-                      'numpy',
-                      'scipy',
-                      'astropy>=1.3,<3'],
+                      'astropy>2'
+                      'matplotlib>2',
+                      'numpy',   # no special requirements, but astropy has some
+                      'scipy'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
