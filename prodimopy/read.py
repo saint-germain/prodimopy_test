@@ -379,6 +379,12 @@ class Data_ProDiMo(object):
     Holds the provided SED observations (photometry, spectra, extinction etc.)
     TODO: maybe put all the observations into one object (e.g. also the lines)
     """
+    self.lineObs = None
+    """ :class:`prodimopy.read.DataLineObs` :
+    Holds the provide line observations (e.g. LINEObs.dat and line profiles)
+    TODO: maybe put all the observations into one object (e.g. also the lines)
+    """
+
    
   def __str__(self):
     output = "Info ProDiMo.out: \n"
@@ -1431,6 +1437,8 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
 
   if readObs:
     data.sedObs=read_continuumObs(directory)
+    if data.lines is not None:
+      data.lineObs=read_lineObs(directory, len(data.lines))
     
   print("INFO: Reading time: ","{:4.2f}".format(timer()-startAll)+" s")  
   
