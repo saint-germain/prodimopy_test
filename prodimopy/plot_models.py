@@ -199,6 +199,9 @@ class PlotModels(object):
     lticks = list()
     # for some reason this dummy is require
     lticks.append("")
+    
+    ymin=1.e100
+    ymax=1.e-100
     for model in models:                  
       iline = 1  
       x = list()
@@ -252,6 +255,10 @@ class PlotModels(object):
       ax.plot(x, y, marker=self.markers[imodel], linestyle='None', ms=ms,mew=mew, 
               color=self.colors[imodel], markeredgecolor=self.colors[imodel], label=model.name,
               zorder=10)
+            
+      ymin=min(np.min(np.array(y)),ymin)
+      ymax=max(np.max(np.array(y)),ymax)
+      print(ymin,ymax)
       
       if showCont:
         # shift the continuum a bit
@@ -262,7 +269,7 @@ class PlotModels(object):
       imodel = imodel + 1  
 
     # boxes for factor 3 and 10 relative to the last model
-    if showBoxes:
+    if showBoxes and lineObs is None:
       for i in range(len(x)):
         xc=x[i]-0.3
         yc=y[i]/3.0
@@ -307,6 +314,8 @@ class PlotModels(object):
     
     if "ylim" in kwargs: 
       ax.set_ylim(kwargs["ylim"])
+    else:
+      ax.set_ylim(ymin/2,ymax*2)
       
     ax.semilogy()        
     
