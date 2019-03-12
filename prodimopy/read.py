@@ -349,6 +349,12 @@ class Data_ProDiMo(object):
     radiative transfer with ray tracing. 
     see :class:`prodimopy.read.DataSED` for details.
     """
+    self.contImages = None            
+    """ :class:`prodimopy.read.DataContinuumImages` :
+    Reads the continuum images data (image.out) if available.
+    The full images are only read if requested for a particular wavelength
+    see :class:`prodimopy.read.DataContinuumImages` for details.
+    """
     self.starSpec = None
     """ :class:`prodimopy.read.DataStarSpec` :
     The (unattenuated) stellar input spectrum.  
@@ -1099,7 +1105,71 @@ class DataSEDAna(object):
     self.z15=numpy.zeros(shape=(nlam,nx))
     self.z85=numpy.zeros(shape=(nlam,nx))
 
+class DataContinuumImages(object):
+  '''
+  Holds the continuum images (image.out) and provides a method to read 
+  one particular image.   
+  
+  The coordinates x,y are the same for all images, and only stored once.
+  
+  '''
+  def __init__(self,nlam,nx,ny,filepath="./image.out"):
+    self.nlam=None
+    """ int: 
+    The number of wavelenthpoint (== number of images)
+    """
+    self.lams=numpy.zeros(shape=(nlam))
+    """ array_like(float,ndim=1) :
+    The wavelengths   
+    `UNIT:` micron, `DIMS:` (nlam)
+    """
+    self.nx=nx
+    """ int: 
+    The number of x axis points (radial) of the image
+    """
+    self.ny=ny
+    """ int: 
+    The number of y axis points (or theta) of the image
+    """
+    self.x=numpy.zeros(shape=(nx,ny))
+    """ array_like(float,ndim=2) :
+    x coordindates    
+    `UNIT:` au, `DIMS:` (nx,ny)
+    """
+    self.y=numpy.zeros(shape=(nx,ny))
+    """ array_like(float,ndim=2) :
+    y coordindates    
+    `UNIT:` au, `DIMS:` (nx,ny)
+    """
+    self._filepath=filepath
 
+  def getImage(self,wl):
+    '''
+    Reads the intensities at a certain wavelength (image) from the image.out 
+    file.
+    
+    The image with the closes wavelength to the given wavelength (wl) will be 
+    returned
+    
+    Parameters
+    ----------
+    wl : float 
+    the wavelength in micron of the requested image
+
+    Returns
+    -------
+    array_like(float,ndim=2) :
+    the image intensitis in units ... (dimension nx,ny) 
+    '''
+    idx=numpy.argmin(numpy.abs(self.lams-wl))
+    
+    # read the colum according the the wavelength, first 4 columns are 
+    # ix,iz, x, y ... not required here
+    intens=numpy.loadtxt(self._filepath,skiprows=6,usecols=4+idx)
+        
+    return intens.reshape((self.nx,self.ny)),self.lams[idx]
+    
+    
 class DataBgSpec(object):
   '''
   Backgound field input spectrum  
@@ -1163,7 +1233,8 @@ class DataReaction(object):
 
 
 def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True, 
-                 filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", 
+                 readImages=True,filename="ProDiMo.out", 
+                 filenameLineEstimates="FlineEstimates.out", 
                  filenameLineFlux="line_flux.out",
                  td_fileIdx=None):
   '''
@@ -1439,6 +1510,9 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
     data.sedObs=read_continuumObs(directory)
     if data.lines is not None:
       data.lineObs=read_lineObs(directory, len(data.lines))
+      
+  if readImages:
+    data.contImages=read_continuumImages(directory)
     
   print("INFO: Reading time: ","{:4.2f}".format(timer()-startAll)+" s")  
   
@@ -1871,7 +1945,35 @@ def read_gas(directory,filename="gas_cs.out",tarfile=None):
  
   f.close()
 
-  return gas  
+  return gas
+
+def read_continuumImages(directory,filename="image.out"):
+  '''
+  Reads the image.out file. 
+  To avoid unnecessary memor usage, the Intensities are not read in this 
+  routine. For this use :func:`~prodimopy.DataContinuumImages.get_image` 
+  '''
+  
+  f,fname=_getfile(filename, directory=directory)
+  
+  if f is None: return None
+  
+  dummy=f.readline()
+  nrnt=f.readline().split()
+  nlam=f.readline().split()[0]
+
+  images=DataContinuumImages(int(nlam), int(nrnt[0]), int(nrnt[1]),filepath=fname)
+  
+  images.lams[:]=numpy.array(f.readline().split()).astype(numpy.float)
+  f.close()
+  
+  # Read the coordinates
+  xy=numpy.loadtxt(fname,skiprows=6,usecols=(2,3))
+  images.x=xy[:,0].reshape(images.nx,images.ny)
+  images.y=xy[:,1].reshape(images.nx,images.ny)
+
+  return images
+  
 
 def read_continuumObs(directory,filename="SEDobs.dat"):
   ''' 
@@ -1902,15 +2004,32 @@ def read_continuumObs(directory,filename="SEDobs.dat"):
     contObs.fnuErgErr = (contObs.fnuJyErr*u.Jy).cgs.value
   
   # check for the spectrum files
-  fnames=glob.glob(directory+"/*spec.dat")
+  # types of spectra that are understood, is more of a unofficial naming convention
+  types=["Spitzer","ISO","PACS","SPIRE"]
+  fnames=list()
+  for spectype in types:
+    fnames.extend(glob.glob(directory+"/"+spectype+"*spec*.dat"))
+  
   if fnames is not None and len(fnames)>0:    
     if contObs is None:
-      contObs=DataContinuumObs()
-      
+      contObs=DataContinuumObs()      
     contObs.specs=list()
     
   for fname in fnames:
-    spec=numpy.loadtxt(fname, skiprows=3)    
+    if types[0] in fname:
+      spec=numpy.loadtxt(fname, skiprows=3)
+    elif types[1] in fname:
+      spec=numpy.loadtxt(fname, skiprows=1)
+    elif types[2] in fname:
+      spec=numpy.loadtxt(fname)
+    elif types[3] in fname:
+      spec=numpy.loadtxt(fname,skiprows=1)
+      # convert frequency to micron, SPIRE data       
+      spec[:,0]=(spec[:,0]* u.GHz).to(u.micron, equivalencies=u.spectral()).value
+    else:
+      print(fname)
+      spec=numpy.loadtxt(fname)
+    
     contObs.specs.append(spec)
     
   # check if there is some extinction data
