@@ -8,8 +8,9 @@ import matplotlib.ticker as plticker
 import numpy as np
 from math import pi
 
-import prodimopy.plot as pplot
-import prodimopy.extinction as ext
+# has to be this way because of circular imports
+import prodimopy.plot
+import prodimopy.extinction
 
 import astropy.units as u
 import astropy.constants as const
@@ -238,7 +239,7 @@ class PlotModels(object):
           if xLabelGHz is True:
             lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.1f}".format(line.frequency)+r"$\,$GHz")
           else:
-          # lticks.append(r"$\mathrm{"+pplot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
+          # lticks.append(r"$\mathrm{"+prodimopy.plot.spnToLatex(ident[0])+r"}$ "+r"{:.2f}".format(line.wl))
           # FIXME: spnToLatex does not work here with all line names ... 
             lticks.append(r"$\mathrm{" + line.ident + r"}$ " + r"{:.2f}".format(line.wl))   
            
@@ -454,9 +455,9 @@ class PlotModels(object):
     
     ax.set_xlabel(r"r [au]")    
     if relToH==True:
-      ax.set_ylabel(r"average $\mathrm{\epsilon(" + pplot.spnToLatex(species) + ")}$ ")
+      ax.set_ylabel(r"average $\mathrm{\epsilon(" + prodimopy.plot.spnToLatex(species) + ")}$ ")
     else:
-      ax.set_ylabel(r"N$_\mathrm{" + pplot.spnToLatex(species) + "}$ " + "[cm$^{-2}$]")
+      ax.set_ylabel(r"N$_\mathrm{" + prodimopy.plot.spnToLatex(species) + "}$ " + "[cm$^{-2}$]")
   
     self._dokwargs(ax,**kwargs)          
     self._legend(ax,**kwargs)
@@ -559,7 +560,7 @@ class PlotModels(object):
       return 
             
     ax.set_xlabel(r"r [au]")
-    ax.set_ylabel(r"average $\epsilon(\mathrm{" + pplot.spnToLatex(species) + "})$")
+    ax.set_ylabel(r"average $\epsilon(\mathrm{" + prodimopy.plot.spnToLatex(species) + "})$")
     
     # do axis style
     ax.semilogy()     
@@ -608,7 +609,7 @@ class PlotModels(object):
 #     ax2.set_xticklabels(["{:.2f}".format(x) for x in nhver_to_zr(ix, ax.get_xticks(), model)])
     
     ax.set_xlabel(r"$\mathrm{\log N_{<H>} [cm^{-2}]}$ @" + rstr)
-    ax.set_ylabel(r"$\mathrm{\epsilon(" + pplot.spnToLatex(species) + "})$")    
+    ax.set_ylabel(r"$\mathrm{\epsilon(" + prodimopy.plot.spnToLatex(species) + "})$")    
     
     # do axis style
     ax.semilogy()     
@@ -946,7 +947,7 @@ class PlotModels(object):
     ax.semilogy()    
             
     ax.set_xlabel(r"r [au]")    
-    ax.set_ylabel(r"midplane $\epsilon(\mathrm{" + pplot.spnToLatex(species) + "})$")    
+    ax.set_ylabel(r"midplane $\epsilon(\mathrm{" + prodimopy.plot.spnToLatex(species) + "})$")    
     
     self._dokwargs(ax, **kwargs)  
     self._legend(ax,**kwargs)
@@ -984,7 +985,7 @@ class PlotModels(object):
         # idx validity of extinction function
         ist=np.argmin(np.abs(x-0.0912))
         ien=np.argmin(np.abs(x-6.0))
-        y[ist:ien]=y[ist:ien]/ext.reddening(x[ist:ien]*1.e4, a_v=model.sedObs.A_V,r_v=model.sedObs.R_V, model="f99")
+        y[ist:ien]=y[ist:ien]/prodimopy.extinction.reddening(x[ist:ien]*1.e4, a_v=model.sedObs.A_V,r_v=model.sedObs.R_V, model="f99")
       
       dist = ((model.sed.distance*u.pc).to(u.cm)).value                          
       pl=ax.plot(x, y, self.styles[iplot], marker=None, color=self.colors[iplot], label=model.name,

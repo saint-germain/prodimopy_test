@@ -10,7 +10,11 @@ from matplotlib.ticker import MaxNLocator
 import astropy.units as u
 import math
 import copy
-import prodimopy.extinction as ext
+
+# has to be this way because of circular imports
+import prodimopy.extinction 
+import prodimopy.plot_models
+
 
 class Plot(object):
   '''
@@ -1190,7 +1194,7 @@ class Plot(object):
       # idx validity of extinction function
       ist=np.argmin(np.abs(x-0.0912))
       ien=np.argmin(np.abs(x-6.0))
-      y[ist:ien]=y[ist:ien]/ext.reddening(x[ist:ien]*1.e4, a_v=sedObs.A_V,r_v=sedObs.R_V, model="f99")
+      y[ist:ien]=y[ist:ien]/prodimopy.extinction.reddening(x[ist:ien]*1.e4, a_v=sedObs.A_V,r_v=sedObs.R_V, model="f99")
     
     dist = ((model.sed.distance*u.pc).to(u.cm)).value
     
@@ -1631,6 +1635,25 @@ class Plot(object):
     self._dokwargs(axh,**kwargs)
     self._dokwargs(axc,**kwargs)
   
+    return self._closefig(fig)
+
+  def plot_lines(self, model, lineidents, useLineEstimate=True,jansky=False,
+                 showBoxes=True,lineObs=None,lineObsLabel="Obs.",peakFlux=False,
+                 showCont=False,xLabelGHz=False,showGrid=True,**kwargs):
+    """
+    Plots a selection of lines or lineEstimates.
+  
+    Simply uses :func:`~prodimopy.plot.PlotModels.plot_lines`
+
+    """
+    print("PLOT: plot_lines ...")
+    
+    # need the instance
+    ppm=prodimopy.plot_models.PlotModels(None)
+    fig=ppm.plot_lines([model], lineidents, useLineEstimate=useLineEstimate,jansky=jansky,
+                 showBoxes=showBoxes,lineObs=lineObs,lineObsLabel=lineObsLabel,peakFlux=peakFlux,
+                 showCont=showCont,xLabelGHz=xLabelGHz,showGrid=showGrid,**kwargs)
+
     return self._closefig(fig)
 
 
