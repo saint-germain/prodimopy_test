@@ -46,7 +46,7 @@ class CompareAbs(object):
 
   def diff(self,val,valref,diff):
     """
-    Checks the relative difference between to values.
+    Checks the relative difference between two values.
     
     Parameters
     ----------
@@ -57,7 +57,7 @@ class CompareAbs(object):
       the reference value
       
     diff : float
-      if the values of the arrays differe only by <diff the are considered
+      if the two values differe only by <diff the are considered
       as equal.
     """
     d=abs(val/valref-1.0)
@@ -145,7 +145,7 @@ class Compare(CompareAbs):
     if f == False:
       return False,d
   
-    return True,None
+    return True,d
   
   def compareLineEstimates(self): 
     '''
@@ -166,7 +166,7 @@ class Compare(CompareAbs):
     if f == False:
       return False,d
   
-    return True,None
+    return True,d
   
     
   def compareSED(self):
@@ -181,7 +181,32 @@ class Compare(CompareAbs):
     if f == False:
       return False,d
     
-    return True,None  
+    return True,d  
+  
+  def compareContinuumImages(self):
+    """
+    Compares some of the continuum images.  
+    """
+    if self.m.contImages is None and self.mref.contImages is None: return True,None
+    if self.m.contImages is not None and self.mref.contImages is None: return False,None
+    if self.m.contImages is None and self.mref.contImages is not None: return False,None
+    
+    
+    for wl in [1,10,100,1000]:
+      imm,immwl=self.m.contImages.getImage(wl)
+      imref,imrefwl=self.mref.contImages.getImage(wl)    
+    
+      f,d=self.diff(immwl, imrefwl, self.d)
+      if f == False:
+        return False,d
+    
+      f,d=self.diffArray(imm, imref, self.d)
+    
+      if f == False:
+        return False,d
+    
+    return True,d  
+  
   
   def compareCdnmol(self):
     ''' 
