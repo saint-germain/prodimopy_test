@@ -65,7 +65,8 @@ def main(args=None):
       
     pp.plot_dust_opac(pd,ylim=[1.e-1,None])
       
-    pp.plot_NH(pd)
+    #pp.plot_NH(pd,sdscale=True,ylim=[5.e27,5.e29])
+    pp.plot_NH(pd,sdscale=True,ylim=[4.e23,5.e27],xlim=[None,0.038],xlog=False)
     
     # here the default contour plots are used not very fancy currently. 
     # you can use latex for the labels!
@@ -89,6 +90,8 @@ def main(args=None):
     pp.plot_cont(pd, pd.tg, r"$\mathrm{T_{dust} [K]}$",contour=True,
                     zlim=[5,1500],extend="both")
     
+    pp.plot_cont(pd, pd.zetaX, r"$\mathrm{\zeta_{X}\,per\,H\,[s^{-1}]}$",contour=True,
+                    zlim=[1.e-19,1.e-13],extend="both")
     
   
     # this plots the vertical abundances at different radii for different species
@@ -105,14 +108,19 @@ def main(args=None):
     for spname in species:
       pp.plot_abuncont(pd, spname, zr=True,xlog=True,ylog=False, zlim=[1.e-4,3.e-15],extend="both")
       
+      
+    # Line Origin plot for two lines and the continuum (if available)
+    pp.plot_line_origin(pd,[["CO",1300.],["C18O",1365.]],
+                        pd.nmol[:,:,pd.spnames["CO"]],label=r"log n(CO) $\mathrm{[cm^{-3}]}$",
+                        zlim=[1.e-3,1.e8],extend="both",showContOrigin=True)
   
-    cth2lines=pd.selectLineEstimates("C2H2_H")
-    fluxes=[lest.flux for lest in cth2lines]
-    imax=numpy.argmax(fluxes)
-    print(cth2lines[imax],cth2lines[imax].wl,cth2lines[imax].ident)    
+        
+    if pd.lines is not None:
+      lineidents=[[line.ident,line.wl] for line in pd.lines]      
+      
+      pp.plot_lines(pd,lineidents,showBoxes=False,lineObs=pd.lineObs,useLineEstimate=False)
   
-    pp.plot_line_origin(pd,[[cth2lines[imax].ident,cth2lines[imax].wl]],
-                        pd.nmol[:,:,pd.spnames["C2H2"]],xlim=[None,30],ylim=[None,0.4],
-                        zlim=[1.e-3,1.e8],extend="both")
+      for ident in lineidents:
+        pp.plot_lineprofile(pd, ident[1], ident[0],lineObs=pd.lineObs)
   
   
