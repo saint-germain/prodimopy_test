@@ -330,17 +330,24 @@ class PlotCasasim(object):
     
     self._closefig(fig)
 
-  def plot_integrated_diff(self, imageObs,imageModel,imageDiff, zlim=[None, None],**kwargs):
+  def plot_integrated_diff(self, imageObs,imageModel,imageDiff, zlim=[None, None],
+                           mJy=False,**kwargs):
     """
     Plots an image and its diff Model-Obs
     """
     
     if imageObs is None or imageModel is None or imageDiff is None: return
     
+    scalefac=1.0
+    if mJy==True:
+      scalefac=1000.0    
+    
     vmin = zlim[0]
     vmax = zlim[1]
     if vmin is None: vmin = numpy.nanmin([imageObs.data,imageDiff.data])
     if vmax is None: vmax = numpy.nanmax([imageObs.data,imageDiff.data]) 
+    vmin=vmin*scalefac
+    vmax=vmax*scalefac     
     #print("interated_diff: ",vmin,vmax,numpy.nanmin([imageDiff.data]),numpy.nanmax([imageDiff.data]))
     
     # wcsim=wcs.WCS(image.header)    
@@ -349,9 +356,9 @@ class PlotCasasim(object):
                            figsize=pplot.scale_figs([2.1,1.0]))
     
     
-    im = axes[0].imshow(imageObs.data, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
-    im2 = axes[1].imshow(imageModel.data, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
-    im3 = axes[2].imshow(imageDiff.data, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
+    im = axes[0].imshow(imageObs.data*scalefac, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
+    im2 = axes[1].imshow(imageModel.data*scalefac, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
+    im3 = axes[2].imshow(imageDiff.data*scalefac, cmap="inferno", vmin=vmin, vmax=vmax,origin="lower")
     
     # calculate the rms of the residual    
     rms=numpy.nansum((imageDiff.data**2.0)/imageDiff.data.size)**0.5
@@ -386,18 +393,23 @@ class PlotCasasim(object):
       # FIXME: that would show the image like in the casaviewer
     # axes.invert_yaxis()  
   
+    if mJy==True:
+      clabel="[mJy/beam km/s]"
+    else:
+      clabel="[Jy/beam km/s]"
+  
     self._dokwargs(axes[0],**kwargs)
   
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
     CB = fig.colorbar(im, ax=axes.ravel().tolist(), pad=0.02,
                     format="%5.2f", fraction=0.04)  
     CB.set_ticks(ticks)
-    CB.set_label("[Jy/beam km/s]")
+    CB.set_label(clabel)
           
     return self._closefig(fig)
   
   
-  def plot_integrated(self, image, zlim=[None, None],mJy=False,**kwargs):
+  def plot_integrated(self, image, zlim=[None, None],mJy=False,cb_format="%5.1f",**kwargs):
     """
     Plots a zeroth moment image (integrated intensity) image.
     """
@@ -446,16 +458,14 @@ class PlotCasasim(object):
   
     # FIXME: format is hardcoded that does not work always
     if mJy==True:
-      cformat="%5.2f"
       clabel="[mJy/beam km/s]"
     else:
-      cformat="%5.2f"
       clabel="[Jy/beam km/s]"
       
   
     ticks = MaxNLocator(nbins=6).tick_values(vmin, vmax)
     CB = fig.colorbar(im, ax=ax, pad=0.02,
-                    format=cformat, fraction=0.04)  
+                    format=cb_format, fraction=0.04)  
     CB.set_ticks(ticks)
     CB.set_label(clabel)
           
