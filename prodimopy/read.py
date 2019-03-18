@@ -2032,9 +2032,7 @@ def read_continuumObs(directory,filename="SEDobs.dat"):
       
     # If there is no error provided just and a zero column
     if spec.shape[1]<3:
-      print(spec)
       spec=numpy.c_[spec,np.zeros(spec.shape[0])]
-      print(spec)
     
     contObs.specs.append(spec)
     
