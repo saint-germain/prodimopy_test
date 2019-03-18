@@ -81,8 +81,8 @@ def main(args=None):
                     zlim=[1.e-8,None],extend="both")
     
     # Plot radiation field at certain wavelengths (here simply done with the index)
-    pp.plot_cont(pd,pd.radFields[:,:,0],zr=False,xlog=False,label="lam="+str(pd.lams[0]))
-    pp.plot_cont(pd,pd.radFields[:,:,5],zr=False,xlog=False,label="lam="+str(pd.lams[5]))
+    # pp.plot_cont(pd,pd.radFields[:,:,0],zr=False,xlog=False,label="lam="+str(pd.lams[0]))
+    # pp.plot_cont(pd,pd.radFields[:,:,5],zr=False,xlog=False,label="lam="+str(pd.lams[5]))
 
     pp.plot_cont(pd, pd.tg, r"$\mathrm{T_{gas} [K]}$",contour=True,
                     zlim=[5,5000],extend="both")
@@ -90,37 +90,42 @@ def main(args=None):
     pp.plot_cont(pd, pd.tg, r"$\mathrm{T_{dust} [K]}$",contour=True,
                     zlim=[5,1500],extend="both")
     
-    pp.plot_cont(pd, pd.zetaX, r"$\mathrm{\zeta_{X}\,per\,H\,[s^{-1}]}$",contour=True,
-                    zlim=[1.e-19,1.e-13],extend="both")
+    pp.plot_heat_cool(pd)
+    
+    
+    # pp.plot_cont(pd, pd.zetaX, r"$\mathrm{\zeta_{X}\,per\,H\,[s^{-1}]}$",contour=True,
+    #                zlim=[1.e-19,1.e-13],extend="both")
     
   
     # this plots the vertical abundances at different radii for different species
-    rs=[1,10,100]
-    species=["CO","HCO+","e-","S+"]
-    for r in rs:
-      pp.plot_abunvert(pd, r, species,ylim=[3.e-15,3.e-3])
+    # rs=[1,10,100]
+    # species=["CO","HCO+","e-","S+"]
+    # for r in rs:
+    #  pp.plot_abunvert(pd, r, species,ylim=[3.e-15,3.e-3])
       
     # plots the average abundances of the above species
-    pp.plot_avgabun(pd, species,ylim=[3.e-15,3.e-3])
+    # pp.plot_avgabun(pd, species,ylim=[3.e-15,3.e-3])
     
     # contour plots for a couple of species
     species=["CO","H2O","HCO+","HN2+"]
     for spname in species:
       pp.plot_abuncont(pd, spname, zr=True,xlog=True,ylog=False, zlim=[1.e-4,3.e-15],extend="both")
       
-      
     # Line Origin plot for two lines and the continuum (if available)
+    contTd=pplot.Contour(pd.td, [10,20,30],linewidths=0.5)
+    contTg=pplot.Contour(pd.tg, [10,20,30],linewidths=0.5,linestyles="--")
     pp.plot_line_origin(pd,[["CO",1300.],["C18O",1365.]],
-                        pd.nmol[:,:,pd.spnames["CO"]],label=r"log n(CO) $\mathrm{[cm^{-3}]}$",
-                        zlim=[1.e-3,1.e8],extend="both",showContOrigin=True)
+                        pd.nmol[:,:,pd.spnames["CO"]]/pd.nHtot[:,:],label=r"$log \epsilon(CO)$",
+                        zlim=[1.e-9,2.e-4],extend="both",showContOrigin=True,oconts=[contTd,contTg])
   
-        
     if pd.lines is not None:
-      lineidents=[[line.ident,line.wl] for line in pd.lines]      
-      
+      lineidents=[[line.ident,line.wl] for line in pd.lines]            
       pp.plot_lines(pd,lineidents,showBoxes=False,lineObs=pd.lineObs,useLineEstimate=False)
-  
-      for ident in lineidents:
-        pp.plot_lineprofile(pd, ident[1], ident[0],lineObs=pd.lineObs)
+    
+    if pd.lineObs is not None:
+      # plot line profiles for each observation
+      for line,lineOb in zip(pd.lines,pd.lineObs):
+        if lineOb.profile is not None:
+          pp.plot_lineprofile(pd, line.wl, line.ident,lineObs=pd.lineObs)
   
   
