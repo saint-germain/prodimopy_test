@@ -1853,7 +1853,7 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat",tarfile=None):
   versionStr=records[0].split()
   version=float(versionStr[0])
   
-  for rec in records[2:2 + nlines]:  #        
+  for rec in records[2:2 + nlines]:
     fields = rec.split()
     
     lineobs = DataLineObs(float(fields[0].strip()), \
@@ -1871,7 +1871,7 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat",tarfile=None):
   
   # the additional data
   # check if there is actually more data
-  if (len(records)>2 + nlines+1):    
+  if (len(records)>2 + nlines+1):
     # FIXME: do this proberly (the reading etc. and different versions)  
     profile = (records[2 + nlines+1].split())[0:nlines]
     autoC = (records[2 + nlines+2].split())[0:nlines]
@@ -2027,8 +2027,14 @@ def read_continuumObs(directory,filename="SEDobs.dat"):
       # convert frequency to micron, SPIRE data       
       spec[:,0]=(spec[:,0]* u.GHz).to(u.micron, equivalencies=u.spectral()).value
     else:
-      print(fname)
+      print("Don't know about type of "+fname+" Spectrum. Try anyway")
       spec=numpy.loadtxt(fname)
+      
+    # If there is no error provided just and a zero column
+    if spec.shape[1]<3:
+      print(spec)
+      spec=numpy.c_[spec,np.zeros(spec.shape[0])]
+      print(spec)
     
     contObs.specs.append(spec)
     
