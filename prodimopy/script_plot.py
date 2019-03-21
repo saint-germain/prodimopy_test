@@ -66,7 +66,7 @@ def main(args=None):
     pp.plot_dust_opac(pd,ylim=[1.e-1,None])
       
     #pp.plot_NH(pd,sdscale=True,ylim=[5.e27,5.e29])
-    pp.plot_NH(pd,sdscale=True,ylim=[4.e23,5.e27],xlim=[None,0.038],xlog=False)
+    pp.plot_NH(pd,sdscale=True,ylim=[4.e23,5.e27],xlog=True)
     
     # here the default contour plots are used not very fancy currently. 
     # you can use latex for the labels!
@@ -87,7 +87,7 @@ def main(args=None):
     pp.plot_cont(pd, pd.tg, r"$\mathrm{T_{gas} [K]}$",contour=True,
                     zlim=[5,5000],extend="both")
 
-    pp.plot_cont(pd, pd.tg, r"$\mathrm{T_{dust} [K]}$",contour=True,
+    pp.plot_cont(pd, pd.td, r"$\mathrm{T_{dust} [K]}$",contour=True,
                     zlim=[5,1500],extend="both")
     
     pp.plot_heat_cool(pd)
@@ -128,4 +128,5 @@ def main(args=None):
         if lineOb.profile is not None:
           pp.plot_lineprofile(pd, line.wl, line.ident,lineObs=pd.lineObs)
   
+    pp.plot_taulines(pd, [["CO",1300],["C18O",1365]])
   
