@@ -120,6 +120,7 @@ class PlotCasasim(object):
                 cb_fraction=0.015,
                 cb_pad=0.01,
                 cb_extend="neither",
+                cmap="inferno",
                 vellabel_fontsize=5,
                 clevels=None,
                 ccolors=None,
@@ -182,7 +183,7 @@ class PlotCasasim(object):
         
         velidx = cvel_idx + (iax - naxesh)*step
         
-        im = ax.imshow(cube.data[velidx, :, :]*scalefac, cmap="inferno", 
+        im = ax.imshow(cube.data[velidx, :, :]*scalefac, cmap=cmap, 
                        vmin=vmin, vmax=vmax,origin="lower")
               
         # set the border of the coordinate frames to white
@@ -409,7 +410,8 @@ class PlotCasasim(object):
     return self._closefig(fig)
   
   
-  def plot_integrated(self, image, zlim=[None, None],mJy=False,cb_format="%5.1f",**kwargs):
+  def plot_integrated(self, image, zlim=[None, None],mJy=False,cb_format="%5.1f",
+                      cmap="inferno",**kwargs):
     """
     Plots a zeroth moment image (integrated intensity) image.
     """
@@ -431,7 +433,7 @@ class PlotCasasim(object):
     fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=image.wcsrel))
     
     
-    im = ax.imshow(image.data*scalefac, cmap="inferno", vmin=vmin, vmax=vmax,
+    im = ax.imshow(image.data*scalefac, cmap=cmap, vmin=vmin, vmax=vmax,
                    origin="lower")
     # ax.coords[0].set_major_formatter('hh:mm:ss')
     # FIXME: spacing is hardcoded that does not work always
@@ -686,6 +688,7 @@ class PlotCasasim(object):
 
     if specprof is not None:
       x, y = self.specprof_xy_hist(specprof)
+      print(x,y)
       ax.plot(x, y, label="Observation",color="black")  
     
     #pGrayBox=0.3
