@@ -1367,7 +1367,7 @@ class Plot(object):
 
   
 
-  def plot_taulines(self, model, lineIdents, **kwargs):
+  def plot_taulines(self, model, lineIdents, showCont=True, **kwargs):
     '''
     Plots the line optical depth as a function of radius for the given lines.
     The lines are identified via a list of lineIdents containt of an array with 
@@ -1386,14 +1386,17 @@ class Plot(object):
     for lineIdent in lineIdents: 
       x = model.x[:, 0]
       lineEstimate = model.getLineEstimate(lineIdent[0], lineIdent[1])      
-      y = list()
-      # FIXME: why is there a loop
-      for rInfo in lineEstimate.rInfo:
-        y.append(rInfo.tauLine)
+      y = [dum.tauLine for dum in lineEstimate.rInfo]
       
       ax.axhline(y=1.0, linestyle="-", color="black", linewidth=0.5)
       label=r"$\mathrm{"+spnToLatex(lineEstimate.ident) + "}$ " + "{:.2f}".format(lineEstimate.wl) + " $\mathrm{\mu m}$"      
-      ax.plot(x, y, marker=None, label=label)     
+      
+      line, = ax.plot(x, [dum.tauLine for dum in lineEstimate.rInfo], marker=None, label=label)     
+
+      if showCont:
+        ax.plot(x, [dum.tauDust for dum in lineEstimate.rInfo], 
+                marker=None, linestyle="--",color=line.get_color())     
+        
           
       iplot = iplot + 1
       
