@@ -1367,7 +1367,7 @@ class Plot(object):
 
   
 
-  def plot_taulines(self, model, lineIdents, **kwargs):
+  def plot_taulines(self, model, lineIdents, showCont=True, **kwargs):
     '''
     Plots the line optical depth as a function of radius for the given lines.
     The lines are identified via a list of lineIdents containt of an array with 
@@ -1386,14 +1386,17 @@ class Plot(object):
     for lineIdent in lineIdents: 
       x = model.x[:, 0]
       lineEstimate = model.getLineEstimate(lineIdent[0], lineIdent[1])      
-      y = list()
-      # FIXME: why is there a loop
-      for rInfo in lineEstimate.rInfo:
-        y.append(rInfo.tauLine)
+      y = [dum.tauLine for dum in lineEstimate.rInfo]
       
       ax.axhline(y=1.0, linestyle="-", color="black", linewidth=0.5)
       label=r"$\mathrm{"+spnToLatex(lineEstimate.ident) + "}$ " + "{:.2f}".format(lineEstimate.wl) + " $\mathrm{\mu m}$"      
-      ax.plot(x, y, marker=None, label=label)     
+      
+      line, = ax.plot(x, [dum.tauLine for dum in lineEstimate.rInfo], marker=None, label=label)     
+
+      if showCont:
+        ax.plot(x, [dum.tauDust for dum in lineEstimate.rInfo], 
+                marker=None, linestyle="--",color=line.get_color())     
+        
           
       iplot = iplot + 1
       
@@ -1486,6 +1489,19 @@ class Plot(object):
                 rasterized=rasterized,returnFig=True,**kwargs)
     
     ax=fig.axes[0]
+    
+    iest=0
+    r=model.x[:,0]
+    for lesti in lestimates:
+      z15=[rinf.z15 for rinf in lesti.rInfo]
+      z85=[rinf.z85 for rinf in lesti.rInfo]
+      if zr is True:
+        z15=z15/r
+        z85=z85/r
+      print(r,z15)
+      ax.plot(r,z15,color=boxcolors[iest],linestyle=":",linewidth=1.0)
+      ax.plot(r,z85,color=boxcolors[iest],linestyle=":",linewidth=1.0)
+      iest+=1
     
     if showLineLabels:
       ibox=0    
