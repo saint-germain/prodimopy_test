@@ -90,12 +90,14 @@ def main(args=None):
     pms.plot_dust_opac(models)
     
     if not all(x.sed is None for x in models): 
-      pms.plot_sed(models,ylim=[1.e-14,None],plot_starSpec=False)
+      pms.plot_sed(models,ylim=[1.e-14,None],plot_starSpec=False,sedObs=models[0].sedObs)
 
     pms.plot_midplane(models, "nHtot", r"$\mathrm{midplane\,n_{<H>}\,[cm^{-3}}]$",xlog=True,ylog=True)
     pms.plot_midplane(models, "nd", r"$\mathrm{midplane\,n_{dust}\,[cm^{-3}}]$",xlog=True,ylog=True)
     pms.plot_midplane(models, "rhog", r"$\mathrm{midplane\,\rho_{gas}\,[g cm^{-3}}]$",xlog=True,ylog=True)
     pms.plot_midplane(models, "rhod", r"$\mathrm{midplane\,\rho_{dust}\,[g cm^{-3}}]$",xlog=True,ylog=True)
+    pms.plot_midplane(models, "sdg", r"$\mathrm{\Sigma_{gas}\,[g cm^{-2}}]$",xlog=True,ylog=True)
+    pms.plot_midplane(models, "sdd", r"$\mathrm{\Sigma_{dust}\,[g cm^{-2}}]$",xlog=True,ylog=True)
     pms.plot_midplane(models, "tg", r"$\mathrm{midplane\,T_{gas}\,[K]}$",xlog=True,ylog=True)
     pms.plot_midplane(models, "td", r"$\mathrm{midplane\,T_{dust}\,[K]}$",xlog=True,ylog=True)
     pms.plot_midplane(models, "chi", r"$\mathrm{midplane\,\chi\,[Draine]}$",xlog=True,ylog=True)
@@ -113,8 +115,10 @@ def main(args=None):
     
 
     if not all(x.lines is None for x in models):
-      lines=[[line.species,line.wl] for line in models[0].lines]      
-      pms.plot_lines(models,lines,ylim=[1.e-22,3.e-18],useLineEstimate=False)
+      # FIXME: does not work if model[0] has no lines
+      lines=[[line.species,line.wl] for line in models[0].lines]
+      # ylim=[1.e-22,3.e-18]      
+      pms.plot_lines(models,lines,useLineEstimate=False,lineObs=models[0].lineObs)
   
 # make single plots for each model
 #    pp=ppm.Plot(pdf)
