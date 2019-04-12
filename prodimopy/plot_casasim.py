@@ -448,7 +448,7 @@ class PlotCasasim(object):
     
     # mark the center
     # FIXME: alow to control the size of the cross
-    ax.plot(image.centerpix[0], image.centerpix[1], marker="x", color="0.6", linewidth=0.2, ms=1)
+    #ax.plot(image.centerpix[0], image.centerpix[1], marker="x", color="0.6", linewidth=0.2, ms=1)
   
     #ax.axvline(image.centerpix[0],color="0.6",linewidth=0.8,linestyle=":")  
     #ax.axhline(image.centerpix[1],color="0.6",linewidth=0.8,linestyle=":")
@@ -724,7 +724,7 @@ class PlotCasasim(object):
         modelNames=["model"+"{:0d}".format(i+1) for i in range(len(models))]        
       
       for model,label in zip(models,modelNames):
-        ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label=label,elinewidth=0.5)
+        ax.errorbar(model.arcsec, model.flux, yerr=model.flux_err, label=label,elinewidth=0.5,zorder=-32)
 
     if pmGrayBox is not None:
       ax.fill_between(radprof.arcsec, 
