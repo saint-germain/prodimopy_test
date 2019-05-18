@@ -10,11 +10,7 @@ from matplotlib.ticker import MaxNLocator
 import astropy.units as u
 import math
 import copy
-
-# has to be this way because of circular imports
-import prodimopy.extinction 
-import prodimopy.plot_models
-
+import prodimopy.extinction as ext
 
 class Plot(object):
   '''
@@ -105,7 +101,7 @@ class Plot(object):
     '''
     Save and close the plot (Figure). 
     
-    If self.pdf is None than nothing is done and the figure is returned
+    If self.pdf is None than nothing is done and the figure is returend
     
     #set the transparent attribut (used rcParam savefig.transparent)
     '''    
@@ -180,8 +176,6 @@ class Plot(object):
       # just plot it again, is the easiest way (needs to be the same style etc)
       ax2.plot(x, y, color="black")
       ax2.set_ylabel(r"$\Sigma\,\mathrm{[g\,cm^{-2}]}$")
-      # FIXME: does not allow to manually set xlim
-      #        need to check if that works with the two scales
       ax2.set_xlim(min(x), max(x))
       
       # this needs to be done to get the correct scale
@@ -535,6 +529,7 @@ class Plot(object):
     fig, ax = plt.subplots(1, 1)     
   
     iplot = 0
+    if(type(species)==str): species=[species]
     for spec in species:                 
     # get the species
       if (spec in model.spnames):   
@@ -630,6 +625,7 @@ class Plot(object):
       normspec=model.cdnmol[:,0,normidx]      
     
     iplot=0  
+    if(type(species)==str): species=[species]
     for spec,fac in zip(species,scalefacs):
       
       ispec=-1
@@ -799,7 +795,7 @@ class Plot(object):
     iplot=0
     ymin=1.e100
     ymax=-1.0
-    
+    if(type(species)==str): species=[species]
     for spec in species:           
       if useT:
         x = model.td[ix, :]
@@ -896,7 +892,7 @@ class Plot(object):
     iplot=0
     ymin=1.e100
     ymax=-1.0
-    
+    if(type(species)==str): species=[species]
     for spec in species:           
       if useNH:
         old_settings = np.seterr(divide='ignore')     
@@ -974,7 +970,8 @@ class Plot(object):
     xmin = 1.e100
     xmax = 0
     ymin = 1.e100
-    ymax = -1.e00 
+    ymax = -1.e00
+    if(type(species)==str): species=[species] 
     for spec in species:       
       if spec not in model.spnames:
         print("WARN: Species "+spec+" not found") 
@@ -1194,7 +1191,7 @@ class Plot(object):
       # idx validity of extinction function
       ist=np.argmin(np.abs(x-0.0912))
       ien=np.argmin(np.abs(x-6.0))
-      y[ist:ien]=y[ist:ien]/prodimopy.extinction.reddening(x[ist:ien]*1.e4, a_v=sedObs.A_V,r_v=sedObs.R_V, model="f99")
+      y[ist:ien]=y[ist:ien]/ext.reddening(x[ist:ien]*1.e4, a_v=sedObs.A_V,r_v=sedObs.R_V, model="f99")
     
     dist = ((model.sed.distance*u.pc).to(u.cm)).value
     
@@ -1367,7 +1364,7 @@ class Plot(object):
 
   
 
-  def plot_taulines(self, model, lineIdents, showCont=True, **kwargs):
+  def plot_taulines(self, model, lineIdents, **kwargs):
     '''
     Plots the line optical depth as a function of radius for the given lines.
     The lines are identified via a list of lineIdents containt of an array with 
@@ -1386,17 +1383,14 @@ class Plot(object):
     for lineIdent in lineIdents: 
       x = model.x[:, 0]
       lineEstimate = model.getLineEstimate(lineIdent[0], lineIdent[1])      
-      y = [dum.tauLine for dum in lineEstimate.rInfo]
+      y = list()
+      # FIXME: why is there a loop
+      for rInfo in lineEstimate.rInfo:
+        y.append(rInfo.tauLine)
       
       ax.axhline(y=1.0, linestyle="-", color="black", linewidth=0.5)
       label=r"$\mathrm{"+spnToLatex(lineEstimate.ident) + "}$ " + "{:.2f}".format(lineEstimate.wl) + " $\mathrm{\mu m}$"      
-      
-      line, = ax.plot(x, [dum.tauLine for dum in lineEstimate.rInfo], marker=None, label=label)     
-
-      if showCont:
-        ax.plot(x, [dum.tauDust for dum in lineEstimate.rInfo], 
-                marker=None, linestyle="--",color=line.get_color())     
-        
+      ax.plot(x, y, marker=None, label=label)     
           
       iplot = iplot + 1
       
@@ -1473,12 +1467,9 @@ class Plot(object):
       patches.append(patch)
       
       if showContOrigin is True:
-        if (model.sed is not None and model.sed.sedAna is not None):
-          pointsc=self._getSEDana_boxpoints(lesti.wl, model,zr)
-          patchc = mpl.patches.Polygon(pointsc,True,fill=False,
-                                       color=boxcolors[ibox],zorder=100,
-                                       linewidth=1.0,linestyle="--")
-          patches.append(patchc)
+        pointsc=self._getSEDana_boxpoints(lesti.wl, model,zr)
+        patchc = mpl.patches.Polygon(pointsc,True,fill=False,color=boxcolors[ibox],zorder=100,linewidth=1.0,linestyle="--")
+        patches.append(patchc)
       
       ibox+=1
   
@@ -1489,19 +1480,6 @@ class Plot(object):
                 rasterized=rasterized,returnFig=True,**kwargs)
     
     ax=fig.axes[0]
-    
-    iest=0
-    r=model.x[:,0]
-    for lesti in lestimates:
-      z15=[rinf.z15 for rinf in lesti.rInfo]
-      z85=[rinf.z85 for rinf in lesti.rInfo]
-      if zr is True:
-        z15=z15/r
-        z85=z85/r
-      print(r,z15)
-      ax.plot(r,z15,color=boxcolors[iest],linestyle=":",linewidth=1.0)
-      ax.plot(r,z85,color=boxcolors[iest],linestyle=":",linewidth=1.0)
-      iest+=1
     
     if showLineLabels:
       ibox=0    
@@ -1651,25 +1629,6 @@ class Plot(object):
     self._dokwargs(axh,**kwargs)
     self._dokwargs(axc,**kwargs)
   
-    return self._closefig(fig)
-
-  def plot_lines(self, model, lineidents, useLineEstimate=True,jansky=False,
-                 showBoxes=True,lineObs=None,lineObsLabel="Obs.",peakFlux=False,
-                 showCont=False,xLabelGHz=False,showGrid=True,**kwargs):
-    """
-    Plots a selection of lines or lineEstimates.
-  
-    Simply uses :func:`~prodimopy.plot.PlotModels.plot_lines`
-
-    """
-    print("PLOT: plot_lines ...")
-    
-    # need the instance
-    ppm=prodimopy.plot_models.PlotModels(None)
-    fig=ppm.plot_lines([model], lineidents, useLineEstimate=useLineEstimate,jansky=jansky,
-                 showBoxes=showBoxes,lineObs=lineObs,lineObsLabel=lineObsLabel,peakFlux=peakFlux,
-                 showCont=showCont,xLabelGHz=xLabelGHz,showGrid=showGrid,**kwargs)
-
     return self._closefig(fig)
 
 

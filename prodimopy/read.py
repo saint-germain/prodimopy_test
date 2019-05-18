@@ -349,12 +349,6 @@ class Data_ProDiMo(object):
     radiative transfer with ray tracing. 
     see :class:`prodimopy.read.DataSED` for details.
     """
-    self.contImages = None            
-    """ :class:`prodimopy.read.DataContinuumImages` :
-    Reads the continuum images data (image.out) if available.
-    The full images are only read if requested for a particular wavelength
-    see :class:`prodimopy.read.DataContinuumImages` for details.
-    """
     self.starSpec = None
     """ :class:`prodimopy.read.DataStarSpec` :
     The (unattenuated) stellar input spectrum.  
@@ -385,12 +379,6 @@ class Data_ProDiMo(object):
     Holds the provided SED observations (photometry, spectra, extinction etc.)
     TODO: maybe put all the observations into one object (e.g. also the lines)
     """
-    self.lineObs = None
-    """ :class:`prodimopy.read.DataLineObs` :
-    Holds the provide line observations (e.g. LINEObs.dat and line profiles)
-    TODO: maybe put all the observations into one object (e.g. also the lines)
-    """
-
    
   def __str__(self):
     output = "Info ProDiMo.out: \n"
@@ -1105,71 +1093,7 @@ class DataSEDAna(object):
     self.z15=numpy.zeros(shape=(nlam,nx))
     self.z85=numpy.zeros(shape=(nlam,nx))
 
-class DataContinuumImages(object):
-  '''
-  Holds the continuum images (image.out) and provides a method to read 
-  one particular image.   
-  
-  The coordinates x,y are the same for all images, and only stored once.
-  
-  '''
-  def __init__(self,nlam,nx,ny,filepath="./image.out"):
-    self.nlam=None
-    """ int: 
-    The number of wavelenthpoint (== number of images)
-    """
-    self.lams=numpy.zeros(shape=(nlam))
-    """ array_like(float,ndim=1) :
-    The wavelengths   
-    `UNIT:` micron, `DIMS:` (nlam)
-    """
-    self.nx=nx
-    """ int: 
-    The number of x axis points (radial) of the image
-    """
-    self.ny=ny
-    """ int: 
-    The number of y axis points (or theta) of the image
-    """
-    self.x=numpy.zeros(shape=(nx,ny))
-    """ array_like(float,ndim=2) :
-    x coordindates    
-    `UNIT:` au, `DIMS:` (nx,ny)
-    """
-    self.y=numpy.zeros(shape=(nx,ny))
-    """ array_like(float,ndim=2) :
-    y coordindates    
-    `UNIT:` au, `DIMS:` (nx,ny)
-    """
-    self._filepath=filepath
 
-  def getImage(self,wl):
-    '''
-    Reads the intensities at a certain wavelength (image) from the image.out 
-    file.
-    
-    The image with the closes wavelength to the given wavelength (wl) will be 
-    returned
-    
-    Parameters
-    ----------
-    wl : float 
-    the wavelength in micron of the requested image
-
-    Returns
-    -------
-    array_like(float,ndim=2) :
-    the image intensitis in units ... (dimension nx,ny) 
-    '''
-    idx=numpy.argmin(numpy.abs(self.lams-wl))
-    
-    # read the colum according the the wavelength, first 4 columns are 
-    # ix,iz, x, y ... not required here
-    intens=numpy.loadtxt(self._filepath,skiprows=6,usecols=4+idx)
-        
-    return intens.reshape((self.nx,self.ny)),self.lams[idx]
-    
-    
 class DataBgSpec(object):
   '''
   Backgound field input spectrum  
@@ -1194,47 +1118,66 @@ class DataStarSpec(object):
     self.nu = numpy.zeros(shape=(nlam))    
     self.Inu = numpy.zeros(shape=(nlam))    
 
-class DataReaction(object):
-  """
-  Data container for a chemical reaction in the Reaction Network   
-  of one particular ProDiMo model. That are the Reaction in Reactions.out 
+class Chemistry(object):
+  """ 
+  Data container for chemistry analysis. 
   
-  TODO: this is very preliminary and does not yet contain all the Information
-  """
-  def __init__(self):
-    self.id=None
-    """ int :
-    The Reaction Id ad is 
+     
+         
+  """  
+  def __init__(self, name):          
     """
-    self.Uid=None
-    """ int :
-    The Umist reaction id ... it is unclear what this actually is.   
+    Parameters
+    ----------
+    name : string
+      The name of the model (can be empty).  
+
+    Attributes
+    ----------
+          
     """
-    self.type=None
+    self.name = name 
     """ string :
-    The Reation type identifier as used in ProDiMo    
+    The name of the model (can be empty)
     """
-    self.gasphase=None
-    """ boolean :
-    Gas phase reaction or not
+    self.__tarfile=None
+    self.farray = None        
+    """ array : 
+    array with the formation rate of the main formation reaction for the selected species for each grid point
     """
-
-    " Still a lot of stuff missing but that's it for now"
-
+    self.darray = None        
+    """ array : 
+    array with the formation rate of the main destruction reaction for the selected species for each grid point
+    """
+    self.sorted_form_info = None        
+    """ list : 
+    list of formation processes in descending order according to their max rate value
+    """
+    self.sorted_dest_info = None        
+    """ list : 
+    list of destruction processes in descending order according to their max rate value
+    """
+    self.main_dest_grid = None        
+    """ list : 
+    list of main destruction reaction for the selected species for each grid point
+    index corresponds to first index in sorted_form_info
+    has the same order as grid points in chemanalysis.out
+    """
+    self.main_form_grid = None        
+    """ list : 
+    list of main formation reaction for the selected species for each grid point
+    index corresponds to first index in sorted_dest_info
+    has the same order as grid points in chemanalysis.out
+    """
+    
   def __str__(self):
-    output = str(self.id)
-    output += " "
-    output += str(self.Uid)
-    output += " "
-    output += str(self.type)
-    output += " "
-    output += str(self.gasphase)
+    output = "Info chemistry: \n"
+
     return output   
 
 
 def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True, 
-                 readImages=True,filename="ProDiMo.out", 
-                 filenameLineEstimates="FlineEstimates.out", 
+                 filename="ProDiMo.out", filenameLineEstimates="FlineEstimates.out", 
                  filenameLineFlux="line_flux.out",
                  td_fileIdx=None):
   '''
@@ -1508,11 +1451,6 @@ def read_prodimo(directory=".", name=None, readlineEstimates=True,readObs=True,
 
   if readObs:
     data.sedObs=read_continuumObs(directory)
-    if data.lines is not None:
-      data.lineObs=read_lineObs(directory, len(data.lines))
-      
-  if readImages:
-    data.contImages=read_continuumImages(directory)
     
   print("INFO: Reading time: ","{:4.2f}".format(timer()-startAll)+" s")  
   
@@ -1576,47 +1514,6 @@ def read_elements(directory,filename="Elements.out",tarfile=None):
     elements.massRatio[name]=float(fields[3])
     
   return elements
-
-def read_reactions(directory,filename="Reactions.out",tarfile=None):
-  """
-  Reads the Reactions.out file. 
-  
-  Parameters
-  ----------
-  directory : str 
-    the directory of the model
-    
-  filename: str 
-    an alternative Filename
-
-  Returns
-  -------
-  list(:class:`prodimopy.read.DataReation`) 
-    List of of chemical Reactions.
-    
-  FIXME: Not all data is read yet.
-  """
-
-  f,dummy = _getfile(filename, directory, tarfile)
-  if f is None:
-    return None
-
-  reactions=list()
-  for line in f:
-    
-    # Ignore the multpile temp
-    if ":" in line:
-      fields=line.split()
-      reaction=DataReaction()
-      reaction.id=int(fields[0])
-      reaction.Uid=int(fields[1])
-      reaction.type=fields[2].strip()
-      reaction.gasphase=fields[3].strip()=="T:"
-      reactions.append(reaction)
-    else:
-      "ignore the multipe temperature stuff for now"
-
-  return reactions
 
 
 def read_species(directory,pdata,filename="Species.out",tarfile=None):
@@ -1853,7 +1750,7 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat",tarfile=None):
   versionStr=records[0].split()
   version=float(versionStr[0])
   
-  for rec in records[2:2 + nlines]:
+  for rec in records[2:2 + nlines]:  #        
     fields = rec.split()
     
     lineobs = DataLineObs(float(fields[0].strip()), \
@@ -1871,7 +1768,7 @@ def read_lineObs(directory, nlines, filename="LINEobs.dat",tarfile=None):
   
   # the additional data
   # check if there is actually more data
-  if (len(records)>2 + nlines+1):
+  if (len(records)>2 + nlines+1):    
     # FIXME: do this proberly (the reading etc. and different versions)  
     profile = (records[2 + nlines+1].split())[0:nlines]
     autoC = (records[2 + nlines+2].split())[0:nlines]
@@ -1945,35 +1842,7 @@ def read_gas(directory,filename="gas_cs.out",tarfile=None):
  
   f.close()
 
-  return gas
-
-def read_continuumImages(directory,filename="image.out"):
-  '''
-  Reads the image.out file. 
-  To avoid unnecessary memor usage, the Intensities are not read in this 
-  routine. For this use :func:`~prodimopy.DataContinuumImages.get_image` 
-  '''
-  
-  f,fname=_getfile(filename, directory=directory)
-  
-  if f is None: return None
-  
-  dummy=f.readline()
-  nrnt=f.readline().split()
-  nlam=f.readline().split()[0]
-
-  images=DataContinuumImages(int(nlam), int(nrnt[0]), int(nrnt[1]),filepath=fname)
-  
-  images.lams[:]=numpy.array(f.readline().split()).astype(numpy.float)
-  f.close()
-  
-  # Read the coordinates
-  xy=numpy.loadtxt(fname,skiprows=6,usecols=(2,3))
-  images.x=xy[:,0].reshape(images.nx,images.ny)
-  images.y=xy[:,1].reshape(images.nx,images.ny)
-
-  return images
-  
+  return gas  
 
 def read_continuumObs(directory,filename="SEDobs.dat"):
   ''' 
@@ -2004,36 +1873,15 @@ def read_continuumObs(directory,filename="SEDobs.dat"):
     contObs.fnuErgErr = (contObs.fnuJyErr*u.Jy).cgs.value
   
   # check for the spectrum files
-  # types of spectra that are understood, is more of a unofficial naming convention
-  types=["Spitzer","ISO","PACS","SPIRE"]
-  fnames=list()
-  for spectype in types:
-    fnames.extend(glob.glob(directory+"/"+spectype+"*spec*.dat"))
-  
+  fnames=glob.glob(directory+"/*spec.dat")
   if fnames is not None and len(fnames)>0:    
     if contObs is None:
-      contObs=DataContinuumObs()      
+      contObs=DataContinuumObs()
+      
     contObs.specs=list()
     
   for fname in fnames:
-    if types[0] in fname:
-      spec=numpy.loadtxt(fname, skiprows=3)
-    elif types[1] in fname:
-      spec=numpy.loadtxt(fname, skiprows=1)
-    elif types[2] in fname:
-      spec=numpy.loadtxt(fname)
-    elif types[3] in fname:
-      spec=numpy.loadtxt(fname,skiprows=1)
-      # convert frequency to micron, SPIRE data       
-      spec[:,0]=(spec[:,0]* u.GHz).to(u.micron, equivalencies=u.spectral()).value
-    else:
-      print("Don't know about type of "+fname+" Spectrum. Try anyway")
-      spec=numpy.loadtxt(fname)
-      
-    # If there is no error provided just and a zero column
-    if spec.shape[1]<3:
-      spec=numpy.c_[spec,np.zeros(spec.shape[0])]
-    
+    spec=numpy.loadtxt(fname, skiprows=3)    
     contObs.specs.append(spec)
     
   # check if there is some extinction data
@@ -2353,6 +2201,156 @@ def calc_columnd(data):
 #   izt=data.nz-2
 #   print(nHverC[:,izt],data.NHrad[:,izt])
 #   print(numpy.max(numpy.abs(1.0-nHverC[1:,:]/data.NHrad[1:,:])))
+
+def analyse_chemistry(species,model,name=None,directory=".",filenameReactions="Reactions.out",
+                      filenameChemistry='chemanalysis.out',to_txt=True,td_fileIdx=None):
+    """ 
+    Function that analyses the chemistry in a similar way to chemanalise.pro     
+    """  
+    tarfile=None
+
+    chemistry=Chemistry(None)
+    
+    if name == None:
+        if directory==None or directory=="." or directory=="":
+            dirfields=os.getcwd().split("/")
+        else:  
+            dirfields = directory.split("/")
+
+    name = dirfields[-1]  
+
+    f,dummy = _getfile(filenameReactions, directory, tarfile) #change this
+
+    if f is None: return None
+    lines = f.readlines()
+    f.close()
+
+    fchem,dummy = _getfile(filenameChemistry, directory, tarfile)
+    if fchem is None: return None
+    lineschem = fchem.readlines()
+    fchem.close()
+
+    chem=np.zeros((len(lineschem)-1,5))
+    
+    k=0
+    for i in lineschem[1:]:        
+        chem[k,0]=int(i[0:4])
+        chem[k,1]=int(i[4:9])
+        chem[k,2]=int(i[9:14])
+        chem[k,3]=int(i[14:19])
+        chem[k,4]=float(i[19:30])
+        k+=1
+
+    chem=np.loadtxt(filenameChemistry,skiprows=1)
+
+
+    n_rel_index = model.spnames[species]
+    spchem=chem[chem[:,2]==n_rel_index]
+    lreac=np.unique(spchem[:,3])
+
+    form=[]
+    dest=[]
+    for i in lines:
+        filt=[i[:5]=='     '[:-len(num)]+num for num in lreac.astype(int).astype(str)]
+        if np.sum(filt)==1:
+            if species+' ' in i[18:43]:
+                dest+=[i[:82]] #82
+            if species+' ' in i[47:82]:
+                form+=[i[:82]]
+    destix=[int(i[:5]) for i in dest]
+    formix=[int(i[:5]) for i in form]
+
+    fmrates=[]
+    for i in formix:
+        filt=spchem[:,3]==i
+        try:
+            fmrates+=[(spchem[:,4][filt]).max()]
+        except:
+            fmrates+=[0]
+
+    dtrates=[]
+    for i in destix:
+        filt=spchem[:,3]==i
+        try:
+            dtrates+=[(spchem[:,4][filt]).max()]
+        except:
+            dtrates+=[0]     
+
+    mainffilt=spchem[:,3]==formix[np.argmax(fmrates)]
+    farix=spchem[:,0:2][mainffilt]-1
+    frates=spchem[:,4][mainffilt]
+    farray=np.ones((model.nx,model.nz))*frates.min()
+    for i,j in zip(farix.astype(int),frates):
+        farray[i[0],i[1]]=j
+
+    maindfilt=spchem[:,3]==destix[np.argmax(dtrates)]
+    darix=spchem[:,0:2][maindfilt]-1
+    drates=spchem[:,4][maindfilt]
+    darray=np.ones((model.nx,model.nz))*drates.min()
+    for i,j in zip(darix.astype(int),drates):
+        darray[i[0],i[1]]=j
+
+    chemistry.farray=farray
+    chemistry.darray=darray 
+
+    sordix=np.argsort(dtrates)
+    sordli=np.array(destix)[sordix][::-1]
+    sorfix=np.argsort(fmrates)
+    sorfli=np.array(formix)[sorfix][::-1]
+    frg=(np.arange(len(sorfli))+1).astype(str)
+    drg=(np.arange(len(sordli))+1).astype(str)
+
+    chemistry.sorted_form_info=['     '[:-len(num)]+num+i for num,i in zip(frg,np.array(form)[np.argsort(fmrates)][::-1])]
+    chemistry.sorted_dest_info=['     '[:-len(num)]+num+i for num,i in zip(drg,np.array(dest)[np.argsort(dtrates)][::-1])]
+
+    mfrli=[]
+    mdtli=[]
+    for i in range(1,model.nx+1):
+        for j in range(1,model.nz+1)[::-1]:
+            chfil=(spchem[:,0]==i)&(spchem[:,1]==j)
+            ffil=chfil&np.in1d(spchem[:,3],sorfli)
+            dfil=chfil&np.in1d(spchem[:,3],sordli)
+            freacs=spchem[:,3:5][ffil]
+            try:
+                fmax=freacs[:,0][np.argmax(freacs[:,1])]
+                ifmax=frg[sorfli==fmax][0]
+                mfrli+=[ifmax]
+            except:
+                v+=[0]
+            dreacs=spchem[:,3:5][dfil]
+            try:
+                dmax=dreacs[:,0][np.argmax(dreacs[:,1])]
+                idmax=drg[sordli==dmax][0]
+                mdtli+=[idmax]
+            except:
+                mdtli+=[0]
+    chemistry.main_form_grid=mfrli
+    chemistry.main_dest_grid=mdtli
+    
+    
+    if to_txt:
+        output_chem_fname='chemistry_reactions_'+species+'.txt'
+        f = open(output_chem_fname, 'w')
+        f.writelines("-------------------------------------------------------\n")
+        f.writelines("Formation and destruction reactions in descending order\n")
+        f.writelines("according to their maximum rate across all grid points\n")
+        f.writelines("species :"+species+"\n\n")
+        f.writelines("Formation reactions\n")
+        for i in chemistry.sorted_form_info:
+            f.writelines(i+'\n')
+        f.writelines("\n\n")
+        f.writelines("Destruction reactions\n")
+        for i in chemistry.sorted_dest_info:
+            f.writelines(i+'\n')   
+        f.writelines("-------------------------------------------------------\n")
+        f.close()
+        print("Writing results to: "+output_chem_fname)
+        
+
+    
+    return chemistry
+
+
 
 
 def _flux_Wm2toJykms(flux,frequency):
