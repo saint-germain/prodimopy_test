@@ -69,7 +69,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     # FIXME: include proper version numbers
     install_requires=[
-                      'astropy>2'
+                      'astropy>2',
                       'matplotlib>2',
                       'numpy',   # no special requirements, but astropy has some
                       'scipy'],
